@@ -1,31 +1,35 @@
 name: Codzienny Scraper Cen (Frisco & Gazetki)
 
 on:
-  schedule:
-    - cron: '0 5 * * *'
-  workflow_dispatch:
+schedule:
+- cron: '0 5 * * *'
+workflow_dispatch:
 
 jobs:
-  run-scraper:
-    runs-on: ubuntu-latest
+run-scraper:
+runs-on: ubuntu-latest
 
-    steps:
-      - name: Pobranie kodu z repozytorium
-        uses: actions/checkout@v4
+steps:
+  - name: Pobranie kodu z repozytorium
+    uses: actions/checkout@v4
 
-      - name: Konfiguracja środowiska Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
+  - name: Konfiguracja środowiska Python
+    uses: actions/setup-python@v5
+    with:
+      python-version: '3.11'
 
-      - name: Instalacja zależności
-        run: |
-          pip install -r requirements.txt
+  - name: Instalacja zależności i przeglądarki Chromium
+    run: |
+      pip install -r requirements.txt
+      playwright install chromium
+      playwright install-deps chromium
 
-      - name: Uruchomienie robota cenowego
-        env:
-          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
-          HOUSEHOLD_ID: ${{ secrets.HOUSEHOLD_ID || 'KUCHNIA-2026' }}
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-        run: |
-          python scraper.py
+  - name: Uruchomienie robota cenowego
+    env:
+      FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+      HOUSEHOLD_ID: ${{ secrets.HOUSEHOLD_ID || 'KUCHNIA-2026' }}
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+    run: |
+      python scraper.py
+
+
