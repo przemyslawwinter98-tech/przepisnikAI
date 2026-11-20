@@ -589,6 +589,7 @@
                                 <option value="500 g">za 500 g</option>
                             </select>
                             <select id="pb-new-cat" class="sm:col-span-3 px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-sm text-slate-200 focus:outline-none focus:border-emerald-500">
+                                <option value="Warzywa i owoce">Warzywa i owoce</option>
                                 <option value="Konserwy i słoiki">Konserwy i słoiki</option>
                                 <option value="Mięso i świeże">Mięso i świeże</option>
                                 <option value="Suche i makarony">Suche i makarony</option>
@@ -699,6 +700,7 @@
                     <form onsubmit="handleAddManualShoppingItem(event)" class="flex flex-col sm:flex-row gap-2.5 bg-[#1e293b] p-4 rounded-2xl border border-slate-800">
                         <input type="text" id="new-shop-name" required placeholder="Co trzeba dokupić? (np. Świeży chleb, Pierś z kurczaka 500g)" class="flex-1 px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500">
                         <select id="new-shop-cat" class="px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-sm text-slate-200 focus:outline-none focus:border-emerald-500">
+                            <option value="Warzywa i owoce">Warzywa i owoce</option>
                             <option value="Mięso i świeże">Mięso i świeże</option>
                             <option value="Konserwy i słoiki">Konserwy i słoiki</option>
                             <option value="Suche i makarony">Suche i makarony</option>
@@ -3725,6 +3727,24 @@ BARDZO WAŻNE ZASADY:
                 return;
             }
 
+        function resolveOfferWeight(item) {
+            if (item && item.weight) return String(item.weight).trim();
+            const raw = `${item?.rawText || ''} ${item?.name || ''}`;
+            const cleaned = raw
+                .replace(/\d+[.,]\d+\s*zł\s*\/\s*(?:1\s*)?(?:kg|l|100\s*g)/gi, ' ')
+                .replace(/\(\s*\d+[.,]\d+\s*zł\s*\/\s*[^)]+\)/gi, ' ');
+            const mMulti = cleaned.match(/\b(\d+\s*[x×]\s*\d+(?:[.,]\d+)?\s*(?:kg|g|dag|ml|l))\b/i);
+            if (mMulti) return mMulti[1].replace(/\s+/g, ' ').toLowerCase().replace('×', 'x');
+            const mStd = cleaned.match(/\b(\d+(?:[.,]\d+)?)\s*(kg|g|dag|ml|l|szt\.?)\b/i);
+            if (mStd) {
+                const num = mStd[1].replace('.', ',');
+                let unit = mStd[2].toLowerCase().replace(/\.$/, '');
+                if (unit === 'szt') unit = 'szt.';
+                return `${num} ${unit}`;
+            }
+            return '';
+        }
+
             listEl.innerHTML = items.map(([prodKey, item]) => {
                 const cleanName = window.cleanGenericFoodName(item.name || prodKey);
                 const key = window.normalizeKey(cleanName);
@@ -3733,6 +3753,7 @@ BARDZO WAŻNE ZASADY:
                 const storeLabel = item.store || (item.source ? item.source.replace(/^Promocja\s+/i, '').split('(')[0].trim() : 'Gazetka');
                 const storeBadgeClass = getStoreBadgeStyle(storeLabel);
                 const dateRangeText = formatPromoDateRangePl(item.validFrom, item.validTo);
+                const weightLabel = resolveOfferWeight(item);
                 const existingPb = window.appState.pricebook[key];
 
                 return `
@@ -3742,6 +3763,7 @@ BARDZO WAŻNE ZASADY:
                             <span class="px-2.5 py-0.5 rounded-lg border text-xs font-extrabold uppercase tracking-wide ${storeBadgeClass}">
                                 🏪 ${storeLabel}
                             </span>
+                            ${weightLabel ? `<span class="px-2.5 py-0.5 rounded-lg bg-emerald-500/15 border border-emerald-500/35 text-xs font-bold text-emerald-300">⚖️ ${weightLabel}</span>` : ''}
                             <span class="px-2.5 py-0.5 rounded-lg bg-slate-900 border border-slate-700 text-xs font-semibold text-sky-300">
                                 📅 ${dateRangeText}
                             </span>
@@ -3765,7 +3787,7 @@ BARDZO WAŻNE ZASADY:
                             <span class="text-xs text-slate-400">zł</span>
                         </div>
                         <div class="flex flex-wrap items-center gap-1.5">
-                            <button onclick="addScraperItemToShopping('${safeProdKey}')" title="Dodaj promocję bezpośrednio do Listy Zakupów z datą ważności" class="px-3.5 py-2.5 rounded-xl bg-sky-500/20 hover:bg-sky-500/30 text-sky-300 border border-sky-500/40 font-bold text-xs transition-all">🛒 + Zakupy</button>
+                            <button onclick="addScraperItemToShopping('${safeProdKey}')" title="Dodaj promocję bezpośrednio do Listy Zakupów z gramaturą i datą ważności" class="px-3.5 py-2.5 rounded-xl bg-sky-500/20 hover:bg-sky-500/30 text-sky-300 border border-sky-500/40 font-bold text-xs transition-all">🛒 + Zakupy</button>
                             <button onclick="approveScraperItem('${safeProdKey}')" class="px-4 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs shadow-md shadow-emerald-500/15 transition-all">✓ Zatwierdź do Cennika</button>
                             <button onclick="rejectScraperItem('${safeProdKey}')" title="Odrzuć" class="px-3 py-2.5 rounded-xl bg-slate-800 hover:bg-red-950/60 text-slate-300 hover:text-red-300 text-xs font-bold transition-all">✕</button>
                         </div>
@@ -3774,6 +3796,14 @@ BARDZO WAŻNE ZASADY:
                 `;
             }).join('');
         };
+
+        function mapVerifyCategoryToAppCategory(catId, itemCategory = '') {
+            if (itemCategory === 'Warzywa i owoce' || catId === 'warzywa') return 'Warzywa i owoce';
+            if (catId === 'mieso' || catId === 'pieczywo' || catId === 'ryby') return 'Mięso i świeże';
+            if (catId === 'nabial') return 'Lodówka i mrożonki';
+            if (catId === 'tluszcze') return 'Przyprawy i dodatki';
+            return itemCategory || 'Suche i makarony';
+        }
 
         window.approveScraperItem = async (prodKey) => {
             const item = window.appState.pendingScraper[prodKey];
@@ -3788,14 +3818,21 @@ BARDZO WAŻNE ZASADY:
             const finalPrice = inputEl ? parseFloat(inputEl.value) : Number(item.detectedPrice);
             const storeLabel = item.store || (item.source ? item.source.replace(/^Promocja\s+/i, '').split('(')[0].trim() : 'Gazetka');
             const dateRangeText = formatPromoDateRangePl(item.validFrom, item.validTo);
+            const weightLabel = resolveOfferWeight(item);
+            const catId = classifyVerifyFoodCategory(item, prodKey);
 
             if (!isNaN(finalPrice) && finalPrice > 0) {
                 const existing = window.appState.pricebook[key];
+                const resolvedCategory = existing ? existing.category : mapVerifyCategoryToAppCategory(catId, item.category);
+                const resolvedUnit = key === 'jajka'
+                    ? '10 szt.'
+                    : (weightLabel || (existing ? existing.unit : "1 szt."));
+
                 window.appState.deletedPricebookKeys = (window.appState.deletedPricebookKeys || []).filter(k => k !== key);
                 window.appState.pricebook[key] = {
                     name: key === 'jajka' ? 'Jajka' : finalName,
-                    unit: key === 'jajka' ? '10 szt.' : (existing ? existing.unit : "1 szt."),
-                    category: existing ? existing.category : "Inne",
+                    unit: resolvedUnit,
+                    category: resolvedCategory,
                     price: Number(finalPrice.toFixed(2)),
                     basePrice: Number(finalPrice.toFixed(2)),
                     promoPrice: Number(finalPrice.toFixed(2)),
@@ -3807,15 +3844,8 @@ BARDZO WAŻNE ZASADY:
             }
             delete window.appState.pendingScraper[prodKey];
             await saveKitchenChanges();
-            showToast(`Zatwierdzono do Cennika: <strong>${finalName}</strong> (${finalPrice.toFixed(2)} zł • ${storeLabel})`);
+            showToast(`Zatwierdzono do Cennika: <strong>${finalName}</strong>${weightLabel ? ` (${weightLabel})` : ''} — ${finalPrice.toFixed(2)} zł • ${storeLabel}`);
         };
-
-        function mapVerifyCategoryToShoppingCategory(catId) {
-            if (catId === 'mieso' || catId === 'warzywa' || catId === 'pieczywo' || catId === 'ryby') return 'Mięso i świeże';
-            if (catId === 'nabial') return 'Lodówka i mrożonki';
-            if (catId === 'tluszcze') return 'Przyprawy i dodatki';
-            return 'Suche i makarony';
-        }
 
         window.addScraperItemToShopping = async (prodKey) => {
             const item = window.appState.pendingScraper[prodKey];
@@ -3833,17 +3863,20 @@ BARDZO WAŻNE ZASADY:
             const validFrom = item.validFrom || null;
             const validTo = item.validTo || null;
             const dateRangeText = formatPromoDateRangePl(validFrom, validTo);
+            const weightLabel = resolveOfferWeight(item);
 
-            // Zaktualizuj również cennik bazowy, jeśli nie był usunięty
             const existingPb = window.appState.pricebook[key];
             const catId = classifyVerifyFoodCategory(item, prodKey);
-            const shopCategory = existingPb?.category || mapVerifyCategoryToShoppingCategory(catId);
+            const shopCategory = existingPb?.category || mapVerifyCategoryToAppCategory(catId, item.category);
+            const resolvedUnit = key === 'jajka'
+                ? '10 szt.'
+                : (weightLabel || (existingPb ? existingPb.unit : "1 szt."));
 
             if (!isNaN(finalPrice) && finalPrice > 0) {
                 window.appState.deletedPricebookKeys = (window.appState.deletedPricebookKeys || []).filter(k => k !== key);
                 window.appState.pricebook[key] = {
                     name: key === 'jajka' ? 'Jajka' : finalName,
-                    unit: key === 'jajka' ? '10 szt.' : (existingPb ? existingPb.unit : "1 szt."),
+                    unit: resolvedUnit,
                     category: shopCategory,
                     price: Number(finalPrice.toFixed(2)),
                     basePrice: Number(finalPrice.toFixed(2)),
@@ -3855,12 +3888,13 @@ BARDZO WAŻNE ZASADY:
                 };
             }
 
-            // Dodaj lub zaktualizuj pozycję na Liście Zakupów z czytelną informacją o sklepie i terminie ważności promocji
+            const displayShopName = weightLabel ? `${finalName} (${weightLabel})` : finalName;
             const existingShop = window.appState.shopping.find(
                 s => !s.checked && window.normalizeKey(s.baseName || s.name) === key && (s.promoStore || '') === storeLabel
             );
 
             if (existingShop) {
+                existingShop.name = displayShopName;
                 existingShop.price = Number((finalPrice || 0).toFixed(2));
                 existingShop.promoStore = storeLabel;
                 existingShop.promoValidFrom = validFrom;
@@ -3869,7 +3903,7 @@ BARDZO WAŻNE ZASADY:
             } else {
                 window.appState.shopping.unshift({
                     id: 'shop_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
-                    name: finalName,
+                    name: displayShopName,
                     baseName: finalName,
                     category: shopCategory,
                     price: Number((finalPrice || 0).toFixed(2)),
@@ -3883,7 +3917,7 @@ BARDZO WAŻNE ZASADY:
 
             delete window.appState.pendingScraper[prodKey];
             await saveKitchenChanges();
-            showToast(`🛒 Dodano do Listy Zakupów: <strong>${finalName}</strong> (${storeLabel} • ${dateRangeText})`);
+            showToast(`🛒 Dodano do Listy Zakupów: <strong>${displayShopName}</strong> (${storeLabel} • ${dateRangeText})`);
         };
 
         window.rejectScraperItem = async (prodKey) => {
