@@ -2,7 +2,9 @@
 <html lang="pl" class="dark">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>KuchniaBudżet PRO — Multi-Tenant, Społeczność & Panel Admina</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -31,6 +33,14 @@
         ::-webkit-scrollbar-thumb { background: #334155; border-radius: 9999px; }
         ::-webkit-scrollbar-thumb:hover { background: #475569; }
         .promo-glow { box-shadow: 0 0 22px -5px rgba(16, 185, 129, 0.28); }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .pb-safe { padding-bottom: max(0.5rem, env(safe-area-inset-bottom)); }
+        .pt-safe { padding-top: max(0.625rem, env(safe-area-inset-top)); }
+        /* Zapobieganie automatycznemu zoomowaniu ekranu przez Safari na iPhone 13 mini przy kliknięciu w input */
+        @media screen and (max-width: 767px) {
+            input, select, textarea { font-size: 16px !important; }
+        }
     </style>
 </head>
 <body class="min-h-screen bg-[#0f172a] text-slate-100 selection:bg-emerald-500/30 selection:text-emerald-200">
@@ -240,6 +250,13 @@
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
                     Przepisy & Społeczność
                 </button>
+                <button onclick="switchTab('planner')" data-tab="planner" class="nav-btn w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800/70 transition-all">
+                    <span class="flex items-center gap-3">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                        Planer Posiłków
+                    </span>
+                    <span id="badge-planner-count" class="px-2 py-0.5 text-xs rounded-full bg-sky-500/20 text-sky-300 font-semibold">0</span>
+                </button>
                 <button onclick="switchTab('pantry')" data-tab="pantry" class="nav-btn w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800/70 transition-all">
                     <span class="flex items-center gap-3">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
@@ -302,27 +319,30 @@
             </div>
         </aside>
 
-        <!-- Górny pasek (Mobile) -->
-        <header class="md:hidden sticky top-0 z-30 bg-[#1e293b]/95 backdrop-blur-md border-b border-slate-800 px-3 py-2.5 flex items-center justify-between gap-2">
-            <div class="flex items-center gap-2 min-w-0">
-                <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shrink-0">
-                    <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
+        <!-- Górny pasek (Mobile — dopasowany do iPhone 13 mini 375px) -->
+        <header class="md:hidden sticky top-0 z-30 bg-[#0f172a]/95 backdrop-blur-md border-b border-slate-800/90 px-3.5 pt-safe pb-2.5 flex items-center justify-between gap-2">
+            <div onclick="openKitchenModal()" class="flex items-center gap-2.5 min-w-0 cursor-pointer active:opacity-80">
+                <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-md shadow-emerald-500/20 shrink-0">
+                    <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
                 </div>
                 <div class="min-w-0">
                     <div class="flex items-center gap-1.5">
-                        <span id="mobile-sync-dot" class="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0"></span>
-                        <span id="mobile-kitchen-label" onclick="openKitchenModal()" class="text-xs font-bold text-white truncate max-w-[110px] cursor-pointer">Kuchnia</span>
-                        <span id="mobile-kitchen-code" class="text-[11px] text-emerald-400 font-mono font-extrabold">------</span>
-                        <button onclick="copyKitchenCode()" class="text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-200">📋</button>
-                        <button onclick="openKitchenModal()" title="Edytuj nazwę kuchni i klucz AI" class="text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-300">✏️</button>
+                        <span id="mobile-sync-dot" class="w-2 h-2 rounded-full bg-amber-500 shrink-0"></span>
+                        <span id="mobile-kitchen-label" class="text-sm font-bold text-white truncate max-w-[135px]">Kuchnia</span>
                     </div>
-                    <button onclick="logoutFromKitchen()" class="text-[10px] text-red-400 underline block">Zmień kuchnię / Wyloguj</button>
+                    <div class="flex items-center gap-1.5 mt-0.5">
+                        <span class="text-[10px] text-slate-400">Kod:</span>
+                        <span id="mobile-kitchen-code" class="text-[11px] text-emerald-400 font-mono font-extrabold tracking-wider">------</span>
+                        <button type="button" onclick="event.stopPropagation(); copyKitchenCode()" class="text-[10px] px-1.5 py-0.2 rounded bg-slate-800 text-slate-300">Kopiuj</button>
+                    </div>
                 </div>
             </div>
-            <button onclick="openAddRecipeModal()" class="px-3 py-2 rounded-xl bg-emerald-500 text-slate-950 font-bold text-xs flex items-center gap-1 shadow-md shrink-0">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path></svg>
-                Przepis
-            </button>
+            <div class="flex items-center gap-1.5 shrink-0">
+                <button onclick="openAddRecipeModal()" class="px-3 py-2 rounded-xl bg-emerald-500 active:bg-emerald-400 text-slate-950 font-bold text-xs flex items-center gap-1 shadow-lg shadow-emerald-500/20">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path></svg>
+                    <span>Dodaj</span>
+                </button>
+            </div>
         </header>
 
         <!-- Główny obszar roboczy -->
@@ -336,7 +356,7 @@
                             <svg class="w-5 h-5 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                             <input type="text" id="recipe-search" oninput="renderRecipes()" placeholder="Szukaj dania, składnika lub autora (np. fasola, kurczak, Kowalscy)..." class="w-full pl-11 pr-4 py-3 rounded-xl bg-[#1e293b] border border-slate-700/80 text-sm text-white placeholder-slate-400 focus:outline-none focus:border-emerald-500 transition-colors">
                         </div>
-                        <div class="flex gap-2 overflow-x-auto pb-1">
+                        <div class="flex gap-2 overflow-x-auto no-scrollbar pb-1 -mx-4 px-4 sm:mx-0 sm:px-0">
                             <button onclick="setRecipeFilter('all')" data-filter="all" class="filter-chip px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap bg-emerald-500 text-slate-950 transition-all">Wszystkie</button>
                             <button onclick="setRecipeFilter('pantry')" data-filter="pantry" class="filter-chip px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap bg-[#1e293b] text-slate-300 border border-slate-700 hover:border-emerald-500/50 transition-all">🥫 Z tego co mam</button>
                             <button onclick="setRecipeFilter('community')" data-filter="community" class="filter-chip px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap bg-[#1e293b] text-slate-300 border border-slate-700 hover:border-indigo-500/50 transition-all">🌍 Od innych kuchni (<span id="chip-community-count">0</span>)</button>
@@ -368,6 +388,51 @@
                             </label>
                         </div>
                     </div>
+                </section>
+
+                <!-- ================= ZAKŁADKA: TYGODNIOWY PLANER POSIŁKÓW ================= -->
+                <section id="tab-planner" class="hidden space-y-5">
+                    <!-- Podsumowanie tygodnia + akcje -->
+                    <div class="bg-gradient-to-br from-sky-950/70 via-[#1e293b] to-[#1e293b] rounded-2xl border border-sky-500/40 p-4 sm:p-6 shadow-xl space-y-4">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                            <div>
+                                <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-sky-500/20 text-sky-300 text-[11px] font-bold mb-1">
+                                    <span>📅 PLANER POSIŁKÓW & BUDŻET TYGODNIA</span>
+                                </div>
+                                <h2 class="text-lg sm:text-xl font-bold text-white">Zaplanuj posiłki na cały tydzień</h2>
+                                <p class="text-xs text-slate-300 mt-0.5">Wybierz śniadania, obiady i kolacje z Waszych przepisów — aplikacja policzy koszt tygodnia (z przelicznikiem kromek, ząbków i warzyw) i wrzuci brakujące produkty na Listę Zakupów.</p>
+                            </div>
+                            <div class="flex flex-wrap gap-2 shrink-0">
+                                <button onclick="addMissingFromPlannerToShopping()" class="px-4 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs sm:text-sm shadow-lg shadow-emerald-500/20 transition-all">
+                                    🛒 Dodaj brakujące (<span id="planner-missing-btn-count">0</span>)
+                                </button>
+                                <button onclick="clearMealPlanner()" class="px-3.5 py-2.5 rounded-xl bg-slate-800 hover:bg-red-950/50 text-slate-300 hover:text-red-300 font-semibold text-xs border border-slate-700 transition-all">
+                                    Wyczyść tydzień
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-3 gap-2.5 sm:gap-4 pt-2 border-t border-sky-500/20">
+                            <div class="bg-slate-950/80 p-3 rounded-xl border border-slate-800">
+                                <p class="text-[10px] sm:text-xs text-slate-400 uppercase font-semibold">Zaplanowano</p>
+                                <p id="planner-stat-meals" class="text-base sm:text-2xl font-extrabold text-white mt-0.5">0 dań</p>
+                            </div>
+                            <div class="bg-slate-950/80 p-3 rounded-xl border border-slate-800">
+                                <p class="text-[10px] sm:text-xs text-slate-400 uppercase font-semibold">Koszt tygodnia</p>
+                                <p id="planner-stat-cost" class="text-base sm:text-2xl font-extrabold text-emerald-400 mt-0.5">0.00 zł</p>
+                            </div>
+                            <div class="bg-slate-950/80 p-3 rounded-xl border border-slate-800">
+                                <p class="text-[10px] sm:text-xs text-slate-400 uppercase font-semibold">Do dokupienia</p>
+                                <p id="planner-stat-missing" class="text-base sm:text-2xl font-extrabold text-amber-400 mt-0.5">0 poz.</p>
+                            </div>
+                        </div>
+
+                        <!-- Pasek wyboru dnia na mobile (iPhone 13 mini) -->
+                        <div class="flex md:hidden gap-1.5 overflow-x-auto no-scrollbar pt-1 -mx-1 px-1" id="planner-mobile-day-pills"></div>
+                    </div>
+
+                    <!-- Siatka dni tygodnia -->
+                    <div id="planner-days-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
                 </section>
 
                 <!-- ================= ZAKŁADKA 2: SPIŻARNIA, LODÓWKA & ZAMRAŻARKA ================= -->
@@ -736,44 +801,80 @@
             </div>
         </main>
 
-        <!-- Dolna Nawigacja (Mobile) -->
-        <nav class="md:hidden fixed bottom-0 inset-x-0 bg-[#1e293b]/95 backdrop-blur-md border-t border-slate-800 z-30 flex justify-around py-2 px-1">
-            <button onclick="switchTab('recipes')" data-tab="recipes" class="mobile-nav-btn flex flex-col items-center p-1.5 rounded-xl text-emerald-400">
+        <!-- Dolna Nawigacja (Mobile — 5 głównych przycisków + menu Więcej dla iPhone 13 mini) -->
+        <nav class="md:hidden fixed bottom-0 inset-x-0 bg-[#0f172a]/95 backdrop-blur-lg border-t border-slate-800/90 z-40 grid grid-cols-5 pt-1.5 pb-safe px-1">
+            <button onclick="switchTab('recipes')" data-tab="recipes" class="mobile-nav-btn flex flex-col items-center justify-center py-1.5 rounded-xl text-emerald-400">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
-                <span class="text-[10px] font-semibold mt-0.5">Przepisy</span>
+                <span class="text-[11px] font-semibold mt-0.5">Przepisy</span>
             </button>
-            <button onclick="switchTab('pantry')" data-tab="pantry" class="mobile-nav-btn relative flex flex-col items-center p-1.5 rounded-xl text-slate-400">
+            <button onclick="switchTab('planner')" data-tab="planner" class="mobile-nav-btn relative flex flex-col items-center justify-center py-1.5 rounded-xl text-slate-400">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                <span class="text-[11px] font-semibold mt-0.5">Planer</span>
+                <span id="mobile-badge-planner" class="hidden absolute top-1 right-2.5 w-4 h-4 rounded-full bg-sky-500 text-slate-950 text-[9px] font-extrabold flex items-center justify-center">0</span>
+            </button>
+            <button onclick="switchTab('pantry')" data-tab="pantry" class="mobile-nav-btn relative flex flex-col items-center justify-center py-1.5 rounded-xl text-slate-400">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
-                <span class="text-[10px] font-semibold mt-0.5">Zapasy</span>
-                <span id="mobile-badge-pantry" class="hidden absolute top-0.5 right-0.5 w-4 h-4 rounded-full bg-emerald-500 text-slate-950 text-[9px] font-bold flex items-center justify-center">0</span>
+                <span class="text-[11px] font-semibold mt-0.5">Spiżarnia</span>
+                <span id="mobile-badge-pantry" class="hidden absolute top-1 right-2.5 w-4 h-4 rounded-full bg-emerald-500 text-slate-950 text-[9px] font-extrabold flex items-center justify-center">0</span>
             </button>
-            <button onclick="switchTab('pricebook')" data-tab="pricebook" class="mobile-nav-btn relative flex flex-col items-center p-1.5 rounded-xl text-slate-400">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
-                <span class="text-[10px] font-semibold mt-0.5">Cennik</span>
-            </button>
-            <button onclick="switchTab('promos')" data-tab="promos" class="mobile-nav-btn relative flex flex-col items-center p-1.5 rounded-xl text-slate-400">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path></svg>
-                <span class="text-[10px] font-semibold mt-0.5">Radar</span>
-            </button>
-            <button onclick="switchTab('verify')" data-tab="verify" class="mobile-nav-btn relative flex flex-col items-center p-1.5 rounded-xl text-slate-400">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                <span class="text-[10px] font-semibold mt-0.5">Weryfikuj</span>
-                <span id="mobile-badge-verify" class="hidden absolute top-0.5 right-0.5 w-4 h-4 rounded-full bg-indigo-500 text-white text-[9px] font-bold flex items-center justify-center">0</span>
-            </button>
-            <button onclick="switchTab('shopping')" data-tab="shopping" class="mobile-nav-btn relative flex flex-col items-center p-1.5 rounded-xl text-slate-400">
+            <button onclick="switchTab('shopping')" data-tab="shopping" class="mobile-nav-btn relative flex flex-col items-center justify-center py-1.5 rounded-xl text-slate-400">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
-                <span class="text-[10px] font-semibold mt-0.5">Zakupy</span>
-                <span id="mobile-badge-shopping" class="hidden absolute top-0.5 right-0.5 w-4 h-4 rounded-full bg-amber-500 text-slate-950 text-[9px] font-bold flex items-center justify-center">0</span>
+                <span class="text-[11px] font-semibold mt-0.5">Zakupy</span>
+                <span id="mobile-badge-shopping" class="hidden absolute top-1 right-2.5 w-4 h-4 rounded-full bg-amber-500 text-slate-950 text-[9px] font-extrabold flex items-center justify-center">0</span>
             </button>
-            <button onclick="switchTab('reviews')" data-tab="reviews" class="mobile-nav-btn flex flex-col items-center p-1.5 rounded-xl text-slate-400">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
-                <span class="text-[10px] font-semibold mt-0.5">Koszty</span>
-            </button>
-            <button onclick="switchTab('feedback')" data-tab="feedback" class="mobile-nav-btn flex flex-col items-center p-1.5 rounded-xl text-slate-400">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"></path></svg>
-                <span class="text-[10px] font-semibold mt-0.5">Pomysły</span>
+            <button onclick="toggleMobileMoreMenu()" id="btn-mobile-more" class="mobile-nav-btn relative flex flex-col items-center justify-center py-1.5 rounded-xl text-slate-400">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                <span class="text-[11px] font-semibold mt-0.5">Więcej</span>
+                <span id="mobile-badge-verify" class="hidden absolute top-1 right-2.5 w-4 h-4 rounded-full bg-indigo-500 text-white text-[9px] font-extrabold flex items-center justify-center">0</span>
             </button>
         </nav>
+
+        <!-- Wysuwana szuflada "Więcej" dla iPhone (Cennik/Paragon, Radar, Scraper, Koszty, Ustawienia kuchni) -->
+        <div id="mobile-more-sheet" onclick="if(event.target===this) toggleMobileMoreMenu(false)" class="hidden md:hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-end">
+            <div class="w-full bg-[#1e293b] border-t border-slate-700 rounded-t-3xl p-5 pb-safe space-y-4 shadow-2xl">
+                <div class="w-10 h-1 bg-slate-600 rounded-full mx-auto"></div>
+                <div class="flex items-center justify-between">
+                    <h3 class="text-base font-bold text-white">Narzędzia i Ustawienia</h3>
+                    <button onclick="toggleMobileMoreMenu(false)" class="text-xs text-slate-400 px-2.5 py-1 rounded-lg bg-slate-800">Zamknij</button>
+                </div>
+                <div class="grid grid-cols-2 gap-2.5">
+                    <button onclick="switchTab('pricebook'); toggleMobileMoreMenu(false)" class="p-3.5 rounded-2xl bg-slate-900 border border-slate-800 hover:border-emerald-500/40 text-left space-y-1">
+                        <span class="text-lg">📸</span>
+                        <p class="text-xs font-bold text-white">Cennik & Paragon AI</p>
+                        <p class="text-[10px] text-slate-400">Skanuj paragony i ceny</p>
+                    </button>
+                    <button onclick="switchTab('reviews'); toggleMobileMoreMenu(false)" class="p-3.5 rounded-2xl bg-slate-900 border border-slate-800 hover:border-amber-500/40 text-left space-y-1">
+                        <span class="text-lg">📊</span>
+                        <p class="text-xs font-bold text-white">Historia & Koszt Porcji</p>
+                        <p class="text-[10px] text-slate-400">Rozliczenia obiadów</p>
+                    </button>
+                    <button onclick="switchTab('promos'); toggleMobileMoreMenu(false)" class="p-3.5 rounded-2xl bg-slate-900 border border-slate-800 hover:border-indigo-500/40 text-left space-y-1">
+                        <span class="text-lg">🎯</span>
+                        <p class="text-xs font-bold text-white">Radar Śledzonych</p>
+                        <p class="text-[10px] text-slate-400">Alerty promocyjne</p>
+                    </button>
+                    <button onclick="switchTab('verify'); toggleMobileMoreMenu(false)" class="p-3.5 rounded-2xl bg-slate-900 border border-slate-800 hover:border-indigo-500/40 text-left space-y-1">
+                        <span class="text-lg">🛡️</span>
+                        <p class="text-xs font-bold text-white">Weryfikacja Scrapera</p>
+                        <p class="text-[10px] text-slate-400">Poczekalnia okazji</p>
+                    </button>
+                    <button onclick="switchTab('feedback'); toggleMobileMoreMenu(false)" class="p-3.5 rounded-2xl bg-slate-900 border border-slate-800 text-left space-y-1">
+                        <span class="text-lg">💡</span>
+                        <p class="text-xs font-bold text-white">Zgłoś Pomysł / Błąd</p>
+                        <p class="text-[10px] text-slate-400">Rozwój aplikacji</p>
+                    </button>
+                    <button onclick="toggleMobileMoreMenu(false); openKitchenModal()" class="p-3.5 rounded-2xl bg-slate-900 border border-slate-800 text-left space-y-1">
+                        <span class="text-lg">⚙️</span>
+                        <p class="text-xs font-bold text-white">Nazwa & Klucz AI</p>
+                        <p class="text-[10px] text-slate-400">Ustawienia kuchni</p>
+                    </button>
+                </div>
+                <div class="pt-2 border-t border-slate-800 flex items-center justify-between text-xs">
+                    <button onclick="toggleMobileMoreMenu(false); logoutFromKitchen()" class="text-red-400 font-semibold">🚪 Zmień kuchnię / Wyloguj</button>
+                    <button onclick="toggleMobileMoreMenu(false); openAdminView()" class="text-slate-400">🛡️ Admin</button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- ================= MODALE ================= -->
@@ -1012,6 +1113,23 @@
         </div>
     </div>
 
+    <!-- MODAL 6: Wybierz przepis do Planera Posiłków -->
+    <div id="modal-pick-meal" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
+        <div class="bg-[#1e293b] border-t sm:border border-slate-700 rounded-t-3xl sm:rounded-2xl max-w-lg w-full p-5 sm:p-6 shadow-2xl max-h-[88vh] flex flex-col">
+            <div class="flex items-center justify-between mb-3">
+                <div>
+                    <span id="pick-meal-slot-badge" class="px-2.5 py-0.5 rounded-full bg-sky-500/20 text-sky-300 text-[11px] font-bold">Poniedziałek • Obiad</span>
+                    <h3 class="text-lg font-bold text-white mt-1">Wybierz danie do planu</h3>
+                </div>
+                <button onclick="closeModal('modal-pick-meal')" class="p-2 rounded-xl bg-slate-800 text-slate-400 hover:text-white">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            <input type="text" id="pick-meal-search" oninput="renderPickMealList()" placeholder="Szukaj dania (np. jajecznica, curry, makaron)..." class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-sky-500 mb-3">
+            <div id="pick-meal-list" class="space-y-2 overflow-y-auto pr-1 flex-1"></div>
+        </div>
+    </div>
+
     <!-- ================= LOGIKA APLIKACJI (MULTI-TENANT + SPOŁECZNOŚĆ + ADMIN) ================= -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
@@ -1047,6 +1165,8 @@
             freezer: [],
             shopping: [],
             shoppingHistory: [],
+            mealPlan: {},
+            activePlannerDay: 'mon',
             reviews: [],
             currentFilter: 'all',
             unsubKitchen: null,
@@ -1719,6 +1839,7 @@
                 window.appState.freezer = Array.isArray(data.freezer) ? data.freezer : [];
                 window.appState.shopping = data.shopping || [];
                 window.appState.shoppingHistory = Array.isArray(data.shoppingHistory) ? data.shoppingHistory : [];
+                window.appState.mealPlan = (data.mealPlan && typeof data.mealPlan === 'object') ? data.mealPlan : {};
                 window.appState.reviews = data.reviews || [];
                 window.appState.pendingScraper = data.pendingScraper || {};
                 window.appState.scraperUpdatedAt = data.lastScraped || null;
@@ -1753,6 +1874,7 @@
                     freezer: window.appState.freezer,
                     shopping: window.appState.shopping,
                     shoppingHistory: window.appState.shoppingHistory,
+                    mealPlan: window.appState.mealPlan || {},
                     reviews: window.appState.reviews,
                     pendingScraper: window.appState.pendingScraper,
                     geminiApiKey: window.appState.geminiApiKey || "",
@@ -1760,7 +1882,7 @@
                 }, { mergeFields: [
                     "label", "recipes", "pricebook", "deletedPricebookKeys",
                     "trackedProducts", "pantry", "freezer", "shopping",
-                    "shoppingHistory", "reviews", "pendingScraper",
+                    "shoppingHistory", "mealPlan", "reviews", "pendingScraper",
                     "geminiApiKey", "updatedAt"
                 ] });
             } catch (e) {
@@ -2330,34 +2452,108 @@
             return false;
         };
 
-        // ================= PARSER ILOŚCI, OBLICZANIE KOSZTU I ODEJMOWANIE ZE SPIŻARNI =================
-        function parseQuantityString(str) {
-            if (!str) return { val: 1, baseUnit: 'szt.' };
-            const clean = String(str).toLowerCase().trim().replace(',', '.');
-            const match = clean.match(/(\d+(?:\.\d+)?)\s*(kg|g|l|ml|szt\.?|puszk[ia]?|opak\.?|słoik[ia]?|kromk[ia]?|ząbk[iów]?|łyżk[ia]?)?/);
-            if (!match) return { val: 1, baseUnit: 'szt.' };
+        // ================= PARSER ILOŚCI + EKWIWALENTY KULINARNE (CHLEB, CZOSNEK, WARZYWA) =================
+        const CULINARY_EQUIVALENTS = {
+            chleb_swiezy: { slicesPerLoaf: 16, gramsPerLoaf: 500 },
+            chleb: { slicesPerLoaf: 16, gramsPerLoaf: 500 },
+            bulka: { gramsPerPiece: 65 },
+            czosnek: { clovesPerBulb: 10, gramsPerBulb: 50 },
+            cebula: { gramsPerPiece: 130 },
+            ziemniaki: { gramsPerPiece: 150 },
+            pomidory: { gramsPerPiece: 140 },
+            papryka: { gramsPerPiece: 180 },
+            marchew: { gramsPerPiece: 90 },
+            jablko: { gramsPerPiece: 160 },
+            cytryna: { gramsPerPiece: 100 },
+            piers_z_kurczaka: { gramsPerPiece: 220 },
+            maslo: { gramsPerPiece: 200 },
+            ser_zolty: { gramsPerSlice: 20 },
+            szynka: { gramsPerSlice: 20 }
+        };
+
+        function parseQuantityString(str, canonKey = '') {
+            if (!str) return { val: 1, baseUnit: 'szt.', rawUnit: 'szt.' };
+            const clean = window.stripDiacritics(String(str)).replace(',', '.');
+            const match = clean.match(/(\d+(?:\.\d+)?)\s*(kg|g|dag|l|ml|szt\.?|sztuk[ia]?|puszk[ia]?|opak\.?|sloik[ia]?|kromk[ia]?|zabk[iow]?|zabek|plastr[yow]?|plaster|kostk[ia]?|but\.?)?/);
+            if (!match) return { val: 1, baseUnit: 'szt.', rawUnit: 'szt.' };
 
             let val = parseFloat(match[1]);
-            let unit = (match[2] || 'szt.').replace(/\.$/, '');
+            let unit = (match[2] || 'szt').replace(/\.$/, '');
+            const eq = CULINARY_EQUIVALENTS[canonKey] || {};
 
-            if (unit === 'kg') return { val: val * 1000, baseUnit: 'g' };
-            if (unit === 'g') return { val: val, baseUnit: 'g' };
-            if (unit === 'l') return { val: val * 1000, baseUnit: 'ml' };
-            if (unit === 'ml') return { val: val, baseUnit: 'ml' };
-            if (unit.startsWith('puszk')) return { val: val, baseUnit: 'puszka' };
-            if (unit.startsWith('opak')) return { val: val, baseUnit: 'opak.' };
-            return { val: val, baseUnit: 'szt.' };
+            if (unit === 'kg') return { val: val * 1000, baseUnit: 'g', rawUnit: 'kg' };
+            if (unit === 'dag') return { val: val * 10, baseUnit: 'g', rawUnit: 'dag' };
+            if (unit === 'g') return { val: val, baseUnit: 'g', rawUnit: 'g' };
+            if (unit === 'l') return { val: val * 1000, baseUnit: 'ml', rawUnit: 'l' };
+            if (unit === 'ml') return { val: val, baseUnit: 'ml', rawUnit: 'ml' };
+            if (unit.startsWith('puszk')) return { val: val, baseUnit: 'puszka', rawUnit: 'puszka' };
+            if (unit.startsWith('opak')) return { val: val, baseUnit: 'opak.', rawUnit: 'opak.' };
+            if (unit.startsWith('sloik')) return { val: val, baseUnit: 'słoik', rawUnit: 'słoik' };
+
+            // Kromki -> ułamek bochenka (16 kromek = 1 bochenek)
+            if (unit.startsWith('kromk')) {
+                const perLoaf = eq.slicesPerLoaf || 16;
+                return { val: val / perLoaf, baseUnit: 'szt.', rawUnit: 'kromka' };
+            }
+            // Ząbki czosnku -> ułamek główki (10 ząbków = 1 główka)
+            if (unit.startsWith('zab')) {
+                const perBulb = eq.clovesPerBulb || 10;
+                return { val: val / perBulb, baseUnit: 'szt.', rawUnit: 'ząbek' };
+            }
+            // Plastry sera/wędliny -> gramy (20 g na plaster)
+            if (unit.startsWith('plastr') || unit === 'plaster') {
+                return { val: val * (eq.gramsPerSlice || 20), baseUnit: 'g', rawUnit: 'plaster' };
+            }
+            // Kostki masła -> gramy (200 g)
+            if (unit.startsWith('kostk')) {
+                return { val: val * (eq.gramsPerPiece || 200), baseUnit: 'g', rawUnit: 'kostka' };
+            }
+
+            return { val: val, baseUnit: 'szt.', rawUnit: 'szt.' };
+        }
+
+        function computeRatioBetweenAmounts(reqParsed, packParsed, canonKey = '') {
+            if (!packParsed || packParsed.val <= 0) return 1;
+            const eq = CULINARY_EQUIVALENTS[canonKey] || {};
+
+            // Ten sam wymiar (np. g i g, szt. i szt., puszka i puszka)
+            if (reqParsed.baseUnit === packParsed.baseUnit) {
+                return reqParsed.val / packParsed.val;
+            }
+            // Przepis w szt. (np. 1 cebula, 4 ziemniaki), a cennik/spiżarnia w g/kg
+            if (reqParsed.baseUnit === 'szt.' && packParsed.baseUnit === 'g' && eq.gramsPerPiece) {
+                return (reqParsed.val * eq.gramsPerPiece) / packParsed.val;
+            }
+            // Przepis w g (np. 50 g masła, 250 g chleba), a cennik/spiżarnia w szt.
+            if (reqParsed.baseUnit === 'g' && packParsed.baseUnit === 'szt.') {
+                const gPerPiece = eq.gramsPerPiece || eq.gramsPerLoaf || eq.gramsPerBulb;
+                if (gPerPiece) return reqParsed.val / (packParsed.val * gPerPiece);
+            }
+            // Passata / mleczko kokosowe: 1 ml ≈ 1 g
+            if ((reqParsed.baseUnit === 'ml' && packParsed.baseUnit === 'g') || (reqParsed.baseUnit === 'g' && packParsed.baseUnit === 'ml')) {
+                return reqParsed.val / packParsed.val;
+            }
+            // Puszka (400 ml / 240 g) vs ml/g
+            if (reqParsed.baseUnit === 'ml' && packParsed.baseUnit === 'puszka') {
+                return reqParsed.val / (packParsed.val * 400);
+            }
+            if (reqParsed.baseUnit === 'g' && packParsed.baseUnit === 'puszka') {
+                return reqParsed.val / (packParsed.val * 240);
+            }
+            return null;
         }
 
         function calculateIngredientCostFromPricebook(ing, pbItem) {
             if (window.isIgnoredStapleOrMicro(ing)) return 0;
             if (!pbItem) return Number(ing.price || 0);
             const unitPrice = Number(pbItem.price ?? pbItem.basePrice ?? ing.price ?? 0);
-            const req = parseQuantityString(ing.amount);
-            const pack = parseQuantityString(pbItem.unit || '1 szt.');
+            const canonKey = window.normalizeKey(ing.name);
+            const req = parseQuantityString(ing.amount, canonKey);
+            const pack = parseQuantityString(pbItem.unit || '1 szt.', canonKey);
 
-            if (req.baseUnit === pack.baseUnit && pack.val > 0) {
-                return Number(((req.val / pack.val) * unitPrice).toFixed(2));
+            const ratio = computeRatioBetweenAmounts(req, pack, canonKey);
+            if (ratio !== null && !isNaN(ratio) && ratio > 0) {
+                return Number((ratio * unitPrice).toFixed(2));
             }
             return unitPrice;
         }
@@ -2367,26 +2563,23 @@
             let deductedCount = 0;
 
             recipe.ingredients.forEach(ing => {
+                if (window.isIgnoredStapleOrMicro(ing)) return;
                 const key = window.normalizeKey(ing.name);
                 const current = window.getPantryEntry(key, false);
                 if (!current) return;
 
-                const req = parseQuantityString(ing.amount);
-                const have = parseQuantityString(`${current.qty} ${current.unit}`);
+                const req = parseQuantityString(ing.amount, key);
+                const have = parseQuantityString(`${current.qty} ${current.unit}`, key);
+                const ratio = computeRatioBetweenAmounts(req, have, key);
 
-                if (req.baseUnit === have.baseUnit) {
-                    let remaining = Math.max(0, have.val - req.val);
-                    if (current.unit === 'kg' && have.baseUnit === 'g') {
-                        window.appState.pantry[key].qty = Number((remaining / 1000).toFixed(2));
-                    } else if (current.unit === 'l' && have.baseUnit === 'ml') {
-                        window.appState.pantry[key].qty = Number((remaining / 1000).toFixed(2));
-                    } else {
-                        window.appState.pantry[key].qty = Number(remaining.toFixed(2));
-                    }
+                if (ratio !== null && !isNaN(ratio)) {
+                    const consumedInCurrentUnit = current.qty * ratio;
+                    const nextQty = Math.max(0, Number((current.qty - consumedInCurrentUnit).toFixed(2)));
+                    window.appState.pantry[key].qty = nextQty;
                     deductedCount++;
                 } else {
-                    const nextQty = Math.max(0, current.qty - 1);
-                    window.appState.pantry[key].qty = Number(nextQty.toFixed(2));
+                    const nextQty = Math.max(0, Number((current.qty - 1).toFixed(2)));
+                    window.appState.pantry[key].qty = nextQty;
                     deductedCount++;
                 }
             });
@@ -3230,9 +3423,10 @@ BARDZO WAŻNE ZASADY:
                 if (!pantryEntry) {
                     missingIngredients.push({ ...ing, activePrice: activeP, reason: 'brak w spiżarni (stan: 0)' });
                 } else {
-                    const req = parseQuantityString(ing.amount);
-                    const have = parseQuantityString(`${pantryEntry.qty} ${pantryEntry.unit}`);
-                    if (req.baseUnit === have.baseUnit && have.val < req.val) {
+                    const req = parseQuantityString(ing.amount, key);
+                    const have = parseQuantityString(`${pantryEntry.qty} ${pantryEntry.unit}`, key);
+                    const ratio = computeRatioBetweenAmounts(req, have, key);
+                    if (ratio !== null && ratio > 1.02) {
                         missingIngredients.push({ ...ing, activePrice: activeP, reason: `masz ${pantryEntry.qty} ${pantryEntry.unit}, potrzeba ${ing.amount}` });
                     } else {
                         ownedCount++;
@@ -4268,8 +4462,291 @@ BARDZO WAŻNE ZASADY:
         };
 
         // ================= RENDEROWANIE ZBIORCZE & NAWIGACJA =================
+        // ================= PLANER POSIŁKÓW (TYDZIEŃ + BUDŻET + BRAKUJĄCE ZAKUPY) =================
+        const PLANNER_DAYS = [
+            { id: 'mon', short: 'Pon', full: 'Poniedziałek' },
+            { id: 'tue', short: 'Wt', full: 'Wtorek' },
+            { id: 'wed', short: 'Śr', full: 'Środa' },
+            { id: 'thu', short: 'Czw', full: 'Czwartek' },
+            { id: 'fri', short: 'Pt', full: 'Piątek' },
+            { id: 'sat', short: 'Sob', full: 'Sobota' },
+            { id: 'sun', short: 'Nd', full: 'Niedziela' }
+        ];
+        const PLANNER_SLOTS = [
+            { id: 'breakfast', label: '🌅 Śniadanie' },
+            { id: 'lunch', label: '🍲 Obiad' },
+            { id: 'dinner', label: '🌙 Kolacja' }
+        ];
+
+        window.currentPickMealTarget = null;
+
+        function getAllAvailableRecipesForPlanner() {
+            const local = (window.appState.recipes || []).map(r => ({ ...r, isPublicCommunity: false }));
+            const pub = (window.appState.publicRecipes || [])
+                .filter(p => p.sourceKitchen !== window.appState.kitchenCode)
+                .map(p => ({ ...p, id: p.publicId, isPublicCommunity: true }));
+            return [...local, ...pub];
+        }
+
+        function computePlannerSummary() {
+            const plan = window.appState.mealPlan || {};
+            const allRecs = getAllAvailableRecipesForPlanner();
+            let totalMeals = 0;
+            let totalCost = 0;
+
+            // Agregacja potrzebnych ilości składników na cały tydzień
+            const aggregatedNeeds = {}; // key -> { name, cat, totalRatioOfPack, totalCost, sampleAmount }
+
+            Object.values(plan).forEach(dayObj => {
+                if (!dayObj || typeof dayObj !== 'object') return;
+                Object.values(dayObj).forEach(recipeId => {
+                    if (!recipeId) return;
+                    const rec = allRecs.find(r => r.id === recipeId);
+                    if (!rec) return;
+
+                    totalMeals++;
+                    const m = calculateRecipeMetrics(rec);
+                    totalCost += m.currentTotal;
+
+                    (rec.ingredients || []).forEach(ing => {
+                        if (window.isIgnoredStapleOrMicro(ing)) return;
+                        const key = window.normalizeKey(ing.name);
+                        const pbItem = window.appState.pricebook[key];
+                        const req = parseQuantityString(ing.amount, key);
+                        const pack = parseQuantityString(pbItem?.unit || '1 szt.', key);
+                        const ratio = computeRatioBetweenAmounts(req, pack, key);
+
+                        if (!aggregatedNeeds[key]) {
+                            aggregatedNeeds[key] = {
+                                key,
+                                name: pbItem?.name || ing.name,
+                                cat: pbItem?.category || ing.cat || 'Inne',
+                                packUnit: pbItem?.unit || '1 szt.',
+                                packPrice: Number(pbItem?.price ?? ing.price ?? 0),
+                                totalPackRatio: 0,
+                                rawAmounts: []
+                            };
+                        }
+                        aggregatedNeeds[key].totalPackRatio += (ratio !== null && !isNaN(ratio)) ? ratio : 1;
+                        aggregatedNeeds[key].rawAmounts.push(ing.amount);
+                    });
+                });
+            });
+
+            // Porównaj zsumowane zapotrzebowanie z aktualnym stanem spiżarni
+            const missingItems = [];
+            Object.values(aggregatedNeeds).forEach(need => {
+                const pantryEntry = window.getPantryEntry(need.key, false);
+                let havePackRatio = 0;
+                if (pantryEntry) {
+                    const haveParsed = parseQuantityString(`${pantryEntry.qty} ${pantryEntry.unit}`, need.key);
+                    const packParsed = parseQuantityString(need.packUnit, need.key);
+                    const r = computeRatioBetweenAmounts(haveParsed, packParsed, need.key);
+                    havePackRatio = (r !== null && !isNaN(r)) ? r : 1;
+                }
+
+                const deficitRatio = need.totalPackRatio - havePackRatio;
+                if (deficitRatio > 0.05) {
+                    const packsToBuy = Math.max(1, Math.ceil(deficitRatio));
+                    missingItems.push({
+                        key: need.key,
+                        name: need.name,
+                        cat: need.cat,
+                        packsToBuy,
+                        packUnit: need.packUnit,
+                        estPrice: Number((packsToBuy * need.packPrice).toFixed(2)),
+                        neededDesc: need.rawAmounts.join(' + ')
+                    });
+                }
+            });
+
+            return { totalMeals, totalCost, missingItems };
+        }
+
+        window.setActivePlannerDay = (dayId) => {
+            window.appState.activePlannerDay = dayId;
+            renderMealPlanner();
+        };
+
+        window.openPickMealModal = (dayId, slotId) => {
+            window.currentPickMealTarget = { dayId, slotId };
+            const dayObj = PLANNER_DAYS.find(d => d.id === dayId);
+            const slotObj = PLANNER_SLOTS.find(s => s.id === slotId);
+            document.getElementById('pick-meal-slot-badge').textContent = `${dayObj?.full || ''} • ${slotObj?.label || ''}`;
+            document.getElementById('pick-meal-search').value = '';
+            renderPickMealList();
+            document.getElementById('modal-pick-meal').classList.remove('hidden');
+        };
+
+        window.renderPickMealList = () => {
+            const listEl = document.getElementById('pick-meal-list');
+            const q = (document.getElementById('pick-meal-search')?.value || '').toLowerCase().trim();
+            const allRecs = getAllAvailableRecipesForPlanner().filter(r =>
+                r.title.toLowerCase().includes(q) ||
+                (r.ingredients || []).some(i => i.name.toLowerCase().includes(q))
+            );
+
+            if (allRecs.length === 0) {
+                listEl.innerHTML = `<p class="text-xs text-slate-400 italic py-6 text-center">Brak pasujących przepisów.</p>`;
+                return;
+            }
+
+            listEl.innerHTML = allRecs.map(rec => {
+                const m = calculateRecipeMetrics(rec);
+                return `
+                <button type="button" onclick="assignMealToSlot('${rec.id}')" class="w-full p-3 rounded-xl bg-slate-900/90 hover:bg-slate-800 border ${m.isReadyFromPantry ? 'border-emerald-500/40' : 'border-slate-800'} flex items-center justify-between gap-3 text-left transition-all">
+                    <div class="min-w-0">
+                        <p class="text-sm font-bold text-white truncate">${rec.title}</p>
+                        <p class="text-[11px] text-slate-400 mt-0.5">
+                            ${m.isReadyFromPantry ? '<span class="text-emerald-400 font-semibold">✅ 100% w domu</span>' : `Brakuje: ${m.missingIngredients.length} skł.`} • ${rec.portions || 4} porc.
+                        </p>
+                    </div>
+                    <span class="shrink-0 text-xs font-extrabold text-emerald-400 font-mono bg-slate-950 px-2.5 py-1 rounded-lg border border-slate-800">${m.currentTotal.toFixed(2)} zł</span>
+                </button>
+                `;
+            }).join('');
+        };
+
+        window.assignMealToSlot = async (recipeId) => {
+            const target = window.currentPickMealTarget;
+            if (!target) return;
+            if (!window.appState.mealPlan) window.appState.mealPlan = {};
+            if (!window.appState.mealPlan[target.dayId]) window.appState.mealPlan[target.dayId] = {};
+            window.appState.mealPlan[target.dayId][target.slotId] = recipeId;
+
+            closeModal('modal-pick-meal');
+            renderMealPlanner();
+            updateBadges();
+            await saveKitchenChanges();
+            showToast("Dodano danie do Planera Posiłków!");
+        };
+
+        window.removeMealFromSlot = async (dayId, slotId) => {
+            if (window.appState.mealPlan?.[dayId]) {
+                delete window.appState.mealPlan[dayId][slotId];
+                renderMealPlanner();
+                updateBadges();
+                await saveKitchenChanges();
+            }
+        };
+
+        window.clearMealPlanner = async () => {
+            if (!confirm("Wyczyścić cały plan posiłków na ten tydzień?")) return;
+            window.appState.mealPlan = {};
+            renderMealPlanner();
+            updateBadges();
+            await saveKitchenChanges();
+            showToast("Wyczyszczono Planer Posiłków.");
+        };
+
+        window.addMissingFromPlannerToShopping = async () => {
+            const { missingItems } = computePlannerSummary();
+            if (missingItems.length === 0) {
+                showToast("Wszystkie składniki z planu macie już w Spiżarni!", "success");
+                return;
+            }
+
+            let added = 0;
+            missingItems.forEach(item => {
+                const exists = window.appState.shopping.some(s => !s.checked && window.normalizeKey(s.baseName || s.name) === item.key);
+                if (!exists) {
+                    window.appState.shopping.push({
+                        id: 'shop_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+                        name: `${item.name} (${item.packsToBuy} × ${item.packUnit})`,
+                        baseName: item.name,
+                        category: item.cat,
+                        price: item.estPrice,
+                        checked: false
+                    });
+                    added++;
+                }
+            });
+
+            await saveKitchenChanges();
+            showToast(added > 0 ? `🛒 Dodano ${added} brakujących pozycji z planu na Listę Zakupów!` : "Brakujące składniki są już na Liście Zakupów.");
+        };
+
+        window.renderMealPlanner = () => {
+            const grid = document.getElementById('planner-days-grid');
+            const pills = document.getElementById('planner-mobile-day-pills');
+            if (!grid || !pills) return;
+
+            const summary = computePlannerSummary();
+            document.getElementById('planner-stat-meals').textContent = `${summary.totalMeals} dań`;
+            document.getElementById('planner-stat-cost').textContent = `${summary.totalCost.toFixed(2)} zł`;
+            document.getElementById('planner-stat-missing').textContent = `${summary.missingItems.length} poz.`;
+            document.getElementById('planner-missing-btn-count').textContent = summary.missingItems.length;
+
+            const activeDay = window.appState.activePlannerDay || 'mon';
+            const plan = window.appState.mealPlan || {};
+            const allRecs = getAllAvailableRecipesForPlanner();
+
+            // Pigułki dni tygodnia na telefon (iPhone 13 mini)
+            pills.innerHTML = PLANNER_DAYS.map(d => {
+                const isAct = d.id === activeDay;
+                const countForDay = Object.values(plan[d.id] || {}).filter(Boolean).length;
+                return `
+                <button type="button" onclick="setActivePlannerDay('${d.id}')" class="px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center gap-1.5 ${isAct ? 'bg-sky-500 text-slate-950 shadow-md' : 'bg-slate-900 text-slate-300 border border-slate-800'}">
+                    <span>${d.short}</span>
+                    ${countForDay > 0 ? `<span class="w-4 h-4 rounded-full text-[10px] flex items-center justify-center ${isAct ? 'bg-slate-950 text-sky-400' : 'bg-sky-500/20 text-sky-300'}">${countForDay}</span>` : ''}
+                </button>
+                `;
+            }).join('');
+
+            grid.innerHTML = PLANNER_DAYS.map(day => {
+                const dayPlan = plan[day.id] || {};
+                const isHiddenOnMobile = day.id !== activeDay ? 'hidden md:flex' : 'flex';
+                let dayCost = 0;
+
+                const slotsHtml = PLANNER_SLOTS.map(slot => {
+                    const recId = dayPlan[slot.id];
+                    const rec = recId ? allRecs.find(r => r.id === recId) : null;
+                    if (rec) {
+                        const m = calculateRecipeMetrics(rec);
+                        dayCost += m.currentTotal;
+                        return `
+                        <div class="p-3 rounded-xl bg-slate-950/90 border ${m.isReadyFromPantry ? 'border-emerald-500/35' : 'border-slate-800'} flex items-center justify-between gap-2">
+                            <div onclick="openRecipeDetail('${rec.id}', ${!!rec.isPublicCommunity})" class="min-w-0 flex-1 cursor-pointer">
+                                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">${slot.label}</span>
+                                <p class="text-xs sm:text-sm font-bold text-white truncate mt-0.5 hover:text-emerald-400">${rec.title}</p>
+                                <span class="text-[11px] font-mono text-emerald-400">${m.currentTotal.toFixed(2)} zł</span>
+                            </div>
+                            <button type="button" onclick="removeMealFromSlot('${day.id}', '${slot.id}')" title="Usuń z planu" class="p-1.5 rounded-lg bg-slate-900 hover:bg-red-950/60 text-slate-400 hover:text-red-300 text-xs shrink-0">✕</button>
+                        </div>
+                        `;
+                    }
+                    return `
+                    <button type="button" onclick="openPickMealModal('${day.id}', '${slot.id}')" class="w-full p-2.5 rounded-xl bg-slate-900/50 hover:bg-slate-900 border border-dashed border-slate-700/80 hover:border-sky-500/50 flex items-center justify-between text-left transition-all">
+                        <span class="text-xs text-slate-400">${slot.label}</span>
+                        <span class="text-xs font-bold text-sky-400">+ Wybierz</span>
+                    </button>
+                    `;
+                }).join('');
+
+                return `
+                <div class="${isHiddenOnMobile} flex-col justify-between bg-[#1e293b] rounded-2xl border border-slate-800 p-4 space-y-3">
+                    <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+                        <h3 class="text-sm sm:text-base font-bold text-white">${day.full}</h3>
+                        <span class="text-xs font-mono font-bold text-emerald-400">${dayCost.toFixed(2)} zł</span>
+                    </div>
+                    <div class="space-y-2">
+                        ${slotsHtml}
+                    </div>
+                </div>
+                `;
+            }).join('');
+        };
+
+        window.toggleMobileMoreMenu = (forceState = null) => {
+            const sheet = document.getElementById('mobile-more-sheet');
+            if (!sheet) return;
+            if (forceState === null) sheet.classList.toggle('hidden');
+            else sheet.classList.toggle('hidden', !forceState);
+        };
+
         window.renderAll = () => {
             renderRecipes();
+            renderMealPlanner();
             renderFreezer();
             renderPantry();
             renderPricebook();
@@ -4287,8 +4764,16 @@ BARDZO WAŻNE ZASADY:
             const trackedCount = (window.appState.trackedProducts || []).length;
             const shopUnchecked = window.appState.shopping.filter(s => !s.checked).length;
             const verifyCount = Object.keys(window.appState.pendingScraper || {}).length;
+            const plannerCount = computePlannerSummary().totalMeals;
 
             document.getElementById('badge-pantry-ready').textContent = readyCount;
+            const plannerBadge = document.getElementById('badge-planner-count');
+            if (plannerBadge) plannerBadge.textContent = plannerCount;
+            const mobPlanner = document.getElementById('mobile-badge-planner');
+            if (mobPlanner) {
+                mobPlanner.textContent = plannerCount;
+                mobPlanner.classList.toggle('hidden', plannerCount === 0);
+            }
             const pbBadge = document.getElementById('badge-pricebook-count');
             if (pbBadge) pbBadge.textContent = pbCount;
             const trackedBadge = document.getElementById('badge-tracked-count');
@@ -4310,7 +4795,7 @@ BARDZO WAŻNE ZASADY:
         }
 
         window.switchTab = (tabName) => {
-            ['recipes', 'pantry', 'pricebook', 'promos', 'verify', 'shopping', 'reviews', 'feedback'].forEach(t => {
+            ['recipes', 'planner', 'pantry', 'pricebook', 'promos', 'verify', 'shopping', 'reviews', 'feedback'].forEach(t => {
                 const el = document.getElementById(`tab-${t}`);
                 if (el) el.classList.toggle('hidden', t !== tabName);
             });
