@@ -1950,31 +1950,31 @@
         window.normalizeKey = (str) => {
             const ascii = window.stripDiacritics(str)
                 .replace(/\(.*?\)/g, ' ')
-                .replace(/\b\d+(?:[.,]\d+)?\s*(?:kg|g|dag|ml|l|szt\.?|sztuk[ia]?|puszk[ia]?|opak\.?|sloik[ia]?|kromk[ia]?|zabk[iow]?|lyzk[ia]?|lyzeczk[ia]?|szklank[ia]?|porcj[aei]?)?\b/g, ' ')
                 .replace(/[^a-z\s]/g, ' ')
+                .replace(/\b(kg|g|dag|ml|l|szt|sztuk|sztuki|puszka|puszki|opak|sloik|sloiki|kromka|kromki|zabek|zabki|lyzka|lyzki|lyzeczka|lyzeczki|szklanka|szklanki|porcja|porcje)\b/g, ' ')
                 .replace(/\s+/g, ' ')
                 .trim();
 
             if (!ascii) return '';
 
-            if (/\b(jajko|jajka|jaja|jajek|jaj)\b/.test(ascii)) return 'jajka';
-            if (/\b(cebula|cebule|cebuli|cebul|cebulka)\b/.test(ascii)) return 'cebula';
-            if (/\b(czosnek|czosnku|czosnkiem)\b/.test(ascii)) return 'czosnek';
-            if (/\b(ziemniak|ziemniaki|ziemniakow)\b/.test(ascii)) return 'ziemniaki';
-            if (/\b(pomidor|pomidory|pomidorow)\b/.test(ascii) && !ascii.includes('krojon') && !ascii.includes('puszk') && !ascii.includes('passat') && !ascii.includes('koncentrat')) return 'pomidory';
+            if (ascii.includes('jajk') || /\bjaj[ao]?\b/.test(ascii)) return 'jajka';
+            if (ascii.includes('cebul')) return 'cebula';
+            if (ascii.includes('czosnk') || ascii.includes('czosnek')) return 'czosnek';
+            if (ascii.includes('ziemniak')) return 'ziemniaki';
+            if (ascii.includes('pomidor') && !ascii.includes('krojon') && !ascii.includes('puszk') && !ascii.includes('passat') && !ascii.includes('koncentrat')) return 'pomidory';
             if (ascii.includes('tunczyk')) return 'tunczyk';
-            if (ascii.includes('piers z kurczaka') || ascii.includes('filet z kurczaka') || ascii.includes('piersi z kurczaka') || ascii === 'kurczak') return 'piers_z_kurczaka';
-            if (ascii.includes('mieso mielone') || ascii.includes('miesa mielonego')) return 'mieso_mielone';
-            if (ascii.includes('czerwona fasola') || ascii.includes('fasola czerwona')) return 'czerwona_fasola';
-            if (ascii.includes('biala fasola') || ascii.includes('fasola biala')) return 'biala_fasola';
-            if (ascii.includes('passata')) return 'passata_pomidorowa';
+            if (ascii.includes('piers') && ascii.includes('kurczak') || ascii === 'kurczak') return 'piers_z_kurczaka';
+            if (ascii.includes('mielon')) return 'mieso_mielone';
+            if (ascii.includes('czerwon') && ascii.includes('fasol')) return 'czerwona_fasola';
+            if (ascii.includes('bial') && ascii.includes('fasol')) return 'biala_fasola';
+            if (ascii.includes('passat')) return 'passata_pomidorowa';
             if (ascii.includes('kukurydz')) return 'kukurydza_konserwowa';
             if (ascii.includes('ananas')) return 'ananas_w_puszce';
-            if (ascii === 'ryz' || ascii === 'ryzu') return 'ryz';
-            if (ascii === 'makaron' || ascii === 'makaronu') return 'makaron';
-            if (ascii === 'maslo' || ascii === 'masla') return 'maslo';
-            if (ascii === 'sol' || ascii === 'soli') return 'sol';
-            if (ascii === 'pieprz' || ascii === 'pieprzu') return 'pieprz';
+            if (/\bryz/.test(ascii)) return 'ryz';
+            if (ascii.includes('makaron')) return 'makaron';
+            if (ascii.includes('masl')) return 'maslo';
+            if (/^sol[ia]?$/.test(ascii)) return 'sol';
+            if (ascii.includes('pieprz')) return 'pieprz';
 
             return ascii.replace(/\s+/g, '_');
         };
@@ -1983,11 +1983,11 @@
             const pantry = window.appState.pantry || {};
             let raw = pantry[key];
 
-            // Jeśli pod dokładnym kluczem nie ma wpisu, przeszukaj wszystkie klucze w spiżarni po kanonicznej nazwie
             if (raw === undefined || raw === null || raw === false) {
                 const canonTarget = window.normalizeKey(key);
                 for (const [k, v] of Object.entries(pantry)) {
-                    if (window.normalizeKey(k) === canonTarget && v !== undefined && v !== null && v !== false) {
+                    const canonK = window.normalizeKey(k);
+                    if ((canonK === canonTarget || (canonTarget.length >= 4 && (canonK.includes(canonTarget) || canonTarget.includes(canonK)))) && v !== undefined && v !== null && v !== false) {
                         raw = v;
                         break;
                     }
