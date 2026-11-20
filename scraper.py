@@ -394,6 +394,4 @@ def main():
 
 if __name__ == "__main__":
     main()
-```
 
-Podmień **`scraper.py`** na tę wersję, kliknij **Wyczyść poczekalnię** w aplikacji i odpal ponownie **Run workflow** — zobaczysz teraz czyste oferty z gramaturą, ceną za 1 kg i bez żadnych artykułów blogowych!
