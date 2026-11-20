@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KuchniaBudżet PRO — Planowanie, gotowanie, kontrola</title>
+    <title>KuchniaBudżet PRO — Multi-Tenant, Społeczność & Panel Admina</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script>
@@ -285,11 +285,20 @@
                 </button>
             </nav>
 
-            <div class="p-4 border-t border-slate-800">
+            <div class="p-4 border-t border-slate-800 space-y-2">
                 <button onclick="openAddRecipeModal()" class="w-full py-3 px-4 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold text-sm shadow-lg shadow-emerald-500/20 transition-all flex items-center justify-center gap-2">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path></svg>
                     Dodaj Przepis / Link / AI
                 </button>
+                <div class="grid grid-cols-2 gap-1.5 pt-1">
+                    <button onclick="exportRecipesBackupJson()" title="Pobierz kopię zapasową przepisów i bazy (JSON)" class="py-2 px-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-[11px] font-semibold flex items-center justify-center gap-1 transition-colors">
+                        💾 Eksportuj
+                    </button>
+                    <label title="Przywróć przepisy z pliku kopii zapasowej JSON" class="cursor-pointer py-2 px-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-[11px] font-semibold flex items-center justify-center gap-1 transition-colors">
+                        📂 Importuj
+                        <input type="file" accept=".json,application/json" onchange="importRecipesBackupJson(event)" class="hidden">
+                    </label>
+                </div>
             </div>
         </aside>
 
@@ -337,6 +346,28 @@
                     </div>
 
                     <div id="recipes-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"></div>
+
+                    <!-- Pasek Kopii Zapasowej Przepisów (Eksport / Import JSON & TXT) -->
+                    <div class="bg-[#1e293b]/80 rounded-2xl border border-slate-800 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div>
+                            <h4 class="text-sm font-bold text-white flex items-center gap-1.5">
+                                <span>🛡️ Kopia Zapasowa Przepisów</span>
+                            </h4>
+                            <p class="text-xs text-slate-400">Zapisz wszystkie swoje przepisy na dysku lub telefonie (JSON do przywrócenia 1:1 lub czytelny plik tekstowy TXT).</p>
+                        </div>
+                        <div class="flex flex-wrap items-center gap-2 shrink-0">
+                            <button onclick="exportRecipesBackupJson()" class="px-3.5 py-2 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 text-xs font-bold transition-colors">
+                                💾 Eksportuj JSON (Kopia)
+                            </button>
+                            <button onclick="exportRecipesReadableTxt()" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-semibold transition-colors">
+                                📄 Pobierz jako TXT
+                            </button>
+                            <label class="cursor-pointer px-3.5 py-2 rounded-xl bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 border border-indigo-500/40 text-xs font-bold transition-colors">
+                                📂 Wczytaj z pliku JSON
+                                <input type="file" accept=".json,application/json" onchange="importRecipesBackupJson(event)" class="hidden">
+                            </label>
+                        </div>
+                    </div>
                 </section>
 
                 <!-- ================= ZAKŁADKA 2: SPIŻARNIA, LODÓWKA & ZAMRAŻARKA ================= -->
@@ -920,10 +951,71 @@
         </div>
     </div>
 
+    <!-- MODAL 5: Edytuj Przepis (np. zmiana Pancetta -> Boczek) -->
+    <div id="modal-edit-recipe" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+        <div class="bg-[#1e293b] border border-slate-700 rounded-2xl max-w-2xl w-full p-6 shadow-2xl my-auto max-h-[90vh] overflow-y-auto">
+            <div class="flex items-center justify-between mb-4">
+                <div>
+                    <h3 class="text-xl font-bold text-white">✏️ Edytuj Przepis</h3>
+                    <p class="text-xs text-slate-400 mt-0.5">Zmień nazwę, składniki (np. Pancetta → Boczek) lub kroki przygotowania. Nowe składniki automatycznie pojawią się w Spiżarni.</p>
+                </div>
+                <button onclick="closeModal('modal-edit-recipe')" class="p-2 rounded-xl bg-slate-800 text-slate-400 hover:text-white">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+
+            <form onsubmit="saveEditedRecipe(event)" class="space-y-4">
+                <input type="hidden" id="edit-rec-id">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-400 mb-1">Nazwa dania *</label>
+                        <input type="text" id="edit-rec-title" required class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-sm text-white focus:outline-none focus:border-emerald-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-400 mb-1">Kategoria</label>
+                        <select id="edit-rec-category" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-sm text-white focus:outline-none focus:border-emerald-500">
+                            <option value="Obiad jednogarnkowy">Obiad jednogarnkowy</option>
+                            <option value="Makarony">Makarony</option>
+                            <option value="Ryż i kasze">Ryż i kasze</option>
+                            <option value="Zupy">Zupy</option>
+                            <option value="Śniadanie / Kolacja">Śniadanie / Kolacja</option>
+                            <option value="Inne">Inne</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-400 mb-1">Czas przygotowania (min)</label>
+                        <input type="number" id="edit-rec-time" min="1" value="25" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-sm text-white">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-400 mb-1">Liczba porcji (dla 1 os.)</label>
+                        <input type="number" id="edit-rec-portions" min="1" value="4" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-sm text-white">
+                    </div>
+                </div>
+                <div>
+                    <div class="flex items-center justify-between mb-1">
+                        <label class="block text-xs font-semibold text-slate-400">Składniki (jeden na linię: nazwa | gramatura | cena w zł)</label>
+                        <button type="button" onclick="appendEditIngredientRow()" class="text-xs font-bold text-emerald-400 hover:underline">+ Dodaj linię</button>
+                    </div>
+                    <textarea id="edit-rec-ingredients" rows="6" required class="w-full p-3 rounded-xl bg-slate-900 border border-slate-700 text-sm text-white font-mono focus:outline-none focus:border-emerald-500"></textarea>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1">Instrukcja przygotowania (krok po kroku, jeden krok na linię)</label>
+                    <textarea id="edit-rec-steps" rows="5" required class="w-full p-3 rounded-xl bg-slate-900 border border-slate-700 text-sm text-white focus:outline-none focus:border-emerald-500"></textarea>
+                </div>
+                <div class="flex gap-2 pt-2">
+                    <button type="button" onclick="closeModal('modal-edit-recipe')" class="flex-1 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-sm">Anuluj</button>
+                    <button type="submit" class="flex-1 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-sm shadow-lg shadow-emerald-500/20">✓ Zapisz zmiany w przepisie</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- ================= LOGIKA APLIKACJI (MULTI-TENANT + SPOŁECZNOŚĆ + ADMIN) ================= -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getFirestore, doc, getDoc, setDoc, deleteDoc, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, deleteField, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 
         const firebaseConfig = {
@@ -946,6 +1038,7 @@
             recipes: [],
             publicRecipes: [],
             pricebook: {},
+            deletedPricebookKeys: [],
             trackedProducts: [],
             pendingScraper: {},
             scraperUpdatedAt: null,
@@ -1601,9 +1694,28 @@
                 syncKitchenLabelsUI();
 
                 window.appState.recipes = data.recipes && data.recipes.length > 0 ? data.recipes : STARTER_RECIPES;
-                window.appState.pricebook = normalizePricebookData(data.pricebook);
+                window.appState.deletedPricebookKeys = Array.isArray(data.deletedPricebookKeys) ? data.deletedPricebookKeys : [];
+                window.appState.pricebook = normalizePricebookData(data.pricebook, window.appState.deletedPricebookKeys);
                 window.appState.trackedProducts = Array.isArray(data.trackedProducts) ? data.trackedProducts : DEFAULT_TRACKED;
                 window.appState.pantry = data.pantry || {};
+
+                // Usuń z kafelków spiżarni podstawowe przyprawy/oleje ze stanem 0 (nie zaśmiecają widoku)
+                Object.keys(window.appState.pantry).forEach(pKey => {
+                    const entry = window.appState.pantry[pKey];
+                    if (entry && Number(entry.qty) === 0 && window.isIgnoredStapleOrMicro({ name: pKey, amount: '' })) {
+                        delete window.appState.pantry[pKey];
+                    }
+                });
+
+                // Automatycznie uzupełnij brakujące składniki z istniejących przepisów w Cenniku i Spiżarni (stan: 0)
+                let autoSyncedMissing = 0;
+                window.appState.recipes.forEach(r => {
+                    autoSyncedMissing += ensureIngredientsInPricebookAndPantry(r.ingredients);
+                });
+                if (autoSyncedMissing > 0 && !window.appState._didInitialSync) {
+                    window.appState._didInitialSync = true;
+                    saveKitchenChanges();
+                }
                 window.appState.freezer = Array.isArray(data.freezer) ? data.freezer : [];
                 window.appState.shopping = data.shopping || [];
                 window.appState.shoppingHistory = Array.isArray(data.shoppingHistory) ? data.shoppingHistory : [];
@@ -1635,6 +1747,7 @@
                     label: window.appState.kitchenLabel,
                     recipes: window.appState.recipes,
                     pricebook: window.appState.pricebook,
+                    deletedPricebookKeys: window.appState.deletedPricebookKeys || [],
                     trackedProducts: window.appState.trackedProducts,
                     pantry: window.appState.pantry,
                     freezer: window.appState.freezer,
@@ -1644,7 +1757,12 @@
                     pendingScraper: window.appState.pendingScraper,
                     geminiApiKey: window.appState.geminiApiKey || "",
                     updatedAt: new Date().toISOString()
-                }, { merge: true });
+                }, { mergeFields: [
+                    "label", "recipes", "pricebook", "deletedPricebookKeys",
+                    "trackedProducts", "pantry", "freezer", "shopping",
+                    "shoppingHistory", "reviews", "pendingScraper",
+                    "geminiApiKey", "updatedAt"
+                ] });
             } catch (e) {
                 console.error("Błąd zapisu w kuchnie/" + code, e);
                 showToast("Błąd zapisu w bazie. Sprawdź czy kuchnia nie jest zablokowana.", "error");
@@ -2129,8 +2247,12 @@
             return pb;
         }
 
-        function normalizePricebookData(rawPb) {
+        function normalizePricebookData(rawPb, deletedKeys = []) {
+            const deletedSet = new Set(deletedKeys || []);
             const base = buildInitialPricebook();
+            Object.keys(base).forEach(k => {
+                if (deletedSet.has(k)) delete base[k];
+            });
             if (!rawPb || typeof rawPb !== 'object') return base;
 
             const merged = { ...base };
@@ -2161,6 +2283,53 @@
             return merged;
         }
 
+        // ================= IGNOROWANIE PRZYPRAW / ŁYŻEK OLEJU W KOSZTACH I BRAKACH =================
+        window.isIgnoredStapleOrMicro = (ing) => {
+            if (!ing) return false;
+            const normName = window.stripDiacritics(ing.name || '');
+            const normAmt = window.stripDiacritics(ing.amount || '');
+            const normCat = window.stripDiacritics(ing.cat || '');
+
+            // 0. Jeśli kategoria w przepisie to przyprawy, ale NIE jest to czosnek, masło orzechowe, oliwa w dużej ilości czy sos sojowy w dużej ilości
+            const key = window.normalizeKey(ing.name || '');
+            const pbItem = window.appState?.pricebook?.[key];
+            if (pbItem && window.stripDiacritics(pbItem.category || '') === 'przyprawy i dodatki') {
+                // Czosnek, masło orzechowe, sos sojowy, bulion w kostce liczymy jeśli są w pełnych sztukach/słoikach; pozostałe przyprawy pomijamy
+                if (!['czosnek', 'maslo_orzechowe', 'sos_sojowy', 'bulion_kostka'].includes(key)) return true;
+            }
+
+            // 1. Szeroka lista przypraw, ziół, marynat, proszków i podstaw kuchennych
+            const spiceWords = [
+                'sol', 'pieprz', 'woda', 'olej', 'oliwa', 'przypraw', 'ziol', 'papryk',
+                'oregano', 'bazyli', 'majeran', 'tymian', 'kmin', 'kumin', 'curry',
+                'kurkum', 'cynamon', 'lisc laurow', 'liscie laurow', 'ziele angielsk',
+                'cukier', 'cukru', 'ocet', 'octu', 'rozmaryn', 'kolendr', 'imbir',
+                'galka muszkatolow', 'chili', 'chilli', 'cayenne', 'pieprz cayenne',
+                'czosnek granulowany', 'cebula suszona', 'vegeta', 'ziarenka smaku',
+                'przyprawa do', 'mieszanka przypraw', 'ziola prowansalskie', 'koper',
+                'koperek', 'pietruszk', 'natka', 'szczypiorek', 'lubczyk', 'czaber',
+                'estragon', 'szalwi', 'mieta', 'wanili', 'cukier waniliowy',
+                'proszek do pieczenia', 'soda oczyszczona', 'drozdze suche',
+                'skrobia', 'maka ziemniaczana', 'musztard', 'chrzan', 'ketchup',
+                'majonez', 'sos worcester', 'tabasco', 'sos rybny', 'sezam',
+                'mak', 'kminek', 'gorczyc', 'gozdzik', 'kardamon', 'anyz', 'szafran'
+            ];
+
+            // Wyjątek: nie traktuj świeżej papryki warzywa (np. "Papryka czerwona 1 szt.") jako przyprawy, chyba że jest w gramach/łyżeczkach lub ma słowo "mielona/słodka/ostra/wędzona/suszon"
+            if (normName.includes('papryk')) {
+                if (/\b(slodk|ostr|wedzon|mielon|suszon|przypraw|szczypt|lyzeczk|lyzk)\b/.test(normName + ' ' + normAmt)) return true;
+            } else if (!normName.includes('tunczyk') && !normName.includes('sledz') && !normName.includes('kurczak')) {
+                if (spiceWords.some(sw => normName === sw || normName.startsWith(sw + ' ') || normName.endsWith(' ' + sw) || normName.includes(sw))) {
+                    return true;
+                }
+            }
+
+            // 2. Mikro-ilości w przepisach (łyżka, łyżeczka, szczypta, odrobina, kropla, do smaku, ząbek)
+            if (/\b(lyzk|lyzeczk|szczypt|odrobin|kropl|do smaku|wg uznania|garsc)\b/.test(normAmt)) return true;
+
+            return false;
+        };
+
         // ================= PARSER ILOŚCI, OBLICZANIE KOSZTU I ODEJMOWANIE ZE SPIŻARNI =================
         function parseQuantityString(str) {
             if (!str) return { val: 1, baseUnit: 'szt.' };
@@ -2181,6 +2350,7 @@
         }
 
         function calculateIngredientCostFromPricebook(ing, pbItem) {
+            if (window.isIgnoredStapleOrMicro(ing)) return 0;
             if (!pbItem) return Number(ing.price || 0);
             const unitPrice = Number(pbItem.price ?? pbItem.basePrice ?? ing.price ?? 0);
             const req = parseQuantityString(ing.amount);
@@ -2792,6 +2962,7 @@ BARDZO WAŻNE ZASADY:
             const key = window.normalizeKey(fixed.fixedName);
             const chosenUnit = key === 'jajka' ? '10 szt.' : unitEl.value;
 
+            window.appState.deletedPricebookKeys = (window.appState.deletedPricebookKeys || []).filter(k => k !== key);
             window.appState.pricebook[key] = {
                 name: key === 'jajka' ? 'Jajka' : fixed.fixedName,
                 unit: chosenUnit,
@@ -2830,9 +3001,37 @@ BARDZO WAŻNE ZASADY:
         };
 
         window.deletePricebookItem = async (key) => {
+            const itemName = window.appState.pricebook[key]?.name || key;
             delete window.appState.pricebook[key];
-            await saveKitchenChanges();
-            showToast("Usunięto pozycję z cennika.");
+
+            if (!Array.isArray(window.appState.deletedPricebookKeys)) {
+                window.appState.deletedPricebookKeys = [];
+            }
+            if (!window.appState.deletedPricebookKeys.includes(key)) {
+                window.appState.deletedPricebookKeys.push(key);
+            }
+
+            // Jeśli w spiżarni był pusty kafelek (0 szt.) dla tego produktu, też go sprzątamy
+            if (window.appState.pantry && window.appState.pantry[key] && Number(window.appState.pantry[key].qty) === 0) {
+                delete window.appState.pantry[key];
+            }
+
+            renderAll();
+
+            const code = window.appState.kitchenCode;
+            if (code) {
+                try {
+                    await updateDoc(doc(db, "kuchnie", code), {
+                        [`pricebook.${key}`]: deleteField(),
+                        [`pantry.${key}`]: window.appState.pantry[key] ? window.appState.pantry[key] : deleteField(),
+                        deletedPricebookKeys: window.appState.deletedPricebookKeys,
+                        updatedAt: new Date().toISOString()
+                    });
+                } catch (_) {
+                    await saveKitchenChanges();
+                }
+            }
+            showToast(`Usunięto z cennika: <strong>${itemName}</strong>.`);
         };
 
         window.renderPricebook = () => {
@@ -3018,6 +3217,10 @@ BARDZO WAŻNE ZASADY:
             let ownedCount = 0;
 
             (recipe.ingredients || []).forEach(ing => {
+                if (window.isIgnoredStapleOrMicro(ing)) {
+                    ownedCount++;
+                    return;
+                }
                 const key = window.normalizeKey(ing.name);
                 const pbItem = window.appState.pricebook[key];
                 const activeP = calculateIngredientCostFromPricebook(ing, pbItem);
@@ -3165,6 +3368,7 @@ BARDZO WAŻNE ZASADY:
 
                     <div class="mt-5 pt-3 border-t border-slate-800 flex items-center gap-2">
                         <button onclick="openRecipeDetail('${recipe.id}', ${isPublic})" class="flex-1 py-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold transition-colors">Przepis</button>
+                        ${!isPublic ? `<button onclick="openEditRecipeModal('${recipe.id}')" title="Edytuj przepis (np. zmień składnik)" class="py-2 px-2.5 rounded-xl bg-slate-800 hover:bg-indigo-500/20 text-slate-300 hover:text-indigo-300 border border-slate-700 text-xs font-semibold transition-colors">✏️</button>` : ''}
                         ${metrics.missingIngredients.length > 0 ? `
                             <button onclick="addMissingToShopping('${recipe.id}', ${isPublic})" class="py-2 px-3 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-400 border border-emerald-500/30 text-xs font-semibold transition-colors">
                                 + Zakupy (${metrics.missingIngredients.length})
@@ -3219,6 +3423,19 @@ BARDZO WAŻNE ZASADY:
                     </div>
                     <div class="space-y-2">
                         ${(recipe.ingredients || []).map(ing => {
+                            if (window.isIgnoredStapleOrMicro(ing)) {
+                                return `
+                                <div class="flex items-center justify-between p-2.5 rounded-xl border bg-slate-900/40 border-slate-800/70 opacity-75">
+                                    <div class="flex items-center gap-2.5 flex-wrap">
+                                        <span class="w-5 h-5 rounded-md flex items-center justify-center text-xs bg-slate-800 text-emerald-400 font-bold">~</span>
+                                        <span class="text-sm font-medium text-slate-300">${ing.name}</span>
+                                        <span class="text-xs text-slate-400">(${ing.amount})</span>
+                                        <span class="text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-400">Podstawa kuchenna (pominięto w koszcie)</span>
+                                    </div>
+                                    <span class="text-xs font-semibold text-slate-500">0.00 zł</span>
+                                </div>
+                                `;
+                            }
                             const key = window.normalizeKey(ing.name);
                             const pantryEntry = window.getPantryEntry(key, true);
                             const hasPositive = pantryEntry && pantryEntry.qty > 0;
@@ -3271,6 +3488,7 @@ BARDZO WAŻNE ZASADY:
                 <div class="mt-6 pt-4 border-t border-slate-800 flex flex-wrap justify-between items-center gap-3">
                     <div class="flex flex-wrap gap-2">
                         ${!isPublic ? `
+                            <button onclick="openEditRecipeModal('${recipe.id}')" class="px-3.5 py-2.5 rounded-xl bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 border border-indigo-500/40 text-xs font-bold">✏️ Edytuj przepis</button>
                             <button onclick="deleteRecipe('${recipe.id}')" class="px-3.5 py-2.5 rounded-xl bg-red-950/40 hover:bg-red-900/60 text-red-400 text-xs font-semibold">Usuń przepis</button>
                             ${isSharedByMe
                                 ? `<button onclick="unshareRecipeFromCommunity('${publicDocId}', '${recipe.id}')" class="px-3.5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-500/30 text-xs font-semibold">🔒 Cofnij udostępnienie</button>`
@@ -3438,7 +3656,7 @@ BARDZO WAŻNE ZASADY:
 
                 const payload = {
                     contents: [{ parts: [{ text: promptText }] }],
-                    systemInstruction: { parts: [{ text: "Jesteś polskim szefem kuchni. Wyciągnij lub stwórz ustrukturyzowany przepis po polsku na podstawie podanego tekstu/strony z realistycznymi cenami składników w zł. Używaj podstawowych polskich nazw składników (np. 'Jajka', 'Cebula', 'Ryż', 'Pierś z kurczaka')." }] },
+                    systemInstruction: { parts: [{ text: "Jesteś polskim szefem kuchni. Wyciągnij lub stwórz ustrukturyzowany przepis po polsku na podstawie podanego tekstu/strony z realistycznymi cenami składników w zł. Używaj podstawowych polskich nazw składników (np. 'Jajka', 'Cebula', 'Ryż', 'Pierś z kurczaka'). Dla WSZYSTKICH przypraw, ziół, marynat, sosów w łyżkach, wody oraz tłuszczów do smażenia wpisuj zawsze cenę 0." }] },
                     generationConfig: {
                         responseMimeType: "application/json",
                         responseSchema: {
@@ -3525,24 +3743,55 @@ BARDZO WAŻNE ZASADY:
             );
         };
 
-        async function persistNewRecipe(recipeObj, sharePublic = false) {
-            recipeObj.ingredients.forEach(ing => {
-                const key = window.normalizeKey(ing.name);
-                if (!window.appState.pricebook[key]) {
+        function ensureIngredientsInPricebookAndPantry(ingredientsList) {
+            let addedToPantryCount = 0;
+            (ingredientsList || []).forEach(ing => {
+                if (window.isIgnoredStapleOrMicro(ing)) return;
+                const rawName = (ing.name || '').trim();
+                if (!rawName) return;
+                const key = window.normalizeKey(rawName);
+                if (!key) return;
+
+                const resolved = localSpellFixAndKeywords(rawName);
+                const cleanDisplayName = key === 'jajka' ? 'Jajka' : (resolved.fixedName || rawName.charAt(0).toUpperCase() + rawName.slice(1));
+
+                if (!window.appState.pricebook[key] && !(window.appState.deletedPricebookKeys || []).includes(key)) {
                     window.appState.pricebook[key] = {
-                        name: key === 'jajka' ? 'Jajka' : ing.name,
-                        unit: key === 'jajka' ? '10 szt.' : "1 szt.",
-                        category: ing.cat || 'Inne',
-                        price: ing.price,
-                        basePrice: ing.price,
-                        promoPrice: ing.price,
+                        name: cleanDisplayName,
+                        unit: key === 'jajka' ? '10 szt.' : (resolved.unit || "1 szt."),
+                        category: ing.cat && ing.cat !== 'Inne' ? ing.cat : (resolved.category || 'Inne'),
+                        price: Number(ing.price) || 3.50,
+                        basePrice: Number(ing.price) || 3.50,
+                        promoPrice: Number(ing.price) || 3.50,
                         isPromo: false,
                         store: 'Przepis'
                     };
                 }
+
+                // Jeśli produktu nie ma jeszcze w spiżarni/lodówce (nawet z ilością 0), dodajemy aktywny kafelek ze stanem 0!
+                const existingPantry = window.getPantryEntry(key, true);
+                if (!existingPantry) {
+                    const pbCat = window.appState.pricebook[key]?.category || '';
+                    const isFridge = pbCat === 'Lodówka i mrożonki' || pbCat === 'Mięso i świeże';
+                    window.appState.pantry[key] = {
+                        qty: 0,
+                        unit: 'szt.',
+                        location: isFridge ? 'Lodówka' : 'Spiżarnia'
+                    };
+                    addedToPantryCount++;
+                }
             });
+            return addedToPantryCount;
+        }
+
+        async function persistNewRecipe(recipeObj, sharePublic = false) {
+            const addedPantry = ensureIngredientsInPricebookAndPantry(recipeObj.ingredients);
             window.appState.recipes.unshift(recipeObj);
             await saveKitchenChanges();
+
+            if (addedPantry > 0) {
+                showToast(`Dodano ${addedPantry} brakujących składników z przepisu do Spiżarni (stan: 0).`);
+            }
 
             if (sharePublic) {
                 await window.shareRecipeToCommunity(recipeObj.id);
@@ -3554,6 +3803,94 @@ BARDZO WAŻNE ZASADY:
             await saveKitchenChanges();
             closeModal('modal-recipe-detail');
             showToast("Usunięto przepis z bazy.");
+        };
+
+        window.openEditRecipeModal = (recipeId) => {
+            const recipe = (window.appState.recipes || []).find(r => r.id === recipeId);
+            if (!recipe) return;
+
+            document.getElementById('edit-rec-id').value = recipe.id;
+            document.getElementById('edit-rec-title').value = recipe.title || '';
+            const catSel = document.getElementById('edit-rec-category');
+            if ([...catSel.options].some(o => o.value === recipe.category)) {
+                catSel.value = recipe.category;
+            } else {
+                catSel.value = 'Inne';
+            }
+            document.getElementById('edit-rec-time').value = recipe.time || 25;
+            document.getElementById('edit-rec-portions').value = recipe.portions || 4;
+
+            const ingLines = (recipe.ingredients || []).map(i =>
+                `${i.name} | ${i.amount || '1 porcja'} | ${Number(i.price || 3.00).toFixed(2)}`
+            ).join('\n');
+            document.getElementById('edit-rec-ingredients').value = ingLines;
+            document.getElementById('edit-rec-steps').value = (recipe.steps || []).join('\n');
+
+            closeModal('modal-recipe-detail');
+            document.getElementById('modal-edit-recipe').classList.remove('hidden');
+        };
+
+        window.appendEditIngredientRow = () => {
+            const ta = document.getElementById('edit-rec-ingredients');
+            ta.value = (ta.value.trim() ? ta.value.trim() + '\n' : '') + 'Nowy składnik | 100 g | 3.50';
+            ta.focus();
+        };
+
+        window.saveEditedRecipe = async (e) => {
+            e.preventDefault();
+            const recipeId = document.getElementById('edit-rec-id').value;
+            const recipe = (window.appState.recipes || []).find(r => r.id === recipeId);
+            if (!recipe) return;
+
+            const title = document.getElementById('edit-rec-title').value.trim();
+            const category = document.getElementById('edit-rec-category').value;
+            const time = Number(document.getElementById('edit-rec-time').value) || 25;
+            const portions = Number(document.getElementById('edit-rec-portions').value) || 4;
+            const rawIngs = document.getElementById('edit-rec-ingredients').value.trim().split('\n').filter(Boolean);
+            const steps = document.getElementById('edit-rec-steps').value.trim().split('\n').filter(Boolean);
+
+            const ingredients = rawIngs.map(line => {
+                const parts = line.split('|').map(s => s.trim());
+                return {
+                    name: parts[0] || 'Składnik',
+                    amount: parts[1] || '1 porcja',
+                    price: parseFloat((parts[2] || '3.00').replace(',', '.')) || 3.00,
+                    cat: 'Inne'
+                };
+            });
+
+            recipe.title = title;
+            recipe.category = category;
+            recipe.time = time;
+            recipe.portions = portions;
+            recipe.ingredients = ingredients;
+            recipe.steps = steps;
+
+            const addedToPantry = ensureIngredientsInPricebookAndPantry(ingredients);
+            await saveKitchenChanges();
+
+            // Jeśli przepis był udostępniony społeczności, zaktualizuj również wersję publiczną
+            const publicDocId = `${window.appState.kitchenCode}_${recipe.id}`;
+            const isShared = (window.appState.publicRecipes || []).some(p => p.publicId === publicDocId);
+            if (isShared) {
+                try {
+                    await setDoc(doc(db, "publiczne_przepisy", publicDocId), {
+                        title,
+                        category,
+                        time,
+                        portions,
+                        ingredients,
+                        steps
+                    }, { merge: true });
+                } catch (_) {}
+            }
+
+            closeModal('modal-edit-recipe');
+            openRecipeDetail(recipe.id, false);
+            showToast(addedToPantry > 0
+                ? `Zapisano zmiany w przepisie i dodano ${addedToPantry} nowych składników do Spiżarni!`
+                : `Zapisano zmiany w przepisie <strong>${title}</strong>!`
+            );
         };
 
         // ================= LISTA ZAKUPÓW =================
@@ -4028,6 +4365,143 @@ BARDZO WAŻNE ZASADY:
             }
 
             showToast(`Zapisano nazwę kuchni: <strong>${newLabel}</strong>${myPublicRecipes.length > 0 ? ` i zaktualizowano podpis przy ${myPublicRecipes.length} udostępnionych przepisach!` : '!'}`);
+        };
+
+        // ================= EKSPORT & IMPORT KOPII ZAPASOWEJ PRZEPISÓW =================
+        function triggerFileDownload(filename, contentStr, mimeType) {
+            const blob = new Blob([contentStr], { type: mimeType });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+        }
+
+        window.exportRecipesBackupJson = () => {
+            const recipes = window.appState.recipes || [];
+            const code = window.appState.kitchenCode || 'KUCHNIA';
+            const dateStr = new Date().toISOString().slice(0, 10);
+
+            const payload = {
+                app: "KuchniaBudżet PRO",
+                exportedAt: new Date().toISOString(),
+                kitchenCode: code,
+                kitchenLabel: window.appState.kitchenLabel || "Wspólna Kuchnia",
+                recipesCount: recipes.length,
+                recipes: recipes
+            };
+
+            triggerFileDownload(
+                `przepisy_${code}_${dateStr}.json`,
+                JSON.stringify(payload, null, 2),
+                "application/json;charset=utf-8"
+            );
+            showToast(`💾 Wyeksportowano <strong>${recipes.length} przepisów</strong> do pliku JSON!`);
+        };
+
+        window.exportRecipesReadableTxt = () => {
+            const recipes = window.appState.recipes || [];
+            const code = window.appState.kitchenCode || 'KUCHNIA';
+            const dateStr = new Date().toISOString().slice(0, 10);
+
+            const lines = [
+                `KSIĄŻKA KUCHARSKA — ${window.appState.kitchenLabel || 'Wspólna Kuchnia'} (${code})`,
+                `Data eksportu: ${new Date().toLocaleDateString('pl-PL')} | Liczba przepisów: ${recipes.length}`,
+                "=".repeat(60),
+                ""
+            ];
+
+            recipes.forEach((r, idx) => {
+                lines.push(`${idx + 1}. ${r.title.toUpperCase()} [${r.category || 'Obiad'}]`);
+                lines.push(`   Czas: ${r.time || 25} min | Porcje: ${r.portions || 4}`);
+                lines.push("   Składniki:");
+                (r.ingredients || []).forEach(ing => {
+                    lines.push(`     - ${ing.name}: ${ing.amount || ''} (${Number(ing.price || 0).toFixed(2)} zł)`);
+                });
+                lines.push("   Przygotowanie:");
+                (r.steps || []).forEach((st, sIdx) => {
+                    lines.push(`     ${sIdx + 1}. ${st}`);
+                });
+                lines.push("");
+                lines.push("-".repeat(60));
+                lines.push("");
+            });
+
+            triggerFileDownload(
+                `ksiazka_kucharska_${code}_${dateStr}.txt`,
+                lines.join("\n"),
+                "text/plain;charset=utf-8"
+            );
+            showToast(`📄 Pobrano czytelny plik tekstowy z <strong>${recipes.length} przepisami</strong>!`);
+        };
+
+        window.importRecipesBackupJson = async (event) => {
+            const file = event.target.files?.[0];
+            if (!file) return;
+
+            try {
+                const rawText = await file.text();
+                const parsed = JSON.parse(rawText);
+                const importedList = Array.isArray(parsed)
+                    ? parsed
+                    : (Array.isArray(parsed.recipes) ? parsed.recipes : null);
+
+                if (!importedList || importedList.length === 0) {
+                    showToast("Wybrany plik nie zawiera listy przepisów.", "error");
+                    return;
+                }
+
+                const existingTitles = new Set(
+                    (window.appState.recipes || []).map(r => window.stripDiacritics(r.title))
+                );
+
+                let addedCount = 0;
+                let skippedCount = 0;
+
+                importedList.forEach((rec, idx) => {
+                    if (!rec || !rec.title || !Array.isArray(rec.ingredients)) return;
+                    const normTitle = window.stripDiacritics(rec.title);
+                    if (existingTitles.has(normTitle)) {
+                        skippedCount++;
+                        return;
+                    }
+
+                    const cleanRec = {
+                        id: 'rec_imp_' + Date.now() + '_' + idx,
+                        title: String(rec.title).trim(),
+                        category: rec.category || 'Obiad',
+                        time: Number(rec.time) || 25,
+                        portions: Number(rec.portions) || 4,
+                        ingredients: rec.ingredients.map(i => ({
+                            name: String(i.name || 'Składnik').trim(),
+                            amount: String(i.amount || '1 porcja').trim(),
+                            price: Number(i.price) || 3.00,
+                            cat: i.cat || 'Inne'
+                        })),
+                        steps: Array.isArray(rec.steps) ? rec.steps.map(s => String(s)) : []
+                    };
+
+                    ensureIngredientsInPricebookAndPantry(cleanRec.ingredients);
+                    window.appState.recipes.unshift(cleanRec);
+                    existingTitles.add(normTitle);
+                    addedCount++;
+                });
+
+                if (addedCount > 0) {
+                    await saveKitchenChanges();
+                    showToast(`📂 Zaimportowano <strong>${addedCount} nowych przepisów</strong>${skippedCount > 0 ? ` (pominięto ${skippedCount} duplikatów)` : ''}!`);
+                } else {
+                    showToast(`Wszystkie przepisy z pliku (${skippedCount}) już znajdują się w Twojej kuchni.`, "warning");
+                }
+            } catch (err) {
+                console.error("Błąd importu JSON:", err);
+                showToast("Nie udało się odczytać pliku kopii zapasowej (niepoprawny format JSON).", "error");
+            } finally {
+                event.target.value = '';
+            }
         };
 
         // ================= START APLIKACJI (ROUTING) =================
