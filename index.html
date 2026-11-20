@@ -3764,7 +3764,8 @@ BARDZO WAŻNE ZASADY:
                             <input type="number" step="0.01" id="verify-price-${key}" value="${detected.toFixed(2)}" class="w-20 bg-transparent text-sm font-mono font-extrabold text-emerald-400 text-right focus:outline-none">
                             <span class="text-xs text-slate-400">zł</span>
                         </div>
-                        <div class="flex items-center gap-1.5">
+                        <div class="flex flex-wrap items-center gap-1.5">
+                            <button onclick="addScraperItemToShopping('${safeProdKey}')" title="Dodaj promocję bezpośrednio do Listy Zakupów z datą ważności" class="px-3.5 py-2.5 rounded-xl bg-sky-500/20 hover:bg-sky-500/30 text-sky-300 border border-sky-500/40 font-bold text-xs transition-all">🛒 + Zakupy</button>
                             <button onclick="approveScraperItem('${safeProdKey}')" class="px-4 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs shadow-md shadow-emerald-500/15 transition-all">✓ Zatwierdź do Cennika</button>
                             <button onclick="rejectScraperItem('${safeProdKey}')" title="Odrzuć" class="px-3 py-2.5 rounded-xl bg-slate-800 hover:bg-red-950/60 text-slate-300 hover:text-red-300 text-xs font-bold transition-all">✕</button>
                         </div>
@@ -3807,6 +3808,82 @@ BARDZO WAŻNE ZASADY:
             delete window.appState.pendingScraper[prodKey];
             await saveKitchenChanges();
             showToast(`Zatwierdzono do Cennika: <strong>${finalName}</strong> (${finalPrice.toFixed(2)} zł • ${storeLabel})`);
+        };
+
+        function mapVerifyCategoryToShoppingCategory(catId) {
+            if (catId === 'mieso' || catId === 'warzywa' || catId === 'pieczywo' || catId === 'ryby') return 'Mięso i świeże';
+            if (catId === 'nabial') return 'Lodówka i mrożonki';
+            if (catId === 'tluszcze') return 'Przyprawy i dodatki';
+            return 'Suche i makarony';
+        }
+
+        window.addScraperItemToShopping = async (prodKey) => {
+            const item = window.appState.pendingScraper[prodKey];
+            if (!item) return;
+
+            const rawProdName = item.name || prodKey;
+            const initialKey = window.normalizeKey(window.cleanGenericFoodName(rawProdName));
+            const nameEl = document.getElementById(`verify-name-${initialKey}`);
+            const finalName = window.cleanGenericFoodName(nameEl ? nameEl.value.trim() : rawProdName);
+            const key = window.normalizeKey(finalName);
+
+            const inputEl = document.getElementById(`verify-price-${initialKey}`);
+            const finalPrice = inputEl ? parseFloat(inputEl.value) : Number(item.detectedPrice || 0);
+            const storeLabel = getNormalizedVerifyStore(item);
+            const validFrom = item.validFrom || null;
+            const validTo = item.validTo || null;
+            const dateRangeText = formatPromoDateRangePl(validFrom, validTo);
+
+            // Zaktualizuj również cennik bazowy, jeśli nie był usunięty
+            const existingPb = window.appState.pricebook[key];
+            const catId = classifyVerifyFoodCategory(item, prodKey);
+            const shopCategory = existingPb?.category || mapVerifyCategoryToShoppingCategory(catId);
+
+            if (!isNaN(finalPrice) && finalPrice > 0) {
+                window.appState.deletedPricebookKeys = (window.appState.deletedPricebookKeys || []).filter(k => k !== key);
+                window.appState.pricebook[key] = {
+                    name: key === 'jajka' ? 'Jajka' : finalName,
+                    unit: key === 'jajka' ? '10 szt.' : (existingPb ? existingPb.unit : "1 szt."),
+                    category: shopCategory,
+                    price: Number(finalPrice.toFixed(2)),
+                    basePrice: Number(finalPrice.toFixed(2)),
+                    promoPrice: Number(finalPrice.toFixed(2)),
+                    isPromo: true,
+                    promoValidFrom: validFrom,
+                    promoValidTo: validTo,
+                    store: `${storeLabel} (${dateRangeText})`
+                };
+            }
+
+            // Dodaj lub zaktualizuj pozycję na Liście Zakupów z czytelną informacją o sklepie i terminie ważności promocji
+            const existingShop = window.appState.shopping.find(
+                s => !s.checked && window.normalizeKey(s.baseName || s.name) === key && (s.promoStore || '') === storeLabel
+            );
+
+            if (existingShop) {
+                existingShop.price = Number((finalPrice || 0).toFixed(2));
+                existingShop.promoStore = storeLabel;
+                existingShop.promoValidFrom = validFrom;
+                existingShop.promoValidTo = validTo;
+                existingShop.promoDateText = dateRangeText;
+            } else {
+                window.appState.shopping.unshift({
+                    id: 'shop_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+                    name: finalName,
+                    baseName: finalName,
+                    category: shopCategory,
+                    price: Number((finalPrice || 0).toFixed(2)),
+                    promoStore: storeLabel,
+                    promoValidFrom: validFrom,
+                    promoValidTo: validTo,
+                    promoDateText: dateRangeText,
+                    checked: false
+                });
+            }
+
+            delete window.appState.pendingScraper[prodKey];
+            await saveKitchenChanges();
+            showToast(`🛒 Dodano do Listy Zakupów: <strong>${finalName}</strong> (${storeLabel} • ${dateRangeText})`);
         };
 
         window.rejectScraperItem = async (prodKey) => {
@@ -4634,17 +4711,53 @@ BARDZO WAŻNE ZASADY:
                 <div class="bg-[#1e293b] rounded-2xl border border-slate-800 p-5">
                     <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">${cat}</h4>
                     <div class="space-y-2">
-                        ${items.map(item => `
-                            <div onclick="toggleShoppingCheck('${item.id}')" class="flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-all ${item.checked ? 'bg-slate-900/40 border-slate-800/60 opacity-60' : 'bg-slate-900 border-slate-700/80 hover:border-emerald-500/40'}">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-5 h-5 rounded-md flex items-center justify-center border ${item.checked ? 'bg-emerald-500 border-emerald-500 text-slate-950 font-bold' : 'border-slate-600'}">
+                        ${items.map(item => {
+                            const hasPromoInfo = Boolean(item.promoStore || item.promoValidTo || item.promoDateText);
+                            let promoDeadlineBadge = '';
+                            if (hasPromoInfo) {
+                                const todayStr = new Date().toISOString().slice(0, 10);
+                                let deadlineLabel = '';
+                                let deadlineStyle = 'bg-sky-500/15 text-sky-300 border-sky-500/30';
+
+                                if (item.promoValidTo) {
+                                    const parts = String(item.promoValidTo).split('-');
+                                    const plDate = parts.length === 3 ? `${parts[2]}.${parts[1]}.${parts[0]}` : item.promoValidTo;
+                                    if (item.promoValidTo < todayStr) {
+                                        deadlineLabel = `⚠️ Promka wygasła (${plDate})`;
+                                        deadlineStyle = 'bg-red-500/20 text-red-300 border-red-500/40';
+                                    } else if (item.promoValidTo === todayStr) {
+                                        deadlineLabel = `🔥 Ostatni dzień promki! (do ${plDate})`;
+                                        deadlineStyle = 'bg-amber-500/20 text-amber-300 border-amber-500/40';
+                                    } else {
+                                        deadlineLabel = `⏳ Promka do ${plDate}`;
+                                    }
+                                } else if (item.promoDateText) {
+                                    deadlineLabel = `📅 ${item.promoDateText}`;
+                                }
+
+                                promoDeadlineBadge = `
+                                    <div class="flex flex-wrap items-center gap-1.5 mt-1">
+                                        ${item.promoStore ? `<span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold uppercase border ${getStoreBadgeStyle(item.promoStore)}">🏪 ${item.promoStore}</span>` : ''}
+                                        ${deadlineLabel ? `<span class="px-2 py-0.5 rounded-md text-[11px] font-semibold border ${deadlineStyle}">${deadlineLabel}</span>` : ''}
+                                    </div>
+                                `;
+                            }
+
+                            return `
+                            <div onclick="toggleShoppingCheck('${item.id}')" class="flex items-center justify-between gap-3 p-3 rounded-xl border cursor-pointer transition-all ${item.checked ? 'bg-slate-900/40 border-slate-800/60 opacity-60' : hasPromoInfo ? 'bg-slate-900 border-indigo-500/35 hover:border-emerald-500/40' : 'bg-slate-900 border-slate-700/80 hover:border-emerald-500/40'}">
+                                <div class="flex items-start gap-3 min-w-0">
+                                    <div class="w-5 h-5 mt-0.5 rounded-md flex items-center justify-center shrink-0 border ${item.checked ? 'bg-emerald-500 border-emerald-500 text-slate-950 font-bold' : 'border-slate-600'}">
                                         ${item.checked ? '✓' : ''}
                                     </div>
-                                    <span class="text-sm font-medium ${item.checked ? 'line-through text-slate-500' : 'text-white'}">${item.name}</span>
+                                    <div class="min-w-0">
+                                        <span class="text-sm font-semibold block ${item.checked ? 'line-through text-slate-500' : 'text-white'}">${item.name}</span>
+                                        ${promoDeadlineBadge}
+                                    </div>
                                 </div>
-                                ${item.price > 0 ? `<span class="text-xs font-mono font-bold text-slate-300">${Number(item.price).toFixed(2)} zł</span>` : ''}
+                                ${item.price > 0 ? `<span class="text-xs sm:text-sm font-mono font-bold ${hasPromoInfo ? 'text-emerald-400' : 'text-slate-300'} shrink-0">${Number(item.price).toFixed(2)} zł</span>` : ''}
                             </div>
-                        `).join('')}
+                            `;
+                        }).join('')}
                     </div>
                 </div>
             `).join('');
