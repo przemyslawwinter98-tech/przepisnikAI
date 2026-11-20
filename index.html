@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KuchniaBudżet PRO — Wspólna Spiżarnia & Radar Promocji</title>
+    <title>KuchniaBudżet PRO — Wspólna Spiżarnia, Zamrażarka & Radar</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script>
@@ -47,7 +47,7 @@
                 </div>
                 <div>
                     <h1 class="font-bold text-lg tracking-tight text-white">KuchniaBudżet</h1>
-                    <p class="text-xs text-emerald-400 font-medium">Wspólny Planer & Scraper</p>
+                    <p class="text-xs text-emerald-400 font-medium">Wspólny Planer & Zapasy</p>
                 </div>
             </div>
 
@@ -76,7 +76,7 @@
             <button onclick="switchTab('pantry')" data-tab="pantry" class="nav-btn w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800/70 transition-all">
                 <span class="flex items-center gap-3">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
-                    Spiżarnia (Co mam)
+                    Spiżarnia & Zamrażarka
                 </span>
                 <span id="badge-pantry-ready" class="px-2 py-0.5 text-xs rounded-full bg-emerald-500/20 text-emerald-400 font-semibold">0</span>
             </button>
@@ -110,7 +110,7 @@
         <div class="p-4 border-t border-slate-800">
             <button onclick="openAddRecipeModal()" class="w-full py-3 px-4 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold text-sm shadow-lg shadow-emerald-500/20 transition-all flex items-center justify-center gap-2">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path></svg>
-                Dodaj Przepis / AI
+                Dodaj Przepis / Link / AI
             </button>
         </div>
     </aside>
@@ -172,16 +172,69 @@
                 <div id="recipes-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"></div>
             </section>
 
-            <!-- ================= ZAKŁADKA 2: SPIŻARNIA ("CO MAM W DOMU") ================= -->
+            <!-- ================= ZAKŁADKA 2: SPIŻARNIA, LODÓWKA & ZAMRAŻARKA ================= -->
             <section id="tab-pantry" class="hidden space-y-6">
-                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[#1e293b] p-5 rounded-2xl border border-slate-800">
-                    <div>
-                        <h2 class="text-xl font-bold text-white">Domowa Spiżarnia & Lodówka</h2>
-                        <p class="text-sm text-slate-400 mt-1">Zaznacz produkty, które macie w domu, a apka wskaże gotowe obiady.</p>
+                <!-- Nagłówek + Ręczne dodawanie do Lodówki / Spiżarni z autokorektą -->
+                <div class="bg-[#1e293b] p-5 sm:p-6 rounded-2xl border border-slate-800 space-y-4">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div>
+                            <h2 class="text-xl font-bold text-white">Domowa Spiżarnia, Lodówka & Zamrażarka</h2>
+                            <p class="text-sm text-slate-400 mt-0.5">Dodawaj produkty ręcznie (apka sama poprawi literówki i polskie znaki), zmieniaj ich ilości oraz prowadź ewidencję gotowych dań w zamrażarce.</p>
+                        </div>
+                        <button onclick="clearPantry()" class="self-start sm:self-auto px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold border border-slate-700 transition-all">Wyczyść zapasy</button>
                     </div>
-                    <button onclick="clearPantry()" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold border border-slate-700 transition-all">Wyczyść zaznaczenia</button>
+
+                    <!-- Formularz ręcznego dodawania do Lodówki / Spiżarni -->
+                    <form onsubmit="addManualPantryItem(event)" class="grid grid-cols-1 sm:grid-cols-12 gap-2.5 pt-3 border-t border-slate-800">
+                        <input type="text" id="pantry-add-name" required placeholder="Produkt (np. piers z kurczaka, mleko, ryz)..." class="sm:col-span-5 px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500">
+                        <input type="number" step="0.1" min="0.1" id="pantry-add-qty" value="1" required placeholder="Ilość" class="sm:col-span-2 px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-sm text-white text-center font-mono focus:outline-none focus:border-emerald-500">
+                        <select id="pantry-add-unit" class="sm:col-span-2 px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-sm text-slate-200 focus:outline-none focus:border-emerald-500">
+                            <option value="szt.">szt.</option>
+                            <option value="g">g</option>
+                            <option value="kg">kg</option>
+                            <option value="ml">ml</option>
+                            <option value="l">l</option>
+                            <option value="opak.">opak.</option>
+                            <option value="puszka">puszka</option>
+                        </select>
+                        <select id="pantry-add-loc" class="sm:col-span-2 px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-sm text-slate-200 focus:outline-none focus:border-emerald-500">
+                            <option value="Lodówka">🧊 Lodówka</option>
+                            <option value="Spiżarnia">🥫 Spiżarnia</option>
+                        </select>
+                        <button type="submit" class="sm:col-span-1 py-2.5 px-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-sm transition-all flex items-center justify-center">
+                            + Dodaj
+                        </button>
+                    </form>
                 </div>
 
+                <!-- NOWOŚĆ: ZAMRAŻARKA — EWIDENCJA GOTOWYCH DAŃ -->
+                <div class="bg-gradient-to-br from-sky-950/60 via-[#1e293b] to-[#1e293b] rounded-2xl border border-sky-500/40 p-5 sm:p-6 shadow-xl">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+                        <div>
+                            <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-sky-500/20 text-sky-300 text-xs font-bold mb-1">
+                                <span>❄️ ZAMRAŻARKA — GOTOWE DANIA NA CZARNĄ GODZINĘ</span>
+                            </div>
+                            <h3 class="text-lg font-bold text-white">Ewidencja zamrożonych porcji i pudełek</h3>
+                            <p class="text-xs text-slate-400">Kontroluj, ile porcji ugotowanych obiadów macie już w zamrażarce.</p>
+                        </div>
+                        <span id="freezer-total-portions" class="px-3.5 py-1.5 rounded-xl bg-sky-500/20 border border-sky-500/30 text-sky-300 text-xs font-bold self-start">
+                            0 porcji w zamrażarce
+                        </span>
+                    </div>
+
+                    <form onsubmit="addFreezerMeal(event)" class="grid grid-cols-1 sm:grid-cols-12 gap-2.5 mb-4">
+                        <input type="text" id="freezer-meal-name" required placeholder="Nazwa gotowego dania (np. Chili con carne, Pierogi ruskie, Rosół)..." class="sm:col-span-6 px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-sky-500">
+                        <input type="number" step="1" min="1" id="freezer-meal-portions" value="2" required placeholder="Liczba porcji" class="sm:col-span-2 px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-sm text-white text-center font-mono focus:outline-none focus:border-sky-500">
+                        <input type="text" id="freezer-meal-note" placeholder="Notatka (np. 2 pudełka po 2 porc.)" class="sm:col-span-2 px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-sky-500">
+                        <button type="submit" class="sm:col-span-2 py-2.5 px-4 rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-xs sm:text-sm transition-all">
+                            + Zamroź danie
+                        </button>
+                    </form>
+
+                    <div id="freezer-meals-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3"></div>
+                </div>
+
+                <!-- Sugerowane obiady ze spiżarni -->
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
                     <div class="bg-[#1e293b] rounded-2xl border border-emerald-500/30 p-5">
                         <div class="flex items-center justify-between mb-4">
@@ -206,12 +259,12 @@
                     </div>
                 </div>
 
+                <!-- Lista składników w Lodówce i Spiżarni z edycją ilości -->
                 <div id="pantry-categories-container" class="space-y-5"></div>
             </section>
 
             <!-- ================= ZAKŁADKA 3: RADAR & ŚLEDZONE PRODUKTY ================= -->
             <section id="tab-promos" class="hidden space-y-6">
-                <!-- NOWOŚĆ: Dynamiczna Lista Śledzonych Produktów z AI Korektą Literówek -->
                 <div class="bg-gradient-to-br from-[#1e293b] via-slate-900 to-[#1e293b] rounded-2xl border border-indigo-500/40 p-5 sm:p-6 shadow-xl">
                     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
                         <div>
@@ -234,11 +287,9 @@
                         </button>
                     </form>
 
-                    <!-- Lista aktywnie śledzonych produktów -->
                     <div id="tracked-products-list" class="mt-4 flex flex-wrap gap-2"></div>
                 </div>
 
-                <!-- Ręczny Cennik Bazowy Składników + Dane ze Scrapera -->
                 <div class="bg-[#1e293b] rounded-2xl border border-slate-800 p-5">
                     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
                         <div>
@@ -368,7 +419,7 @@
         </button>
         <button onclick="switchTab('pantry')" data-tab="pantry" class="mobile-nav-btn relative flex flex-col items-center p-2 rounded-xl text-slate-400">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
-            <span class="text-[10px] font-semibold mt-1">Spiżarnia</span>
+            <span class="text-[10px] font-semibold mt-1">Zapasy</span>
             <span id="mobile-badge-pantry" class="hidden absolute top-1 right-1 w-4 h-4 rounded-full bg-emerald-500 text-slate-950 text-[9px] font-bold flex items-center justify-center">0</span>
         </button>
         <button onclick="switchTab('promos')" data-tab="promos" class="mobile-nav-btn relative flex flex-col items-center p-2 rounded-xl text-slate-400">
@@ -403,7 +454,7 @@
         </div>
     </div>
 
-    <!-- MODAL 2: Dodaj Przepis (AI + Ręcznie) -->
+    <!-- MODAL 2: Dodaj Przepis (Link / AI + Ręcznie) -->
     <div id="modal-add-recipe" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
         <div class="bg-[#1e293b] border border-slate-700 rounded-2xl max-w-2xl w-full p-6 shadow-2xl my-auto max-h-[90vh] overflow-y-auto">
             <div class="flex items-center justify-between mb-4">
@@ -414,13 +465,26 @@
             </div>
 
             <div class="grid grid-cols-2 gap-2 p-1 rounded-xl bg-slate-900 mb-5">
-                <button id="btn-mode-ai" onclick="setAddRecipeMode('ai')" class="py-2 rounded-lg text-sm font-bold bg-emerald-500 text-slate-950 transition-all">✨ Generator / Parser AI</button>
+                <button id="btn-mode-ai" onclick="setAddRecipeMode('ai')" class="py-2 rounded-lg text-sm font-bold bg-emerald-500 text-slate-950 transition-all">🔗 Z linku / Generator AI</button>
                 <button id="btn-mode-manual" onclick="setAddRecipeMode('manual')" class="py-2 rounded-lg text-sm font-bold text-slate-400 hover:text-white transition-all">✍️ Formularz Ręczny</button>
             </div>
 
             <div id="add-recipe-ai-panel" class="space-y-4">
-                <p class="text-sm text-slate-300">Wpisz nazwę dania (np. <em>"Zapiekanka makaronowa z tuńczykiem i kukurydzą"</em>) LUB wklej skopiowany przepis ze strony WWW.</p>
-                <textarea id="ai-recipe-prompt" rows="5" placeholder="Wpisz pomysł na danie lub wklej treść przepisu..." class="w-full p-4 rounded-xl bg-slate-950 border border-slate-700 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500"></textarea>
+                <div class="p-3.5 rounded-xl bg-slate-900/90 border border-slate-800 space-y-2">
+                    <label class="block text-xs font-bold uppercase tracking-wider text-emerald-400">Opcja A: Wklej link do przepisu (URL)</label>
+                    <div class="flex flex-col sm:flex-row gap-2">
+                        <input type="url" id="ai-recipe-url" placeholder="https://www.kwestiasmaku.com/przepis/..." class="flex-1 px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500">
+                        <button type="button" id="btn-fetch-url" onclick="importRecipeFromUrl()" class="px-4 py-2.5 rounded-xl bg-indigo-500 hover:bg-indigo-400 text-white font-bold text-xs sm:text-sm shrink-0 transition-all">
+                            Pobierz z linku
+                        </button>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">Opcja B: Wpisz nazwę dania lub wklej treść przepisu</label>
+                    <textarea id="ai-recipe-prompt" rows="5" placeholder="Wpisz pomysł na danie (np. 'Zapiekanka makaronowa z tuńczykiem') lub wklej skopiowany tekst przepisu..." class="w-full p-4 rounded-xl bg-slate-950 border border-slate-700 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500"></textarea>
+                </div>
+
                 <button id="btn-generate-recipe-ai" onclick="generateRecipeWithAI()" class="w-full py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-sm shadow-lg shadow-emerald-500/20 transition-all flex items-center justify-center gap-2">
                     <span>Wygeneruj i zapisz przepis przez AI</span>
                 </button>
@@ -554,10 +618,11 @@
             kitchenCode: localStorage.getItem('kuchnia_code') || 'KUCHNIA-2026',
             recipes: [],
             pricebook: {},
-            trackedProducts: [], // Dynamiczna lista produktów wpisanych przez użytkownika
+            trackedProducts: [],
             pendingScraper: {},
             scraperUpdatedAt: null,
             pantry: {},
+            freezer: [],
             shopping: [],
             reviews: [],
             currentFilter: 'all',
@@ -883,38 +948,62 @@
             .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
             .replace(/ł/g, "l");
 
-        // Lokalna autokorekta literówek spożywczych + Gemini AI (jeśli klucz jest dostępny)
+        // Helper do sprawdzania czy produkt jest w spiżarni (obsługuje zarówno stary format boolean jak i nowy obiekt z ilością)
+        window.getPantryEntry = (key) => {
+            const raw = window.appState.pantry[key];
+            if (!raw) return null;
+            if (raw === true) {
+                return { qty: 1, unit: 'szt.', location: 'Spiżarnia' };
+            }
+            if (typeof raw === 'object' && Number(raw.qty) > 0) {
+                return {
+                    qty: Number(raw.qty),
+                    unit: raw.unit || 'szt.',
+                    location: raw.location || 'Spiżarnia'
+                };
+            }
+            return null;
+        };
+
+        // Autokorekta literówek spożywczych + Gemini AI
         function localSpellFixAndKeywords(rawInput) {
             const clean = rawInput.trim();
             const lowerAscii = window.stripDiacritics(clean);
 
             const dictionary = [
-                { patterns: ["tundzyk", "tuncyk", "tunczyk"], fixed: "Tuńczyk w puszce", query: "tuńczyk w sosie własnym puszka", keywords: ["tunczyk"] },
-                { patterns: ["mieso", "miesko", "mielone"], fixed: "Mięso mielone", query: "mięso mielone 500g", keywords: ["mieso mielone", "mielone", "mieso"] },
-                { patterns: ["piers", "kurczak", "kurczaka", "filet"], fixed: "Pierś z kurczaka", query: "filet z piersi kurczaka", keywords: ["piers z kurczaka", "filet z kurczaka", "kurczak"] },
-                { patterns: ["pasata", "passata"], fixed: "Passata pomidorowa", query: "passata pomidorowa 500g", keywords: ["passata"] },
-                { patterns: ["kukurydz", "kukurydza"], fixed: "Kukurydza konserwowa", query: "kukurydza konserwowa puszka", keywords: ["kukurydza"] },
-                { patterns: ["fasol", "fasola"], fixed: "Fasola w puszce", query: "fasola czerwona puszka", keywords: ["fasola"] },
-                { patterns: ["losos", "losos"], fixed: "Łosoś filet", query: "łosoś świeży filet", keywords: ["losos"] },
-                { patterns: ["twarog", "twarug"], fixed: "Twaróg półtłusty", query: "twaróg półtłusty", keywords: ["twarog"] },
-                { patterns: ["jajk", "jaja"], fixed: "Jajka", query: "jaja ściółkowe 10 szt", keywords: ["jajka", "jaja"] },
-                { patterns: ["makaron"], fixed: "Makaron", query: "makaron penne 500g", keywords: ["makaron"] },
-                { patterns: ["ryz"], fixed: "Ryż", query: "ryż biały 4x100g", keywords: ["ryz"] },
-                { patterns: ["ser zolty", "gouda", "ser"], fixed: "Ser żółty", query: "ser gouda", keywords: ["ser zolty", "gouda"] },
-                { patterns: ["maslo"], fixed: "Masło", query: "masło ekstra 200g", keywords: ["maslo"] },
-                { patterns: ["oliwa"], fixed: "Oliwa z oliwek", query: "oliwa z oliwek", keywords: ["oliwa"] }
+                { patterns: ["tundzyk", "tuncyk", "tunczyk"], fixed: "Tuńczyk w puszce", query: "tuńczyk w sosie własnym puszka", keywords: ["tunczyk"], cat: "Konserwy i słoiki" },
+                { patterns: ["mieso", "miesko", "mielone"], fixed: "Mięso mielone", query: "mięso mielone 500g", keywords: ["mieso mielone", "mielone", "mieso"], cat: "Mięso i świeże" },
+                { patterns: ["piers", "kurczak", "kurczaka", "filet"], fixed: "Pierś z kurczaka", query: "filet z piersi kurczaka", keywords: ["piers z kurczaka", "filet z kurczaka", "kurczak"], cat: "Mięso i świeże" },
+                { patterns: ["pasata", "passata"], fixed: "Passata pomidorowa", query: "passata pomidorowa 500g", keywords: ["passata"], cat: "Konserwy i słoiki" },
+                { patterns: ["kukurydz", "kukurydza"], fixed: "Kukurydza konserwowa", query: "kukurydza konserwowa puszka", keywords: ["kukurydza"], cat: "Konserwy i słoiki" },
+                { patterns: ["fasol", "fasola"], fixed: "Czerwona fasola", query: "fasola czerwona puszka", keywords: ["fasola"], cat: "Konserwy i słoiki" },
+                { patterns: ["losos"], fixed: "Łosoś filet", query: "łosoś świeży filet", keywords: ["losos"], cat: "Mięso i świeże" },
+                { patterns: ["twarog", "twarug"], fixed: "Twaróg półtłusty", query: "twaróg półtłusty", keywords: ["twarog"], cat: "Lodówka i mrożonki" },
+                { patterns: ["jajk", "jaja"], fixed: "Jajka", query: "jaja ściółkowe 10 szt", keywords: ["jajka", "jaja"], cat: "Lodówka i mrożonki" },
+                { patterns: ["makaron"], fixed: "Makaron", query: "makaron penne 500g", keywords: ["makaron"], cat: "Suche i makarony" },
+                { patterns: ["ryz"], fixed: "Ryż", query: "ryż biały 4x100g", keywords: ["ryz"], cat: "Suche i makarony" },
+                { patterns: ["ser zolty", "gouda", "ser"], fixed: "Ser żółty", query: "ser gouda", keywords: ["ser zolty", "gouda"], cat: "Lodówka i mrożonki" },
+                { patterns: ["maslo"], fixed: "Masło", query: "masło ekstra 200g", keywords: ["maslo"], cat: "Lodówka i mrożonki" },
+                { patterns: ["mleko", "mleka"], fixed: "Mleko", query: "mleko UHT", keywords: ["mleko"], cat: "Lodówka i mrożonki" },
+                { patterns: ["smietan"], fixed: "Śmietana 18%", query: "śmietana 18%", keywords: ["smietana"], cat: "Lodówka i mrożonki" },
+                { patterns: ["jogurt"], fixed: "Jogurt naturalny", query: "jogurt naturalny", keywords: ["jogurt"], cat: "Lodówka i mrożonki" },
+                { patterns: ["szynk", "wedlin"], fixed: "Szynka", query: "szynka", keywords: ["szynka"], cat: "Lodówka i mrożonki" },
+                { patterns: ["oliwa"], fixed: "Oliwa z oliwek", query: "oliwa z oliwek", keywords: ["oliwa"], cat: "Przyprawy i dodatki" },
+                { patterns: ["cebula", "cebul"], fixed: "Cebula", query: "cebula", keywords: ["cebula"], cat: "Mięso i świeże" },
+                { patterns: ["czosnek", "czosnk"], fixed: "Czosnek", query: "czosnek", keywords: ["czosnek"], cat: "Przyprawy i dodatki" },
+                { patterns: ["ziemniak"], fixed: "Ziemniaki", query: "ziemniaki", keywords: ["ziemniaki"], cat: "Mięso i świeże" }
             ];
 
             for (const entry of dictionary) {
                 if (entry.patterns.some(p => lowerAscii.includes(p))) {
-                    // Jeśli użytkownik wpisał coś dłuższego z literówką (np. "tundzyk w puszcze"), zachowaj sens lub użyj wzorca
                     const fixedName = lowerAscii.includes("puszcz") && entry.fixed === "Tuńczyk w puszce"
                         ? "Tuńczyk w puszce"
                         : (clean.length <= entry.fixed.length + 3 ? entry.fixed : clean.charAt(0).toUpperCase() + clean.slice(1));
                     return {
                         fixedName,
                         query: entry.query,
-                        keywords: entry.keywords
+                        keywords: entry.keywords,
+                        category: entry.cat || "Inne"
                     };
                 }
             }
@@ -924,7 +1013,8 @@
             return {
                 fixedName: capitalized,
                 query: capitalized,
-                keywords: firstWord.length >= 3 ? [lowerAscii, firstWord] : [lowerAscii]
+                keywords: firstWord.length >= 3 ? [lowerAscii, firstWord] : [lowerAscii],
+                category: "Inne"
             };
         }
 
@@ -971,6 +1061,7 @@
                 window.appState.pricebook = data.pricebook || buildInitialPricebook();
                 window.appState.trackedProducts = Array.isArray(data.trackedProducts) ? data.trackedProducts : DEFAULT_TRACKED;
                 window.appState.pantry = data.pantry || {};
+                window.appState.freezer = Array.isArray(data.freezer) ? data.freezer : [];
                 window.appState.shopping = data.shopping || [];
                 window.appState.reviews = data.reviews || [];
                 window.appState.pendingScraper = data.pendingScraper || {};
@@ -1022,17 +1113,18 @@
                     pricebook: buildInitialPricebook(),
                     trackedProducts: DEFAULT_TRACKED,
                     pantry: {
-                        "ryz": true,
-                        "czerwona_fasola": true,
-                        "passata_pomidorowa": true,
-                        "jajka": true,
-                        "ser_zolty": true
+                        "ryz": { qty: 1, unit: "kg", location: "Spiżarnia" },
+                        "czerwona_fasola": { qty: 2, unit: "puszka", location: "Spiżarnia" },
+                        "passata_pomidorowa": { qty: 1, unit: "szt.", location: "Spiżarnia" },
+                        "jajka": { qty: 10, unit: "szt.", location: "Lodówka" },
+                        "ser_zolty": { qty: 300, unit: "g", location: "Lodówka" }
                     },
+                    freezer: [],
                     shopping: [],
                     reviews: [],
                     pendingScraper: {}
                 }, { merge: true });
-                showToast("Utworzono nową wspólną kuchnię z 15 przepisami i radarem produktów!");
+                showToast("Utworzono nową wspólną kuchnię z 15 przepisami, spiżarnią i zamrażarką!");
             } catch (e) {
                 console.error("Błąd zapisu inicjalnego:", e);
                 showToast("Nie udało się zapisać danych. Upewnij się, że Kod Domu zgadza się z regułami Firestore.", "error");
@@ -1048,6 +1140,7 @@
                     pricebook: window.appState.pricebook,
                     trackedProducts: window.appState.trackedProducts,
                     pantry: window.appState.pantry,
+                    freezer: window.appState.freezer,
                     shopping: window.appState.shopping,
                     reviews: window.appState.reviews,
                     pendingScraper: window.appState.pendingScraper
@@ -1057,6 +1150,211 @@
                 showToast("Błąd zapisu w chmurze. Sprawdź Kod Domu.", "error");
             }
         }
+
+        // ================= RĘCZNE DODAWANIE I MODYFIKACJA ILOŚCI W SPIŻARNI / LODÓWCE =================
+        window.addManualPantryItem = async (e) => {
+            e.preventDefault();
+            const nameInput = document.getElementById('pantry-add-name');
+            const qtyInput = document.getElementById('pantry-add-qty');
+            const unitInput = document.getElementById('pantry-add-unit');
+            const locInput = document.getElementById('pantry-add-loc');
+
+            const rawName = nameInput.value.trim();
+            const qty = parseFloat(qtyInput.value) || 1;
+            const unit = unitInput.value;
+            const location = locInput.value;
+
+            if (!rawName) return;
+
+            // Automatyczna korekta literówek i polskich znaków
+            let fixed = localSpellFixAndKeywords(rawName);
+            if (apiKey) {
+                try {
+                    const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            contents: [{ parts: [{ text: `Popraw polską nazwę produktu spożywczego (dodaj polskie znaki, popraw literówki, wielka litera na początku): "${rawName}". Zwróć JSON: {"fixedName": "Poprawna nazwa"}` }] }],
+                            generationConfig: { responseMimeType: "application/json" }
+                        })
+                    });
+                    const data = await resp.json();
+                    const parsed = JSON.parse(data.candidates?.[0]?.content?.parts?.[0]?.text || "{}");
+                    if (parsed.fixedName) fixed.fixedName = parsed.fixedName;
+                } catch (_) {}
+            }
+
+            const key = window.normalizeKey(fixed.fixedName);
+
+            // Upewnij się, że produkt widnieje również w cenniku/katalogu spiżarni
+            if (!window.appState.pricebook[key]) {
+                window.appState.pricebook[key] = {
+                    name: fixed.fixedName,
+                    category: location === 'Lodówka' ? 'Lodówka i mrożonki' : (fixed.category || 'Spiżarnia'),
+                    basePrice: 5.00,
+                    promoPrice: 5.00,
+                    isPromo: false,
+                    store: "Baza"
+                };
+            }
+
+            const existing = window.getPantryEntry(key);
+            if (existing && existing.unit === unit) {
+                window.appState.pantry[key] = {
+                    qty: Number((existing.qty + qty).toFixed(2)),
+                    unit,
+                    location
+                };
+            } else {
+                window.appState.pantry[key] = { qty, unit, location };
+            }
+
+            await saveHouseholdChanges();
+            const correctedNote = window.stripDiacritics(rawName) !== window.stripDiacritics(fixed.fixedName) || rawName !== fixed.fixedName
+                ? ` (poprawiono z "${rawName}")`
+                : '';
+            showToast(`Dodano do ${location === 'Lodówka' ? 'Lodówki' : 'Spiżarni'}: <strong>${fixed.fixedName}</strong> (${qty} ${unit})${correctedNote}`);
+
+            nameInput.value = '';
+            qtyInput.value = '1';
+        };
+
+        window.adjustPantryQuantity = async (key, delta) => {
+            const current = window.getPantryEntry(key);
+            if (!current) {
+                window.appState.pantry[key] = { qty: 1, unit: 'szt.', location: 'Spiżarnia' };
+            } else {
+                const step = (current.unit === 'g' || current.unit === 'ml') ? 100 : (current.unit === 'kg' || current.unit === 'l' ? 0.5 : 1);
+                const nextQty = Number((current.qty + delta * step).toFixed(2));
+                if (nextQty <= 0) {
+                    delete window.appState.pantry[key];
+                } else {
+                    window.appState.pantry[key] = { ...current, qty: nextQty };
+                }
+            }
+            await saveHouseholdChanges();
+        };
+
+        window.setPantryQuantityDirect = async (key, newQtyRaw) => {
+            const val = parseFloat(newQtyRaw);
+            const current = window.getPantryEntry(key) || { qty: 1, unit: 'szt.', location: 'Spiżarnia' };
+            if (isNaN(val) || val <= 0) {
+                delete window.appState.pantry[key];
+            } else {
+                window.appState.pantry[key] = { ...current, qty: Number(val.toFixed(2)) };
+            }
+            await saveHouseholdChanges();
+        };
+
+        window.changePantryUnitOrLocation = async (key, field, value) => {
+            const current = window.getPantryEntry(key) || { qty: 1, unit: 'szt.', location: 'Spiżarnia' };
+            window.appState.pantry[key] = { ...current, [field]: value };
+            await saveHouseholdChanges();
+        };
+
+        // ================= ZAMRAŻARKA — EWIDENCJA GOTOWYCH DAŃ =================
+        window.addFreezerMeal = async (e) => {
+            e.preventDefault();
+            const nameEl = document.getElementById('freezer-meal-name');
+            const portionsEl = document.getElementById('freezer-meal-portions');
+            const noteEl = document.getElementById('freezer-meal-note');
+
+            const rawName = nameEl.value.trim();
+            const portions = parseInt(portionsEl.value, 10) || 1;
+            const note = noteEl.value.trim();
+            if (!rawName) return;
+
+            const capitalized = rawName.charAt(0).toUpperCase() + rawName.slice(1);
+            const existing = window.appState.freezer.find(m => window.stripDiacritics(m.name) === window.stripDiacritics(capitalized));
+
+            if (existing) {
+                existing.portions = Number(existing.portions) + portions;
+                if (note) existing.note = note;
+            } else {
+                window.appState.freezer.unshift({
+                    id: 'frz_' + Date.now(),
+                    name: capitalized,
+                    portions,
+                    note,
+                    frozenAt: new Date().toLocaleDateString('pl-PL')
+                });
+            }
+
+            await saveHouseholdChanges();
+            nameEl.value = '';
+            portionsEl.value = '2';
+            noteEl.value = '';
+            showToast(`❄️ Zapisano w zamrażarce: <strong>${capitalized}</strong> (${portions} porc.)`);
+        };
+
+        window.freezeFromRecipe = async (recipeId) => {
+            const recipe = window.appState.recipes.find(r => r.id === recipeId);
+            if (!recipe) return;
+            const defaultPortions = Math.max(1, Math.round((recipe.portions || 4) / 2));
+            const existing = window.appState.freezer.find(m => window.stripDiacritics(m.name) === window.stripDiacritics(recipe.title));
+
+            if (existing) {
+                existing.portions = Number(existing.portions) + defaultPortions;
+            } else {
+                window.appState.freezer.unshift({
+                    id: 'frz_' + Date.now(),
+                    name: recipe.title,
+                    portions: defaultPortions,
+                    note: 'Z ugotowanego przepisu',
+                    frozenAt: new Date().toLocaleDateString('pl-PL')
+                });
+            }
+
+            await saveHouseholdChanges();
+            showToast(`❄️ Dodano ${defaultPortions} porcje "${recipe.title}" do zamrażarki!`);
+        };
+
+        window.adjustFreezerPortions = async (mealId, delta) => {
+            const meal = window.appState.freezer.find(m => m.id === mealId);
+            if (!meal) return;
+            const next = Number(meal.portions) + delta;
+            if (next <= 0) {
+                window.appState.freezer = window.appState.freezer.filter(m => m.id !== mealId);
+                showToast(`Wyjęto ostatnią porcję "${meal.name}" z zamrażarki.`);
+            } else {
+                meal.portions = next;
+            }
+            await saveHouseholdChanges();
+        };
+
+        window.renderFreezer = () => {
+            const container = document.getElementById('freezer-meals-list');
+            const badge = document.getElementById('freezer-total-portions');
+            if (!container) return;
+
+            const meals = window.appState.freezer || [];
+            const totalPortions = meals.reduce((sum, m) => sum + (Number(m.portions) || 0), 0);
+            badge.textContent = `${totalPortions} porcji w zamrażarce`;
+
+            if (meals.length === 0) {
+                container.innerHTML = `<p class="col-span-full text-xs text-slate-400 italic py-2">Zamrażarka gotowych dań jest pusta. Wpisz powyżej ugotowane danie (np. Chili con carne, Pierogi), żeby pamiętać ile porcji czeka na szybki obiad.</p>`;
+                return;
+            }
+
+            container.innerHTML = meals.map(meal => `
+                <div class="p-3.5 rounded-xl bg-slate-950/90 border border-sky-500/30 flex items-center justify-between gap-3">
+                    <div class="min-w-0">
+                        <div class="flex items-center gap-1.5">
+                            <span class="text-sky-400 text-xs">❄️</span>
+                            <h4 class="text-sm font-bold text-white truncate">${meal.name}</h4>
+                        </div>
+                        <p class="text-[11px] text-slate-400 mt-0.5">
+                            Zamrożono: ${meal.frozenAt || 'ostatnio'} ${meal.note ? `• <span class="text-slate-300">${meal.note}</span>` : ''}
+                        </p>
+                    </div>
+                    <div class="flex items-center gap-1.5 shrink-0 bg-slate-900 px-2 py-1 rounded-lg border border-slate-800">
+                        <button onclick="adjustFreezerPortions('${meal.id}', -1)" title="Wyjmij 1 porcję" class="w-6 h-6 rounded bg-slate-800 hover:bg-red-950/70 text-slate-200 hover:text-red-300 font-bold text-sm flex items-center justify-center">−</button>
+                        <span class="px-1.5 text-xs font-extrabold text-sky-300 font-mono">${meal.portions} porc.</span>
+                        <button onclick="adjustFreezerPortions('${meal.id}', 1)" title="Dodaj 1 porcję" class="w-6 h-6 rounded bg-slate-800 hover:bg-sky-900/70 text-slate-200 hover:text-sky-300 font-bold text-sm flex items-center justify-center">+</button>
+                    </div>
+                </div>
+            `).join('');
+        };
 
         // ================= ŚLEDZONE PRODUKTY Z AI AUTOKOREKTĄ =================
         window.addTrackedProductWithAI = async (e) => {
@@ -1073,10 +1371,8 @@
             btn.disabled = true;
             btn.innerHTML = `<span class="animate-spin inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full"></span> <span>AI sprawdza...</span>`;
 
-            // 1. Najpierw nasza błyskawiczna korekta lokalna
             let resolved = localSpellFixAndKeywords(rawName);
 
-            // 2. Jeśli skonfigurowany klucz Gemini AI w przeglądarce — dopytaj AI o poprawę literówek i synonimy
             if (apiKey) {
                 try {
                     const prompt = `Użytkownik wpisał produkt spożywczy do śledzenia cen: "${rawName}".
@@ -1102,9 +1398,7 @@ Zwróć JSON: {"fixedName": "Poprawna polska nazwa", "query": "fraza do wyszukiw
                             };
                         }
                     }
-                } catch (_) {
-                    // Fallback do korekty lokalnej
-                }
+                } catch (_) {}
             }
 
             const alreadyExists = window.appState.trackedProducts.some(
@@ -1184,7 +1478,7 @@ Zwróć JSON: {"fixedName": "Poprawna polska nazwa", "query": "fraza do wyszukiw
                     promoItems.push({ name: ing.name, store: pbItem.store || 'Promocja' });
                 }
 
-                if (window.appState.pantry[key]) {
+                if (window.getPantryEntry(key)) {
                     ownedCount++;
                 } else {
                     missingIngredients.push({ ...ing, activePrice: activeP });
@@ -1221,6 +1515,7 @@ Zwróć JSON: {"fixedName": "Poprawna polska nazwa", "query": "fraza do wyszukiw
         // ================= RENDEROWANIE WIDOKÓW =================
         window.renderAll = () => {
             renderRecipes();
+            renderFreezer();
             renderPantry();
             renderTrackedProducts();
             renderPricebook();
@@ -1414,7 +1709,8 @@ Zwróć JSON: {"fixedName": "Poprawna polska nazwa", "query": "fraza do wyszukiw
                     <div class="space-y-2">
                         ${recipe.ingredients.map(ing => {
                             const key = window.normalizeKey(ing.name);
-                            const inPantry = !!window.appState.pantry[key];
+                            const pantryEntry = window.getPantryEntry(key);
+                            const inPantry = !!pantryEntry;
                             const pb = window.appState.pricebook[key];
                             const price = (pb && pb.isPromo) ? pb.promoPrice : (pb ? pb.basePrice : ing.price);
                             return `
@@ -1425,6 +1721,7 @@ Zwróć JSON: {"fixedName": "Poprawna polska nazwa", "query": "fraza do wyszukiw
                                     </span>
                                     <span class="text-sm font-medium ${inPantry ? 'text-emerald-200' : 'text-slate-200'}">${ing.name}</span>
                                     <span class="text-xs text-slate-400">(${ing.amount})</span>
+                                    ${inPantry ? `<span class="text-[11px] px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-mono">W domu: ${pantryEntry.qty} ${pantryEntry.unit}</span>` : ''}
                                 </div>
                                 <div class="text-right">
                                     <span class="text-xs font-bold ${pb && pb.isPromo ? 'text-emerald-400' : 'text-slate-300'}">${Number(price).toFixed(2)} zł</span>
@@ -1460,11 +1757,16 @@ Zwróć JSON: {"fixedName": "Poprawna polska nazwa", "query": "fraza do wyszukiw
                     </div>
                 ` : ''}
 
-                <div class="mt-6 pt-4 border-t border-slate-800 flex justify-between items-center gap-3">
+                <div class="mt-6 pt-4 border-t border-slate-800 flex flex-wrap justify-between items-center gap-3">
                     <button onclick="deleteRecipe('${recipe.id}')" class="px-3.5 py-2.5 rounded-xl bg-red-950/40 hover:bg-red-900/60 text-red-400 text-xs font-semibold">Usuń przepis</button>
-                    <button onclick="closeModal('modal-recipe-detail'); openReviewModal('${recipe.id}')" class="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-sm">
-                        Ugotowane! Oceń i rozlicz
-                    </button>
+                    <div class="flex flex-wrap gap-2">
+                        <button onclick="freezeFromRecipe('${recipe.id}')" class="px-4 py-2.5 rounded-xl bg-sky-500/20 hover:bg-sky-500/30 text-sky-300 border border-sky-500/30 font-bold text-xs sm:text-sm">
+                            ❄️ Zamroź porcje
+                        </button>
+                        <button onclick="closeModal('modal-recipe-detail'); openReviewModal('${recipe.id}')" class="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs sm:text-sm">
+                            Ugotowane! Oceń i rozlicz
+                        </button>
+                    </div>
                 </div>
             `;
             document.getElementById('modal-recipe-detail').classList.remove('hidden');
@@ -1472,7 +1774,18 @@ Zwróć JSON: {"fixedName": "Poprawna polska nazwa", "query": "fraza do wyszukiw
 
         // ================= SPIŻARNIA =================
         window.togglePantryItem = async (key) => {
-            window.appState.pantry[key] = !window.appState.pantry[key];
+            const current = window.getPantryEntry(key);
+            if (current) {
+                delete window.appState.pantry[key];
+            } else {
+                const pb = window.appState.pricebook[key];
+                const isFridge = pb && (pb.category === 'Lodówka i mrożonki' || pb.category === 'Mięso i świeże');
+                window.appState.pantry[key] = {
+                    qty: 1,
+                    unit: 'szt.',
+                    location: isFridge ? 'Lodówka' : 'Spiżarnia'
+                };
+            }
             await saveHouseholdChanges();
             if (!document.getElementById('modal-recipe-detail').classList.contains('hidden')) {
                 const titleEl = document.querySelector('#recipe-detail-content h2');
@@ -1486,7 +1799,7 @@ Zwróć JSON: {"fixedName": "Poprawna polska nazwa", "query": "fraza do wyszukiw
         window.clearPantry = async () => {
             window.appState.pantry = {};
             await saveHouseholdChanges();
-            showToast("Wyczyszczono zaznaczenia w spiżarni.");
+            showToast("Wyczyszczono zapasy w spiżarni i lodówce.");
         };
 
         window.renderPantry = () => {
@@ -1502,7 +1815,7 @@ Zwróć JSON: {"fixedName": "Poprawna polska nazwa", "query": "fraza do wyszukiw
             document.getElementById('pantry-almost-count').textContent = almostRecipes.length;
 
             fullList.innerHTML = fullRecipes.length === 0
-                ? `<p class="text-sm text-slate-400 italic">Brak dań, do których macie 100% składników. Zaznacz produkty poniżej.</p>`
+                ? `<p class="text-sm text-slate-400 italic">Brak dań, do których macie 100% składników. Dodaj produkty powyżej lub kliknij pozycje poniżej.</p>`
                 : fullRecipes.map(({ recipe, metrics }) => `
                     <div onclick="openRecipeDetail('${recipe.id}')" class="p-3 rounded-xl bg-emerald-950/30 border border-emerald-500/30 flex items-center justify-between cursor-pointer hover:bg-emerald-950/50 transition-colors">
                         <div>
@@ -1537,14 +1850,44 @@ Zwróć JSON: {"fixedName": "Poprawna polska nazwa", "query": "fraza do wyszukiw
             catContainer.innerHTML = Object.entries(byCategory).map(([cat, items]) => `
                 <div class="bg-[#1e293b] rounded-2xl border border-slate-800 p-5">
                     <h4 class="text-sm font-bold uppercase tracking-wider text-slate-300 mb-3">${cat}</h4>
-                    <div class="flex flex-wrap gap-2">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
                         ${items.sort((a, b) => a.name.localeCompare(b.name)).map(item => {
-                            const active = !!window.appState.pantry[item.key];
+                            const entry = window.getPantryEntry(item.key);
+                            const active = !!entry;
+
+                            if (!active) {
+                                return `
+                                <button onclick="togglePantryItem('${item.key}')" class="px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-medium border bg-slate-900/90 text-slate-300 border-slate-700/80 hover:border-slate-500 transition-all flex items-center justify-between gap-2 text-left">
+                                    <span class="truncate">+ ${item.name}</span>
+                                    <span class="text-[11px] text-slate-500 shrink-0">Brak</span>
+                                </button>
+                                `;
+                            }
+
                             return `
-                            <button onclick="togglePantryItem('${item.key}')" class="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-medium border transition-all flex items-center gap-2 ${active ? 'bg-emerald-500 text-slate-950 border-emerald-400 font-bold shadow-md shadow-emerald-500/15' : 'bg-slate-900/90 text-slate-300 border-slate-700/80 hover:border-slate-500'}">
-                                <span>${active ? '✓' : '+'}</span>
-                                <span>${item.name}</span>
-                            </button>
+                            <div class="p-2.5 rounded-xl border bg-emerald-950/35 border-emerald-500/50 flex flex-col gap-2 shadow-sm">
+                                <div class="flex items-center justify-between gap-2">
+                                    <button onclick="togglePantryItem('${item.key}')" title="Usuń ze stanu" class="flex items-center gap-1.5 text-left min-w-0">
+                                        <span class="w-4 h-4 rounded bg-emerald-500 text-slate-950 font-bold text-[11px] flex items-center justify-center shrink-0">✓</span>
+                                        <span class="text-xs sm:text-sm font-bold text-emerald-200 truncate">${item.name}</span>
+                                    </button>
+                                    <select onchange="changePantryUnitOrLocation('${item.key}', 'location', this.value)" class="px-1.5 py-0.5 rounded bg-slate-900 border border-slate-700 text-[10px] text-slate-300">
+                                        <option value="Lodówka" ${entry.location === 'Lodówka' ? 'selected' : ''}>🧊 Lodówka</option>
+                                        <option value="Spiżarnia" ${entry.location !== 'Lodówka' ? 'selected' : ''}>🥫 Spiżarnia</option>
+                                    </select>
+                                </div>
+
+                                <div class="flex items-center justify-between gap-1.5 bg-slate-950/80 p-1 rounded-lg border border-slate-800">
+                                    <button onclick="adjustPantryQuantity('${item.key}', -1)" class="w-7 h-7 rounded bg-slate-800 hover:bg-red-950/70 text-slate-200 hover:text-red-300 font-bold text-sm flex items-center justify-center">−</button>
+                                    <div class="flex items-center gap-1">
+                                        <input type="number" step="0.1" value="${entry.qty}" onchange="setPantryQuantityDirect('${item.key}', this.value)" class="w-14 bg-transparent text-center text-xs font-mono font-bold text-white focus:outline-none">
+                                        <select onchange="changePantryUnitOrLocation('${item.key}', 'unit', this.value)" class="bg-slate-900 text-[11px] text-emerald-400 font-semibold rounded px-1 py-0.5 border border-slate-800">
+                                            ${['szt.', 'g', 'kg', 'ml', 'l', 'opak.', 'puszka'].map(u => `<option value="${u}" ${entry.unit === u ? 'selected' : ''}>${u}</option>`).join('')}
+                                        </select>
+                                    </div>
+                                    <button onclick="adjustPantryQuantity('${item.key}', 1)" class="w-7 h-7 rounded bg-slate-800 hover:bg-emerald-900/70 text-slate-200 hover:text-emerald-300 font-bold text-sm flex items-center justify-center">+</button>
+                                </div>
+                            </div>
                             `;
                         }).join('')}
                     </div>
@@ -1809,7 +2152,7 @@ Zwróć JSON: {"fixedName": "Poprawna polska nazwa", "query": "fraza do wyszukiw
             showToast("Wyczyszczono poczekalnię scrapera.");
         };
 
-        // ================= DODAWANIE PRZEPISÓW =================
+        // ================= DODAWANIE PRZEPISÓW (W TYM Z LINKU URL) =================
         window.setAddRecipeMode = (mode) => {
             const aiPanel = document.getElementById('add-recipe-ai-panel');
             const manPanel = document.getElementById('add-recipe-manual-panel');
@@ -1829,11 +2172,69 @@ Zwróć JSON: {"fixedName": "Poprawna polska nazwa", "query": "fraza do wyszukiw
             }
         };
 
+        async function fetchWebpageReadableText(targetUrl) {
+            // Próba 1: Jina Reader (zwraca czysty tekst markdown dowolnego bloga kulinarnego bez blokad CORS)
+            try {
+                const jinaResp = await fetch(`https://r.jina.ai/${targetUrl}`, {
+                    headers: { 'Accept': 'text/plain' }
+                });
+                if (jinaResp.ok) {
+                    const txt = await jinaResp.text();
+                    if (txt && txt.length > 150) return txt.slice(0, 14000);
+                }
+            } catch (_) {}
+
+            // Próba 2: AllOrigins CORS Proxy
+            const proxyResp = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`);
+            if (!proxyResp.ok) throw new Error("Nie udało się pobrać strony z linku.");
+            const data = await proxyResp.json();
+            const docParser = new DOMParser().parseFromString(data.contents || "", "text/html");
+            docParser.querySelectorAll("script, style, nav, footer, header, aside").forEach(el => el.remove());
+            const cleanText = (docParser.body?.innerText || "").replace(/\s+/g, " ").trim();
+            if (cleanText.length < 100) throw new Error("Strona jest pusta lub zablokowana.");
+            return cleanText.slice(0, 14000);
+        }
+
+        window.importRecipeFromUrl = async () => {
+            const urlInput = document.getElementById('ai-recipe-url');
+            const rawUrl = urlInput.value.trim();
+            if (!rawUrl || !/^https?:\/\//i.test(rawUrl)) {
+                showToast("Wklej poprawny link zaczynający się od https://...", "warning");
+                return;
+            }
+
+            const btn = document.getElementById('btn-fetch-url');
+            const origText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = `<span class="animate-spin inline-block w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full"></span> Pobieram...`;
+
+            try {
+                const pageContent = await fetchWebpageReadableText(rawUrl);
+                document.getElementById('ai-recipe-prompt').value = `Źródło: ${rawUrl}\n\n${pageContent}`;
+                showToast("Pobrano treść przepisu ze strony! Przetwarzam...");
+                await generateRecipeWithAI();
+                urlInput.value = '';
+            } catch (err) {
+                console.error("Błąd pobierania linku:", err);
+                showToast("Nie udało się automatycznie pobrać strony — wklej tekst przepisu w pole poniżej lub użyj Formularza Ręcznego.", "warning");
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = origText;
+            }
+        };
+
         window.generateRecipeWithAI = async () => {
             const promptText = document.getElementById('ai-recipe-prompt').value.trim();
             if (!promptText) {
-                showToast("Wpisz nazwę dania lub wklej przepis!", "warning");
+                showToast("Wklej link, wpisz nazwę dania lub wklej przepis!", "warning");
                 return;
+            }
+
+            // Jeśli użytkownik wkleił sam link w pole tekstowe zamiast w pole URL wyżej
+            if (/^https?:\/\/\S+$/i.test(promptText)) {
+                document.getElementById('ai-recipe-url').value = promptText;
+                document.getElementById('ai-recipe-prompt').value = '';
+                return importRecipeFromUrl();
             }
 
             const btn = document.getElementById('btn-generate-recipe-ai');
@@ -1841,7 +2242,7 @@ Zwróć JSON: {"fixedName": "Poprawna polska nazwa", "query": "fraza do wyszukiw
             btn.disabled = true;
             btn.innerHTML = `<span class="animate-spin inline-block w-4 h-4 border-2 border-slate-950 border-t-transparent rounded-full"></span> <span>AI tworzy przepis...</span>`;
 
-            const systemPrompt = `Jesteś polskim szefem kuchni. Stwórz ustrukturyzowany przepis po polsku na podstawie podanego opisu z realistycznymi cenami składników w zł.`;
+            const systemPrompt = `Jesteś polskim szefem kuchni. Wyciągnij lub stwórz ustrukturyzowany przepis po polsku na podstawie podanego tekstu/strony z realistycznymi cenami składników w zł.`;
 
             const payload = {
                 contents: [{ parts: [{ text: promptText }] }],
@@ -1876,6 +2277,8 @@ Zwróć JSON: {"fixedName": "Poprawna polska nazwa", "query": "fraza do wyszukiw
             };
 
             try {
+                if (!apiKey) throw new Error("Brak klucza Gemini API w index.html");
+
                 const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -1893,7 +2296,13 @@ Zwróć JSON: {"fixedName": "Poprawna polska nazwa", "query": "fraza do wyszukiw
                 showToast(`Dodano przepis: ${newRecipe.title}!`);
             } catch (err) {
                 console.error("Błąd AI:", err);
-                showToast("Przełącz na Formularz Ręczny, aby dodać przepis bezpośrednio.", "warning");
+                // Jeśli mamy pobrany tekst ze strony, przenosimy go od razu do formularza ręcznego
+                const firstLine = promptText.split('\n').find(l => l.trim() && !l.startsWith('Źródło:')) || '';
+                if (firstLine) {
+                    document.getElementById('man-title').value = firstLine.replace(/^#+\s*/, '').slice(0, 70);
+                    document.getElementById('man-steps').value = promptText.slice(0, 1500);
+                }
+                showToast("Przełączono na Formularz Ręczny (uzupełnij klucz Gemini API w index.html, aby parsować linki jednym kliknięciem).", "warning");
                 setAddRecipeMode('manual');
             } finally {
                 btn.disabled = false;
@@ -2016,7 +2425,10 @@ Zwróć JSON: {"fixedName": "Poprawna polska nazwa", "query": "fraza do wyszukiw
             checkedItems.forEach(item => {
                 const cleanName = item.baseName || item.name.replace(/\(.*?\)/g, '').trim();
                 const key = window.normalizeKey(cleanName);
-                window.appState.pantry[key] = true;
+                const existing = window.getPantryEntry(key);
+                window.appState.pantry[key] = existing
+                    ? { ...existing, qty: Number((existing.qty + 1).toFixed(2)) }
+                    : { qty: 1, unit: 'szt.', location: 'Spiżarnia' };
             });
 
             window.appState.shopping = window.appState.shopping.filter(s => !s.checked);
