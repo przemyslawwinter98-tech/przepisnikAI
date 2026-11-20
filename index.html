@@ -591,6 +591,48 @@
                     </form>
 
                     <div id="shopping-list-container" class="space-y-4"></div>
+
+                    <!-- HISTORIA ZAKUPÓW (TYDZIEŃ, MIESIĄC, POSZCZEGÓLNE ZAKUPY) -->
+                    <div class="pt-4 border-t border-slate-800 space-y-4">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                            <div>
+                                <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                                    <span>🧾 Historia Zakupów & Wydatki</span>
+                                </h3>
+                                <p class="text-xs text-slate-400">Automatycznie zapisuje się tutaj każdy paragon ze skanera AI oraz zakupy przeniesione z listy do spiżarni.</p>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <div class="bg-[#1e293b] p-4 rounded-2xl border border-slate-800">
+                                <p class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Wydatki w tym tygodniu</p>
+                                <p id="shop-stat-week" class="text-2xl font-extrabold text-emerald-400 mt-1">0.00 zł</p>
+                                <p id="shop-stat-week-count" class="text-[11px] text-slate-500 mt-0.5">0 zakupów (ostatnie 7 dni)</p>
+                            </div>
+                            <div class="bg-[#1e293b] p-4 rounded-2xl border border-slate-800">
+                                <p class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Wydatki w tym miesiącu</p>
+                                <p id="shop-stat-month" class="text-2xl font-extrabold text-sky-400 mt-1">0.00 zł</p>
+                                <p id="shop-stat-month-count" class="text-[11px] text-slate-500 mt-0.5">0 zakupów w bieżącym miesiącu</p>
+                            </div>
+                            <div class="bg-[#1e293b] p-4 rounded-2xl border border-slate-800">
+                                <p class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Łącznie wszystkie zakupy</p>
+                                <p id="shop-stat-all" class="text-2xl font-extrabold text-amber-400 mt-1">0.00 zł</p>
+                                <p id="shop-stat-all-count" class="text-[11px] text-slate-500 mt-0.5">0 zapisanych wizyt w sklepie</p>
+                            </div>
+                        </div>
+
+                        <div class="bg-[#1e293b] rounded-2xl border border-slate-800 p-5 space-y-3">
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                <h4 class="text-sm font-bold text-white">Poszczególne zakupy (kliknij, aby rozwinąć listę produktów)</h4>
+                                <select id="shop-history-filter" onchange="renderShoppingHistory()" class="px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-700 text-xs text-slate-200">
+                                    <option value="all">Wszystkie zakupy</option>
+                                    <option value="week">Ostatni tydzień (7 dni)</option>
+                                    <option value="month">Bieżący miesiąc</option>
+                                </select>
+                            </div>
+                            <div id="shopping-history-list" class="space-y-2.5"></div>
+                        </div>
+                    </div>
                 </section>
 
                 <!-- ================= ZAKŁADKA 7: HISTORIA & KOSZT PORCJI ================= -->
@@ -911,6 +953,7 @@
             pantry: {},
             freezer: [],
             shopping: [],
+            shoppingHistory: [],
             reviews: [],
             currentFilter: 'all',
             unsubKitchen: null,
@@ -1386,6 +1429,7 @@
                     },
                     freezer: [],
                     shopping: [],
+                    shoppingHistory: [],
                     reviews: [],
                     pendingScraper: {},
                     geminiApiKey: ""
@@ -1562,6 +1606,7 @@
                 window.appState.pantry = data.pantry || {};
                 window.appState.freezer = Array.isArray(data.freezer) ? data.freezer : [];
                 window.appState.shopping = data.shopping || [];
+                window.appState.shoppingHistory = Array.isArray(data.shoppingHistory) ? data.shoppingHistory : [];
                 window.appState.reviews = data.reviews || [];
                 window.appState.pendingScraper = data.pendingScraper || {};
                 window.appState.scraperUpdatedAt = data.lastScraped || null;
@@ -1594,6 +1639,7 @@
                     pantry: window.appState.pantry,
                     freezer: window.appState.freezer,
                     shopping: window.appState.shopping,
+                    shoppingHistory: window.appState.shoppingHistory,
                     reviews: window.appState.reviews,
                     pendingScraper: window.appState.pendingScraper,
                     geminiApiKey: window.appState.geminiApiKey || "",
@@ -2707,6 +2753,21 @@ BARDZO WAŻNE ZASADY:
                 }
             });
 
+            const receiptTotal = selected.reduce((sum, item) => sum + Number((item.unitPrice * item.purchasedQty).toFixed(2)), 0);
+            const storeName = selected[0]?.store || "Paragon AI";
+            window.appState.shoppingHistory.unshift({
+                id: 'shist_' + Date.now(),
+                timestamp: new Date().toISOString(),
+                date: new Date().toLocaleDateString('pl-PL'),
+                source: `📸 ${storeName}`,
+                total: Number(receiptTotal.toFixed(2)),
+                items: selected.map(item => ({
+                    name: item.name,
+                    qty: `${item.purchasedQty} ${item.pantryUnit}`,
+                    price: Number((item.unitPrice * item.purchasedQty).toFixed(2))
+                }))
+            });
+
             window.appState.scannedReceiptItems = [];
             document.getElementById('receipt-review-panel').classList.add('hidden');
             await saveKitchenChanges();
@@ -3568,9 +3629,23 @@ BARDZO WAŻNE ZASADY:
                     : { qty: 1, unit: 'szt.', location: 'Spiżarnia' };
             });
 
+            const basketTotal = checkedItems.reduce((sum, item) => sum + (Number(item.price) || 0), 0);
+            window.appState.shoppingHistory.unshift({
+                id: 'shist_' + Date.now(),
+                timestamp: new Date().toISOString(),
+                date: new Date().toLocaleDateString('pl-PL'),
+                source: '🛒 Lista Zakupów',
+                total: Number(basketTotal.toFixed(2)),
+                items: checkedItems.map(item => ({
+                    name: item.name,
+                    qty: '1 szt.',
+                    price: Number((Number(item.price) || 0).toFixed(2))
+                }))
+            });
+
             window.appState.shopping = window.appState.shopping.filter(s => !s.checked);
             await saveKitchenChanges();
-            showToast(`Przeniesiono ${checkedItems.length} produktów do Spiżarni!`);
+            showToast(`Przeniesiono ${checkedItems.length} produktów do Spiżarni i zapisano w Historii Zakupów (${basketTotal.toFixed(2)} zł)!`);
         };
 
         window.clearCheckedShopping = async () => {
@@ -3618,6 +3693,100 @@ BARDZO WAŻNE ZASADY:
                     </div>
                 </div>
             `).join('');
+        };
+
+        window.deleteShoppingHistoryEntry = async (entryId) => {
+            if (!confirm("Usunąć ten wpis z historii zakupów?")) return;
+            window.appState.shoppingHistory = (window.appState.shoppingHistory || []).filter(h => h.id !== entryId);
+            await saveKitchenChanges();
+            showToast("Usunięto wpis z historii zakupów.");
+        };
+
+        window.renderShoppingHistory = () => {
+            const listEl = document.getElementById('shopping-history-list');
+            const filter = document.getElementById('shop-history-filter')?.value || 'all';
+            if (!listEl) return;
+
+            const history = window.appState.shoppingHistory || [];
+            const now = new Date();
+            const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+            const currentMonth = now.getMonth();
+            const currentYear = now.getFullYear();
+
+            let weekSum = 0, weekCount = 0;
+            let monthSum = 0, monthCount = 0;
+            let allSum = 0;
+
+            history.forEach(entry => {
+                const amount = Number(entry.total) || 0;
+                allSum += amount;
+                const dt = entry.timestamp ? new Date(entry.timestamp) : null;
+                if (dt && !isNaN(dt.getTime())) {
+                    if (dt >= sevenDaysAgo) {
+                        weekSum += amount;
+                        weekCount++;
+                    }
+                    if (dt.getMonth() === currentMonth && dt.getFullYear() === currentYear) {
+                        monthSum += amount;
+                        monthCount++;
+                    }
+                }
+            });
+
+            document.getElementById('shop-stat-week').textContent = `${weekSum.toFixed(2)} zł`;
+            document.getElementById('shop-stat-week-count').textContent = `${weekCount} zakupów (ostatnie 7 dni)`;
+            document.getElementById('shop-stat-month').textContent = `${monthSum.toFixed(2)} zł`;
+            document.getElementById('shop-stat-month-count').textContent = `${monthCount} zakupów w tym miesiącu`;
+            document.getElementById('shop-stat-all').textContent = `${allSum.toFixed(2)} zł`;
+            document.getElementById('shop-stat-all-count').textContent = `${history.length} zapisanych wizyt w sklepie`;
+
+            const filtered = history.filter(entry => {
+                if (filter === 'all') return true;
+                const dt = entry.timestamp ? new Date(entry.timestamp) : null;
+                if (!dt || isNaN(dt.getTime())) return false;
+                if (filter === 'week') return dt >= sevenDaysAgo;
+                if (filter === 'month') return dt.getMonth() === currentMonth && dt.getFullYear() === currentYear;
+                return true;
+            });
+
+            if (filtered.length === 0) {
+                listEl.innerHTML = `<p class="text-xs text-slate-400 italic py-4 text-center">Brak zapisanych zakupów w wybranym okresie. Zeskanuj paragon w zakładce Cennik lub przenieś odhaczone zakupy do Spiżarni.</p>`;
+                return;
+            }
+
+            listEl.innerHTML = filtered.map(entry => {
+                const items = Array.isArray(entry.items) ? entry.items : [];
+                const timeStr = entry.timestamp ? new Date(entry.timestamp).toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' }) : '';
+                return `
+                <details class="group rounded-xl bg-slate-950/90 border border-slate-800 hover:border-slate-700 transition-all">
+                    <summary class="list-none cursor-pointer p-3.5 flex items-center justify-between gap-3">
+                        <div class="flex items-center gap-3 min-w-0">
+                            <span class="text-slate-400 group-open:rotate-90 transition-transform text-xs">▶</span>
+                            <div class="min-w-0">
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <span class="text-xs font-bold text-white">${entry.source || 'Zakupy'}</span>
+                                    <span class="text-[11px] text-slate-400">${entry.date || ''} ${timeStr}</span>
+                                    <span class="px-2 py-0.5 rounded bg-slate-800 text-slate-300 text-[10px] font-semibold">${items.length} prod.</span>
+                                </div>
+                                <p class="text-[11px] text-slate-400 truncate mt-0.5">${items.map(i => i.name).join(', ')}</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3 shrink-0">
+                            <span class="text-sm sm:text-base font-extrabold text-emerald-400 font-mono">${Number(entry.total || 0).toFixed(2)} zł</span>
+                            <button type="button" onclick="event.preventDefault(); deleteShoppingHistoryEntry('${entry.id}')" title="Usuń wpis" class="text-slate-500 hover:text-red-400 text-xs px-1.5 py-1">✕</button>
+                        </div>
+                    </summary>
+                    <div class="px-4 pb-3.5 pt-2 border-t border-slate-800/80 space-y-1.5">
+                        ${items.map(it => `
+                            <div class="flex items-center justify-between text-xs text-slate-300">
+                                <span>• ${it.name} <span class="text-slate-500">(${it.qty || '1 szt.'})</span></span>
+                                <span class="font-mono font-semibold text-slate-200">${Number(it.price || 0).toFixed(2)} zł</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                </details>
+                `;
+            }).join('');
         };
 
         // ================= RECENZJE, WALIDACJA SPIŻARNI & ROZLICZENIE KOSZTÓW =================
@@ -3770,6 +3939,7 @@ BARDZO WAŻNE ZASADY:
             renderTrackedProducts();
             renderVerifyScraper();
             renderShoppingList();
+            renderShoppingHistory();
             renderReviewsAndStats();
             updateBadges();
         };
