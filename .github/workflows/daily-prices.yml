@@ -1,0 +1,35 @@
+name: Codzienny Scraper Cen (Frisco & Gazetki)
+
+on:
+  schedule:
+    # Uruchamia się codziennie o 05:00 UTC (06:00 / 07:00 czasu polskiego)
+    - cron: '0 5 * * *'
+  # Pozwala uruchomić robota ręcznie jednym przyciskiem w zakładce Actions na GitHubie
+  workflow_dispatch:
+
+jobs:
+  run-scraper:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Pobranie kodu z repozytorium
+        uses: actions/checkout@v4
+
+      - name: Konfiguracja środowiska Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Instalacja zależności
+        run: |
+          pip install -r requirements.txt
+
+      - name: Uruchomienie robota cenowego
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          # Upewnij się, że HOUSEHOLD_ID zgadza się z Waszym Kodem Domu w aplikacji i regułach Firestore!
+          HOUSEHOLD_ID: ${{ secrets.HOUSEHOLD_ID || 'KUCHNIA-2026' }}
+          # Opcjonalny klucz Gemini API do filtrowania śmieciowych dopasowań w scraperze
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          python scraper.py
