@@ -39,9 +39,9 @@
     <div id="toast-container" class="fixed top-4 right-4 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none px-4 md:px-0"></div>
 
     <!-- ===================================================================== -->
-    <!-- WIDOK A: EKRAN POWITALNY (WYBÓR / TWORZENIE KUCHNI)                   -->
+    <!-- WIDOK A: EKRAN POWITALNY (DOMYŚLNIE WIDOCZNY, ŻEBY NIGDY NIE BYŁO SZAREGO EKRANU) -->
     <!-- ===================================================================== -->
-    <div id="view-welcome" class="hidden min-h-screen flex flex-col items-center justify-center p-4 bg-gradient-to-b from-slate-950 via-[#0f172a] to-slate-950">
+    <div id="view-welcome" class="min-h-screen flex flex-col items-center justify-center p-4 bg-gradient-to-b from-slate-950 via-[#0f172a] to-slate-950">
         <div class="max-w-lg w-full space-y-6">
             <div class="text-center space-y-2">
                 <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-xl shadow-emerald-500/20 mx-auto">
@@ -133,7 +133,7 @@
                 </form>
             </div>
 
-            <!-- Lista wszystkich kuchni (widoczna po zalogowaniu) -->
+            <!-- Lista wszystkich kuchni i sugestii (widoczna po zalogowaniu) -->
             <div id="admin-dashboard-box" class="hidden space-y-5">
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div class="bg-[#1e293b] p-4 rounded-2xl border border-slate-800">
@@ -593,6 +593,32 @@
                     <div id="shopping-list-container" class="space-y-4"></div>
                 </section>
 
+                <!-- ================= ZAKŁADKA 7: HISTORIA & KOSZT PORCJI ================= -->
+                <section id="tab-reviews" class="hidden space-y-6">
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div class="bg-[#1e293b] p-5 rounded-2xl border border-slate-800">
+                            <p class="text-xs font-semibold uppercase tracking-wider text-slate-400">Średni koszt 1 porcji / os.</p>
+                            <p id="stat-avg-portion" class="text-2xl sm:text-3xl font-extrabold text-emerald-400 mt-1">0.00 zł</p>
+                            <p class="text-xs text-slate-500 mt-1">Na podstawie Waszych paragonów</p>
+                        </div>
+                        <div class="bg-[#1e293b] p-5 rounded-2xl border border-slate-800">
+                            <p class="text-xs font-semibold uppercase tracking-wider text-slate-400">Ugotowane porcje (dla 2 os.)</p>
+                            <p id="stat-total-portions" class="text-2xl sm:text-3xl font-extrabold text-white mt-1">0 porcji</p>
+                            <p id="stat-total-dinners" class="text-xs text-slate-500 mt-1">0 pełnych obiadów dla dwojga</p>
+                        </div>
+                        <div class="bg-[#1e293b] p-5 rounded-2xl border border-slate-800">
+                            <p class="text-xs font-semibold uppercase tracking-wider text-slate-400">Wydano łącznie (rozliczone)</p>
+                            <p id="stat-total-spent" class="text-2xl sm:text-3xl font-extrabold text-amber-400 mt-1">0.00 zł</p>
+                            <p class="text-xs text-slate-500 mt-1">Zamiast jedzenia na mieście</p>
+                        </div>
+                    </div>
+
+                    <div class="bg-[#1e293b] rounded-2xl border border-slate-800 p-5">
+                        <h3 class="text-lg font-bold text-white mb-4">Dziennik Ugotowanych Dań & Recenzji</h3>
+                        <div id="reviews-history-list" class="space-y-3"></div>
+                    </div>
+                </section>
+
                 <!-- ================= ZAKŁADKA 8: SUGESTIE ZMIAN I POMYSŁY ================= -->
                 <section id="tab-feedback" class="hidden space-y-6">
                     <div class="bg-gradient-to-br from-indigo-950/80 via-[#1e293b] to-[#1e293b] rounded-2xl border border-indigo-500/40 p-5 sm:p-6 shadow-xl">
@@ -631,32 +657,6 @@
                     <div class="bg-[#1e293b] rounded-2xl border border-slate-800 p-5 space-y-3">
                         <h3 class="text-base font-bold text-white">Twoje wysłane sugestie z tej kuchni</h3>
                         <div id="user-feedback-history" class="space-y-2.5"></div>
-                    </div>
-                </section>
-
-                <!-- ================= ZAKŁADKA 7: HISTORIA & KOSZT PORCJI ================= -->
-                <section id="tab-reviews" class="hidden space-y-6">
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                        <div class="bg-[#1e293b] p-5 rounded-2xl border border-slate-800">
-                            <p class="text-xs font-semibold uppercase tracking-wider text-slate-400">Średni koszt 1 porcji / os.</p>
-                            <p id="stat-avg-portion" class="text-2xl sm:text-3xl font-extrabold text-emerald-400 mt-1">0.00 zł</p>
-                            <p class="text-xs text-slate-500 mt-1">Na podstawie Waszych paragonów</p>
-                        </div>
-                        <div class="bg-[#1e293b] p-5 rounded-2xl border border-slate-800">
-                            <p class="text-xs font-semibold uppercase tracking-wider text-slate-400">Ugotowane porcje (dla 2 os.)</p>
-                            <p id="stat-total-portions" class="text-2xl sm:text-3xl font-extrabold text-white mt-1">0 porcji</p>
-                            <p id="stat-total-dinners" class="text-xs text-slate-500 mt-1">0 pełnych obiadów dla dwojga</p>
-                        </div>
-                        <div class="bg-[#1e293b] p-5 rounded-2xl border border-slate-800">
-                            <p class="text-xs font-semibold uppercase tracking-wider text-slate-400">Wydano łącznie (rozliczone)</p>
-                            <p id="stat-total-spent" class="text-2xl sm:text-3xl font-extrabold text-amber-400 mt-1">0.00 zł</p>
-                            <p class="text-xs text-slate-500 mt-1">Zamiast jedzenia na mieście</p>
-                        </div>
-                    </div>
-
-                    <div class="bg-[#1e293b] rounded-2xl border border-slate-800 p-5">
-                        <h3 class="text-lg font-bold text-white mb-4">Dziennik Ugotowanych Dań & Recenzji</h3>
-                        <div id="reviews-history-list" class="space-y-3"></div>
                     </div>
                 </section>
 
@@ -1414,6 +1414,10 @@
                 window.appState.unsubPublicRecipes();
                 window.appState.unsubPublicRecipes = null;
             }
+            if (window.appState.unsubMyFeedback) {
+                window.appState.unsubMyFeedback();
+                window.appState.unsubMyFeedback = null;
+            }
             localStorage.removeItem('kodKuchni');
             window.appState.kitchenCode = '';
             document.getElementById('welcome-join-code').value = '';
@@ -1488,7 +1492,6 @@
             }
         };
 
-        // Zapisuje przepis z publicznej bazy społeczności do własnej kuchni użytkownika
         window.saveCommunityRecipeToMyKitchen = async (publicDocId) => {
             const pub = (window.appState.publicRecipes || []).find(p => p.publicId === publicDocId);
             if (!pub) return;
@@ -1614,6 +1617,10 @@
                 window.appState.unsubAdminList();
                 window.appState.unsubAdminList = null;
             }
+            if (window.appState.unsubAdminFeedback) {
+                window.appState.unsubAdminFeedback();
+                window.appState.unsubAdminFeedback = null;
+            }
             if (window.appState.kitchenCode) {
                 connectToActiveKitchen(window.appState.kitchenCode);
             } else {
@@ -1667,6 +1674,10 @@
                 if (window.appState.unsubAdminList) {
                     window.appState.unsubAdminList();
                     window.appState.unsubAdminList = null;
+                }
+                if (window.appState.unsubAdminFeedback) {
+                    window.appState.unsubAdminFeedback();
+                    window.appState.unsubAdminFeedback = null;
                 }
             }
         });
@@ -1933,7 +1944,7 @@
 
         // ================= NORMALIZACJA NAZW I INTELIGENTNE DOPASOWANIE SKŁADNIKÓW =================
         window.stripDiacritics = (str) => String(str || '').toLowerCase().trim()
-            .normalize("NFD").replace(/[̀-ͯ]/g, "")
+            .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
             .replace(/ł/g, "l");
 
         window.normalizeKey = (str) => {
@@ -2863,6 +2874,7 @@ BARDZO WAŻNE ZASADY:
             listEl.innerHTML = items.map(([prodKey, item]) => {
                 const key = window.normalizeKey(item.name || prodKey);
                 const detected = Number(item.detectedPrice || 0);
+                const safeProdKey = prodKey.replace(/'/g, "\\\\'");
                 return `
                 <div class="bg-[#1e293b] rounded-2xl border border-slate-800 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div>
@@ -2872,8 +2884,8 @@ BARDZO WAŻNE ZASADY:
                     </div>
                     <div class="flex items-center gap-2 shrink-0">
                         <input type="number" step="0.01" id="verify-price-${key}" value="${detected.toFixed(2)}" class="w-24 px-2.5 py-1.5 rounded-lg bg-slate-950 border border-emerald-500/50 text-sm font-mono font-bold text-emerald-400 text-right">
-                        <button onclick="approveScraperItem('${prodKey.replace(/'/g, "'")}')" class="px-3.5 py-2 rounded-xl bg-emerald-500 text-slate-950 font-bold text-xs">✓ Cennik</button>
-                        <button onclick="rejectScraperItem('${prodKey.replace(/'/g, "'")}')" class="px-3 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs">✕</button>
+                        <button onclick="approveScraperItem('${safeProdKey}')" class="px-3.5 py-2 rounded-xl bg-emerald-500 text-slate-950 font-bold text-xs">✓ Cennik</button>
+                        <button onclick="rejectScraperItem('${safeProdKey}')" class="px-3 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs">✕</button>
                     </div>
                 </div>
                 `;
@@ -2992,7 +3004,6 @@ BARDZO WAŻNE ZASADY:
                 sharedPublicDocId: `${window.appState.kitchenCode}_${r.id}`
             }));
 
-            // Przepisy z innych kuchni (pomijamy własne, bo już są w localRecs)
             const otherCommunityRecs = (window.appState.publicRecipes || [])
                 .filter(p => p.sourceKitchen !== window.appState.kitchenCode)
                 .map(p => ({ ...p, id: p.publicId, isPublicCommunity: true }));
@@ -3241,14 +3252,14 @@ BARDZO WAŻNE ZASADY:
             const data = await proxyResp.json();
             const docParser = new DOMParser().parseFromString(data.contents || "", "text/html");
             docParser.querySelectorAll("script, style, nav, footer, header, aside").forEach(el => el.remove());
-            const cleanText = (docParser.body?.innerText || "").replace(/\n{3,}/g, "\\n\\n").trim();
+            const cleanText = (docParser.body?.innerText || "").replace(/\n{3,}/g, "\n\n").trim();
             if (cleanText.length < 100) throw new Error("Strona jest pusta lub zablokowana.");
             return cleanText.slice(0, 15000);
         }
 
         function parseRecipeLocallyFromText(rawText) {
             const lines = rawText
-                .split('\\n')
+                .split('\n')
                 .map(l => l.replace(/^#+\s*/, '').replace(/^\*+\s*/, '').replace(/^-\s*/, '').trim())
                 .filter(l => l && !l.startsWith('Title:') && !l.startsWith('URL Source:') && !l.startsWith('Markdown Content:') && !l.startsWith('Źródło:') && !l.startsWith('!['));
 
@@ -3269,7 +3280,7 @@ BARDZO WAŻNE ZASADY:
 
             if (ingLines.length === 0) {
                 for (const line of lines.slice(1, 35)) {
-                    if (line.length < 75 && /(\d+\s*(g|kg|ml|l|szt|łyżk|łyżeczk|szklank|puszk|ząbk|opak))/i.test(line)) ingLines.push(line);
+                    if (line.length < 75 && /\b(\d+\s*(g|kg|ml|l|szt|łyżk|łyżeczk|szklank|puszk|ząbk|opak))\b/i.test(line)) ingLines.push(line);
                 }
             }
 
@@ -3286,8 +3297,8 @@ BARDZO WAŻNE ZASADY:
             const formattedSteps = stepLines.length > 0 ? stepLines.slice(0, 12) : lines.slice(1, 8).filter(l => l.length > 25);
             return {
                 title,
-                ingredientsText: formattedIngredients.join('\\n'),
-                stepsText: (formattedSteps.length > 0 ? formattedSteps : ["Przygotuj składniki według opisu ze strony."]).join('\\n')
+                ingredientsText: formattedIngredients.join('\n'),
+                stepsText: (formattedSteps.length > 0 ? formattedSteps : ["Przygotuj składniki według opisu ze strony."]).join('\n')
             };
         }
 
@@ -3306,7 +3317,7 @@ BARDZO WAŻNE ZASADY:
 
             try {
                 const pageContent = await fetchWebpageReadableText(rawUrl);
-                document.getElementById('ai-recipe-prompt').value = `Źródło: ${rawUrl}\\n\\n${pageContent}`;
+                document.getElementById('ai-recipe-prompt').value = `Źródło: ${rawUrl}\n\n${pageContent}`;
                 showToast("Pobrano treść przepisu ze strony! Przetwarzam...");
                 await generateRecipeWithAI();
                 urlInput.value = '';
@@ -3420,8 +3431,8 @@ BARDZO WAŻNE ZASADY:
             const category = document.getElementById('man-category').value;
             const time = Number(document.getElementById('man-time').value) || 25;
             const portions = Number(document.getElementById('man-portions').value) || 4;
-            const rawIngs = document.getElementById('man-ingredients').value.trim().split('\\n');
-            const steps = document.getElementById('man-steps').value.trim().split('\\n').filter(Boolean);
+            const rawIngs = document.getElementById('man-ingredients').value.trim().split('\n');
+            const steps = document.getElementById('man-steps').value.trim().split('\n').filter(Boolean);
             const sharePublic = document.getElementById('man-recipe-share-public').checked;
 
             const ingredients = rawIngs.map(line => {
@@ -3807,7 +3818,6 @@ BARDZO WAŻNE ZASADY:
         };
         window.closeModal = (id) => document.getElementById(id).classList.add('hidden');
 
-        // Zapisuje nową widoczną nazwę kuchni, klucz AI oraz aktualizuje podpis autora w udostępnionych przepisach!
         window.saveKitchenAiSettings = async (e) => {
             e.preventDefault();
             const newLabel = document.getElementById('input-kitchen-label').value.trim() || "Wspólna Kuchnia";
@@ -3822,7 +3832,6 @@ BARDZO WAŻNE ZASADY:
 
             await saveKitchenChanges();
 
-            // Zaktualizuj też pole "sharedBy" we wszystkich przepisach udostępnionych przez tę kuchnię
             const myPublicRecipes = (window.appState.publicRecipes || []).filter(
                 p => p.sourceKitchen === window.appState.kitchenCode
             );
@@ -3838,7 +3847,7 @@ BARDZO WAŻNE ZASADY:
         };
 
         // ================= START APLIKACJI (ROUTING) =================
-        window.addEventListener('DOMContentLoaded', () => {
+        function initAppRouter() {
             if (window.location.hash === '#admin') {
                 openAdminView();
                 return;
@@ -3850,7 +3859,13 @@ BARDZO WAŻNE ZASADY:
             } else {
                 showOnlyTopView('view-welcome');
             }
-        });
+        }
+
+        if (document.readyState === 'loading') {
+            window.addEventListener('DOMContentLoaded', initAppRouter);
+        } else {
+            initAppRouter();
+        }
 
         window.addEventListener('hashchange', () => {
             if (window.location.hash === '#admin') {
