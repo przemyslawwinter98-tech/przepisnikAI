@@ -3418,6 +3418,29 @@ BARDZO WAŻNE ZASADY:
             `).join('');
         };
 
+        function formatPromoDateRangePl(validFrom, validTo) {
+            const fmt = (dStr) => {
+                if (!dStr) return '';
+                const parts = String(dStr).split('-');
+                if (parts.length === 3) return `${parts[2]}.${parts[1]}.${parts[0]}`;
+                return dStr;
+            };
+            const f = fmt(validFrom);
+            const t = fmt(validTo);
+            if (f && t) return `od ${f} do ${t}`;
+            if (t) return `do ${t}`;
+            if (f) return `od ${f}`;
+            return 'aktualna gazetka';
+        }
+
+        function getStoreBadgeStyle(storeName) {
+            const s = (storeName || '').toLowerCase();
+            if (s.includes('lidl')) return 'bg-blue-500/20 text-blue-300 border-blue-500/40';
+            if (s.includes('biedronka')) return 'bg-red-500/20 text-red-300 border-red-500/40';
+            if (s.includes('netto')) return 'bg-amber-500/20 text-amber-300 border-amber-500/40';
+            return 'bg-indigo-500/20 text-indigo-300 border-indigo-500/40';
+        }
+
         window.renderVerifyScraper = () => {
             const listEl = document.getElementById('verify-scraper-list');
             const items = Object.entries(window.appState.pendingScraper || {});
@@ -3432,20 +3455,48 @@ BARDZO WAŻNE ZASADY:
             }
 
             listEl.innerHTML = items.map(([prodKey, item]) => {
-                const key = window.normalizeKey(item.name || prodKey);
+                const cleanName = window.cleanGenericFoodName(item.name || prodKey);
+                const key = window.normalizeKey(cleanName);
                 const detected = Number(item.detectedPrice || 0);
-                const safeProdKey = prodKey.replace(/'/g, "\\\\'");
+                const safeProdKey = prodKey.replace(/'/g, "\\'");
+                const storeLabel = item.store || (item.source ? item.source.replace(/^Promocja\s+/i, '').split('(')[0].trim() : 'Gazetka');
+                const storeBadgeClass = getStoreBadgeStyle(storeLabel);
+                const dateRangeText = formatPromoDateRangePl(item.validFrom, item.validTo);
+                const existingPb = window.appState.pricebook[key];
+
                 return `
-                <div class="bg-[#1e293b] rounded-2xl border border-slate-800 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                    <div>
-                        <span class="px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 text-xs font-bold">${item.source || 'Scraper'}</span>
-                        <h4 class="text-base font-bold text-white mt-1">${item.name || prodKey}</h4>
-                        <p class="text-xs text-slate-400 font-mono mt-0.5">${item.rawText || ''}</p>
+                <div class="bg-[#1e293b] rounded-2xl border border-slate-800 hover:border-slate-700 p-4 flex flex-col lg:flex-row lg:items-center justify-between gap-4 transition-all">
+                    <div class="space-y-1.5 min-w-0 flex-1">
+                        <div class="flex flex-wrap items-center gap-2">
+                            <span class="px-2.5 py-0.5 rounded-lg border text-xs font-extrabold uppercase tracking-wide ${storeBadgeClass}">
+                                🏪 ${storeLabel}
+                            </span>
+                            <span class="px-2.5 py-0.5 rounded-lg bg-slate-900 border border-slate-700 text-xs font-semibold text-sky-300">
+                                📅 ${dateRangeText}
+                            </span>
+                            ${existingPb ? `<span class="text-[11px] text-slate-400">W cenniku: <strong class="text-slate-200">${Number(existingPb.price).toFixed(2)} zł</strong></span>` : '<span class="text-[11px] text-emerald-400 font-semibold">Nowy produkt</span>'}
+                        </div>
+
+                        <div class="flex items-center gap-2">
+                            <input type="text" id="verify-name-${key}" value="${cleanName}" class="bg-slate-950/80 border border-slate-700 focus:border-emerald-500 rounded-lg px-2.5 py-1 text-base font-bold text-white w-full max-w-xs focus:outline-none">
+                        </div>
+
+                        <p class="text-xs text-slate-400 truncate">
+                            Z gazetki: <span class="font-mono text-slate-300">${item.rawText || item.name || ''}</span>
+                            ${item.sourceUrl ? ` • <a href="${item.sourceUrl}" target="_blank" rel="noopener" class="text-indigo-400 hover:underline">Źródło ↗</a>` : ''}
+                        </p>
                     </div>
-                    <div class="flex items-center gap-2 shrink-0">
-                        <input type="number" step="0.01" id="verify-price-${key}" value="${detected.toFixed(2)}" class="w-24 px-2.5 py-1.5 rounded-lg bg-slate-950 border border-emerald-500/50 text-sm font-mono font-bold text-emerald-400 text-right">
-                        <button onclick="approveScraperItem('${safeProdKey}')" class="px-3.5 py-2 rounded-xl bg-emerald-500 text-slate-950 font-bold text-xs">✓ Cennik</button>
-                        <button onclick="rejectScraperItem('${safeProdKey}')" class="px-3 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs">✕</button>
+
+                    <div class="flex flex-wrap items-center justify-between sm:justify-end gap-2 shrink-0 pt-2 lg:pt-0 border-t lg:border-t-0 border-slate-800/80">
+                        <div class="flex items-center gap-1.5 bg-slate-950 px-2.5 py-1.5 rounded-xl border border-emerald-500/40">
+                            <span class="text-[11px] text-slate-400">Cena:</span>
+                            <input type="number" step="0.01" id="verify-price-${key}" value="${detected.toFixed(2)}" class="w-20 bg-transparent text-sm font-mono font-extrabold text-emerald-400 text-right focus:outline-none">
+                            <span class="text-xs text-slate-400">zł</span>
+                        </div>
+                        <div class="flex items-center gap-1.5">
+                            <button onclick="approveScraperItem('${safeProdKey}')" class="px-4 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs shadow-md shadow-emerald-500/15 transition-all">✓ Zatwierdź do Cennika</button>
+                            <button onclick="rejectScraperItem('${safeProdKey}')" title="Odrzuć" class="px-3 py-2.5 rounded-xl bg-slate-800 hover:bg-red-950/60 text-slate-300 hover:text-red-300 text-xs font-bold transition-all">✕</button>
+                        </div>
                     </div>
                 </div>
                 `;
@@ -3455,27 +3506,36 @@ BARDZO WAŻNE ZASADY:
         window.approveScraperItem = async (prodKey) => {
             const item = window.appState.pendingScraper[prodKey];
             if (!item) return;
-            const prodName = item.name || prodKey;
-            const key = window.normalizeKey(prodName);
-            const inputEl = document.getElementById(`verify-price-${key}`);
+            const rawProdName = item.name || prodKey;
+            const initialKey = window.normalizeKey(window.cleanGenericFoodName(rawProdName));
+            const nameEl = document.getElementById(`verify-name-${initialKey}`);
+            const finalName = window.cleanGenericFoodName(nameEl ? nameEl.value.trim() : rawProdName);
+            const key = window.normalizeKey(finalName);
+
+            const inputEl = document.getElementById(`verify-price-${initialKey}`);
             const finalPrice = inputEl ? parseFloat(inputEl.value) : Number(item.detectedPrice);
+            const storeLabel = item.store || (item.source ? item.source.replace(/^Promocja\s+/i, '').split('(')[0].trim() : 'Gazetka');
+            const dateRangeText = formatPromoDateRangePl(item.validFrom, item.validTo);
 
             if (!isNaN(finalPrice) && finalPrice > 0) {
                 const existing = window.appState.pricebook[key];
+                window.appState.deletedPricebookKeys = (window.appState.deletedPricebookKeys || []).filter(k => k !== key);
                 window.appState.pricebook[key] = {
-                    name: key === 'jajka' ? 'Jajka' : prodName,
+                    name: key === 'jajka' ? 'Jajka' : finalName,
                     unit: key === 'jajka' ? '10 szt.' : (existing ? existing.unit : "1 szt."),
                     category: existing ? existing.category : "Inne",
                     price: Number(finalPrice.toFixed(2)),
                     basePrice: Number(finalPrice.toFixed(2)),
                     promoPrice: Number(finalPrice.toFixed(2)),
-                    isPromo: false,
-                    store: item.source || "Scraper"
+                    isPromo: true,
+                    promoValidFrom: item.validFrom || null,
+                    promoValidTo: item.validTo || null,
+                    store: `${storeLabel} (${dateRangeText})`
                 };
             }
             delete window.appState.pendingScraper[prodKey];
             await saveKitchenChanges();
-            showToast(`Zatwierdzono do Cennika: ${prodName}`);
+            showToast(`Zatwierdzono do Cennika: <strong>${finalName}</strong> (${finalPrice.toFixed(2)} zł • ${storeLabel})`);
         };
 
         window.rejectScraperItem = async (prodKey) => {

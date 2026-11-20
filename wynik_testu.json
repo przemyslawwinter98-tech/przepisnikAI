@@ -1,0 +1,320 @@
+{
+  "total_offers": 901,
+  "matched_radar": {
+    "maslo": {
+      "name": "Masło",
+      "detectedPrice": 2.99,
+      "validFrom": "2026-11-19",
+      "validTo": "2026-11-25",
+      "source": "Promocja Biedronka (ważne: 2026-11-19 – 2026-11-25)",
+      "rawText": "Zobacz aktualna Masło ekstra z Polskiej Mleczarni — 2.99 zł (ważne: 2026-11-19 – 2026-11-25)",
+      "sourceUrl": "https://blix.pl/sklep/biedronka/gazetka/537453/"
+    },
+    "mleko": {
+      "name": "Mleko",
+      "detectedPrice": 1.98,
+      "validFrom": "2026-11-19",
+      "validTo": "2026-11-25",
+      "source": "Promocja Biedronka (ważne: 2026-11-19 – 2026-11-25)",
+      "rawText": "Zobacz aktualna Mleko UHT Mlekovita Łączka 3,2% — 1.98 zł (ważne: 2026-11-19 – 2026-11-25)",
+      "sourceUrl": "https://blix.pl/sklep/biedronka/gazetka/537453/"
+    },
+    "serek_wiejski": {
+      "name": "Serek wiejski",
+      "detectedPrice": 2.49,
+      "validFrom": "2026-11-16",
+      "validTo": "2026-11-21",
+      "source": "Promocja Biedronka (ważne: 2026-11-16 – 2026-11-21)",
+      "rawText": "Zobacz aktualna Serek wiejski Piątnica — 2.49 zł (ważne: 2026-11-16 – 2026-11-21)",
+      "sourceUrl": "https://blix.pl/sklep/biedronka/gazetka/536667/"
+    },
+    "piers_z_kurczaka": {
+      "name": "Pierś z kurczaka",
+      "detectedPrice": 2.49,
+      "validFrom": "2026-11-19",
+      "validTo": "2026-11-25",
+      "source": "Promocja Biedronka (ważne: 2026-11-19 – 2026-11-25)",
+      "rawText": "Zobacz aktualna Przyprawy Prymat przyprawa do kurczaka — 2.49 zł (ważne: 2026-11-19 – 2026-11-25)",
+      "sourceUrl": "https://blix.pl/sklep/biedronka/gazetka/537453/"
+    },
+    "mieso_mielone": {
+      "name": "Mięso mielone",
+      "detectedPrice": 7.99,
+      "validFrom": "2026-11-19",
+      "validTo": "2026-11-21",
+      "source": "Promocja Netto (ważne: 2026-11-19 – 2026-11-21)",
+      "rawText": "Zobacz aktualna Mięso mielone z nogi kurczaka Sztuka Mięsa — 7.99 zł (ważne: 2026-11-19 – 2026-11-21)",
+      "sourceUrl": "https://blix.pl/sklep/netto/gazetka/536244/"
+    },
+    "ryz": {
+      "name": "Ryż",
+      "detectedPrice": 2.79,
+      "validFrom": "2026-11-16",
+      "validTo": "2026-11-21",
+      "source": "Promocja Biedronka (ważne: 2026-11-16 – 2026-11-21)",
+      "rawText": "Zobacz aktualna Ryż brązowy Plony Natury — 2.79 zł (ważne: 2026-11-16 – 2026-11-21)",
+      "sourceUrl": "https://blix.pl/sklep/biedronka/gazetka/536667/"
+    },
+    "makaron": {
+      "name": "Makaron",
+      "detectedPrice": 3.99,
+      "validFrom": "2026-11-16",
+      "validTo": "2026-11-21",
+      "source": "Promocja Biedronka (ważne: 2026-11-16 – 2026-11-21)",
+      "rawText": "Zobacz aktualna Makaron protein świderki Go Active — 3.99 zł (ważne: 2026-11-16 – 2026-11-21)",
+      "sourceUrl": "https://blix.pl/sklep/biedronka/gazetka/536667/"
+    }
+  },
+  "sample_offers": [
+    {
+      "store": "Biedronka",
+      "raw_name": "Zobacz Komplet pościeli z polaru Smukee",
+      "generic_name": "Zobacz Komplet pościeli z polaru Smukee",
+      "price": 69.9,
+      "valid_from": null,
+      "valid_to": null,
+      "raw_text": "Zobacz Komplet pościeli z polaru Smukee 69,90 zł",
+      "source_url": "https://blix.pl/sklep/biedronka/"
+    },
+    {
+      "store": "Biedronka",
+      "raw_name": "Zobacz Czapka Puccini",
+      "generic_name": "Zobacz Czapka Puccini",
+      "price": 29.99,
+      "valid_from": null,
+      "valid_to": null,
+      "raw_text": "Zobacz Czapka Puccini 29,99 zł",
+      "source_url": "https://blix.pl/sklep/biedronka/"
+    },
+    {
+      "store": "Biedronka",
+      "raw_name": "Zobacz Prostownik automatyczny Blow",
+      "generic_name": "Zobacz Prostownik automatyczny Blow",
+      "price": 69.9,
+      "valid_from": null,
+      "valid_to": null,
+      "raw_text": "Zobacz Prostownik automatyczny Blow 69,90 zł",
+      "source_url": "https://blix.pl/sklep/biedronka/"
+    },
+    {
+      "store": "Biedronka",
+      "raw_name": "Zobacz Whiskey Jameson",
+      "generic_name": "Zobacz Whiskey Jameson",
+      "price": 69.99,
+      "valid_from": null,
+      "valid_to": null,
+      "raw_text": "Zobacz Whiskey Jameson 69,99 zł",
+      "source_url": "https://blix.pl/sklep/biedronka/"
+    },
+    {
+      "store": "Biedronka",
+      "raw_name": "Zobacz Fileciki z łososia Marinero Kids",
+      "generic_name": "Zobacz Fileciki z łososia Kids",
+      "price": 6.49,
+      "valid_from": null,
+      "valid_to": null,
+      "raw_text": "Zobacz Fileciki z łososia Marinero Kids 6,49 zł",
+      "source_url": "https://blix.pl/sklep/biedronka/"
+    },
+    {
+      "store": "Biedronka",
+      "raw_name": "Zobacz Polędwice z dorsza Marinero",
+      "generic_name": "Zobacz Polędwice z dorsza",
+      "price": 19.99,
+      "valid_from": null,
+      "valid_to": null,
+      "raw_text": "Zobacz Polędwice z dorsza Marinero 19,99 zł",
+      "source_url": "https://blix.pl/sklep/biedronka/"
+    },
+    {
+      "store": "Biedronka",
+      "raw_name": "Zobacz Szynka delikatesowa z kurczaka Kraina Wędlin",
+      "generic_name": "Zobacz Szynka delikatesowa z kurczaka Kraina Wędlin",
+      "price": 2.99,
+      "valid_from": null,
+      "valid_to": null,
+      "raw_text": "Zobacz Szynka delikatesowa z kurczaka Kraina Wędlin 2,99 zł",
+      "source_url": "https://blix.pl/sklep/biedronka/"
+    },
+    {
+      "store": "Biedronka",
+      "raw_name": "Zobacz Salami klasyczne Kraina Wędlin",
+      "generic_name": "Zobacz Salami klasyczne Kraina Wędlin",
+      "price": 5.99,
+      "valid_from": null,
+      "valid_to": null,
+      "raw_text": "Zobacz Salami klasyczne Kraina Wędlin 5,99 zł",
+      "source_url": "https://blix.pl/sklep/biedronka/"
+    },
+    {
+      "store": "Biedronka",
+      "raw_name": "Zobacz Schab z beskidzkiej wędzarni Kraina Wędlin",
+      "generic_name": "Zobacz Schab z beskidzkiej wędzarni Kraina Wędlin",
+      "price": 5.99,
+      "valid_from": null,
+      "valid_to": null,
+      "raw_text": "Zobacz Schab z beskidzkiej wędzarni Kraina Wędlin 5,99 zł",
+      "source_url": "https://blix.pl/sklep/biedronka/"
+    },
+    {
+      "store": "Biedronka",
+      "raw_name": "Zobacz Lasagne bolognese Donatello",
+      "generic_name": "Zobacz Lasagne bolognese Donatello",
+      "price": 15.99,
+      "valid_from": null,
+      "valid_to": null,
+      "raw_text": "Zobacz Lasagne bolognese Donatello 15,99 zł",
+      "source_url": "https://blix.pl/sklep/biedronka/"
+    },
+    {
+      "store": "Biedronka",
+      "raw_name": "Zobacz aktualna Sinsay Akcesoria zimowe damskie - od",
+      "generic_name": "Zobacz aktualna Sinsay Akcesoria zimowe damskie - od",
+      "price": 9.99,
+      "valid_from": "2026-11-19",
+      "valid_to": "2026-11-25",
+      "raw_text": "Zobacz aktualna Sinsay Akcesoria zimowe damskie - od 9,99 zł",
+      "source_url": "https://blix.pl/sklep/biedronka/gazetka/537453/"
+    },
+    {
+      "store": "Biedronka",
+      "raw_name": "Sinsay Akcesoria zimowe damskie - od",
+      "generic_name": "Sinsay Akcesoria zimowe damskie - od",
+      "price": 9.99,
+      "valid_from": "2026-11-19",
+      "valid_to": "2026-11-25",
+      "raw_text": "Sinsay Akcesoria zimowe damskie - od 9,99 zł",
+      "source_url": "https://blix.pl/sklep/biedronka/gazetka/537453/"
+    },
+    {
+      "store": "Biedronka",
+      "raw_name": "Zobacz aktualna Ser gouda w plastrach Światowid",
+      "generic_name": "Zobacz aktualna Ser gouda w plastrach Światowid",
+      "price": 16.99,
+      "valid_from": "2026-11-19",
+      "valid_to": "2026-11-25",
+      "raw_text": "Zobacz aktualna Ser gouda w plastrach Światowid 16,99 zł",
+      "source_url": "https://blix.pl/sklep/biedronka/gazetka/537453/"
+    },
+    {
+      "store": "Biedronka",
+      "raw_name": "Zobacz od dziś Banany",
+      "generic_name": "Zobacz od dziś Banany",
+      "price": 2.99,
+      "valid_from": "2026-11-19",
+      "valid_to": "2026-11-25",
+      "raw_text": "Zobacz od dziś Banany 2,99 zł",
+      "source_url": "https://blix.pl/sklep/biedronka/gazetka/537453/"
+    },
+    {
+      "store": "Biedronka",
+      "raw_name": "Zobacz aktualna Łopatka wieprzowa",
+      "generic_name": "Zobacz aktualna Łopatka wieprzowa",
+      "price": 10.99,
+      "valid_from": "2026-11-19",
+      "valid_to": "2026-11-25",
+      "raw_text": "Zobacz aktualna Łopatka wieprzowa 10,99 zł",
+      "source_url": "https://blix.pl/sklep/biedronka/gazetka/537453/"
+    },
+    {
+      "store": "Biedronka",
+      "raw_name": "Zobacz aktualna Pomidory na gałązce na wagę",
+      "generic_name": "Zobacz aktualna Pomidory na gałązce na wagę",
+      "price": 7.99,
+      "valid_from": "2026-11-19",
+      "valid_to": "2026-11-25",
+      "raw_text": "Zobacz aktualna Pomidory na gałązce na wagę 7,99 zł",
+      "source_url": "https://blix.pl/sklep/biedronka/gazetka/537453/"
+    },
+    {
+      "store": "Biedronka",
+      "raw_name": "Zobacz aktualna Masło ekstra z Polskiej Mleczarni",
+      "generic_name": "Masło",
+      "price": 2.99,
+      "valid_from": "2026-11-19",
+      "valid_to": "2026-11-25",
+      "raw_text": "Zobacz aktualna Masło ekstra z Polskiej Mleczarni 2,99 zł",
+      "source_url": "https://blix.pl/sklep/biedronka/gazetka/537453/"
+    },
+    {
+      "store": "Biedronka",
+      "raw_name": "Zobacz aktualna Masło Ekstra Polskie Mlekovita",
+      "generic_name": "Masło",
+      "price": 4.49,
+      "valid_from": "2026-11-19",
+      "valid_to": "2026-11-25",
+      "raw_text": "Zobacz aktualna Masło Ekstra Polskie Mlekovita 4,49 zł",
+      "source_url": "https://blix.pl/sklep/biedronka/gazetka/537453/"
+    },
+    {
+      "store": "Biedronka",
+      "raw_name": "Zobacz aktualna Mleko UHT Mlekovita Łączka 3,2%",
+      "generic_name": "Mleko",
+      "price": 1.98,
+      "valid_from": "2026-11-19",
+      "valid_to": "2026-11-25",
+      "raw_text": "Zobacz aktualna Mleko UHT Mlekovita Łączka 3,2% 1,98 zł",
+      "source_url": "https://blix.pl/sklep/biedronka/gazetka/537453/"
+    },
+    {
+      "store": "Biedronka",
+      "raw_name": "Zobacz aktualna Ser żółty gouda w plastrach Światowid",
+      "generic_name": "Zobacz aktualna Ser żółty gouda w plastrach Światowid",
+      "price": 16.99,
+      "valid_from": "2026-11-19",
+      "valid_to": "2026-11-25",
+      "raw_text": "Zobacz aktualna Ser żółty gouda w plastrach Światowid 16,99 zł",
+      "source_url": "https://blix.pl/sklep/biedronka/gazetka/537453/"
+    },
+    {
+      "store": "Biedronka",
+      "raw_name": "Zobacz aktualna Ser żółty edamski Światowid",
+      "generic_name": "Zobacz aktualna Ser żółty edamski Światowid",
+      "price": 3.75,
+      "valid_from": "2026-11-19",
+      "valid_to": "2026-11-25",
+      "raw_text": "Zobacz aktualna Ser żółty edamski Światowid 3,75 zł",
+      "source_url": "https://blix.pl/sklep/biedronka/gazetka/537453/"
+    },
+    {
+      "store": "Biedronka",
+      "raw_name": "Zobacz aktualna Świeży filet z łososia atlantyckiego Marinero",
+      "generic_name": "Zobacz aktualna Świeży filet z łososia atlantyckiego",
+      "price": 5.99,
+      "valid_from": "2026-11-19",
+      "valid_to": "2026-11-25",
+      "raw_text": "Zobacz aktualna Świeży filet z łososia atlantyckiego Marinero 5,99 zł",
+      "source_url": "https://blix.pl/sklep/biedronka/gazetka/537453/"
+    },
+    {
+      "store": "Biedronka",
+      "raw_name": "Zobacz aktualna Krewetki gotowane Marinero",
+      "generic_name": "Zobacz aktualna Krewetki gotowane",
+      "price": 15.99,
+      "valid_from": "2026-11-19",
+      "valid_to": "2026-11-25",
+      "raw_text": "Zobacz aktualna Krewetki gotowane Marinero 15,99 zł",
+      "source_url": "https://blix.pl/sklep/biedronka/gazetka/537453/"
+    },
+    {
+      "store": "Biedronka",
+      "raw_name": "Zobacz aktualna Czekolada Nussbeisser",
+      "generic_name": "Zobacz aktualna Czekolada Nussbeisser",
+      "price": 5.89,
+      "valid_from": "2026-11-19",
+      "valid_to": "2026-11-25",
+      "raw_text": "Zobacz aktualna Czekolada Nussbeisser 5,89 zł",
+      "source_url": "https://blix.pl/sklep/biedronka/gazetka/537453/"
+    },
+    {
+      "store": "Biedronka",
+      "raw_name": "Zobacz aktualna Kiwi",
+      "generic_name": "Zobacz aktualna Kiwi",
+      "price": 7.99,
+      "valid_from": "2026-11-19",
+      "valid_to": "2026-11-25",
+      "raw_text": "Zobacz aktualna Kiwi 7,99 zł",
+      "source_url": "https://blix.pl/sklep/biedronka/gazetka/537453/"
+    }
+  ]
+}
