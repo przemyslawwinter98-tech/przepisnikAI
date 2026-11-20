@@ -1949,20 +1949,21 @@
 
         window.normalizeKey = (str) => {
             const ascii = window.stripDiacritics(str)
-                .replace(/\(.*?\)/g, '')
-                .replace(/[^a-z0-9\s]/g, ' ')
+                .replace(/\(.*?\)/g, ' ')
+                .replace(/\b\d+(?:[.,]\d+)?\s*(?:kg|g|dag|ml|l|szt\.?|sztuk[ia]?|puszk[ia]?|opak\.?|sloik[ia]?|kromk[ia]?|zabk[iow]?|lyzk[ia]?|lyzeczk[ia]?|szklank[ia]?|porcj[aei]?)?\b/g, ' ')
+                .replace(/[^a-z\s]/g, ' ')
                 .replace(/\s+/g, ' ')
                 .trim();
 
             if (!ascii) return '';
 
-            if (/^(jajko|jajka|jaja|jajek|jaj)$/.test(ascii)) return 'jajka';
-            if (/^(cebula|cebule|cebuli|cebul|cebula biala|cebula czerwona)$/.test(ascii)) return 'cebula';
-            if (/^(czosnek|czosnku|zabek czosnku|zabki czosnku)$/.test(ascii)) return 'czosnek';
-            if (/^(ziemniak|ziemniaki|ziemniakow)$/.test(ascii)) return 'ziemniaki';
-            if (/^(pomidor|pomidory|pomidorow)$/.test(ascii) && !ascii.includes('krojon') && !ascii.includes('puszk')) return 'pomidory';
+            if (/\b(jajko|jajka|jaja|jajek|jaj)\b/.test(ascii)) return 'jajka';
+            if (/\b(cebula|cebule|cebuli|cebul|cebulka)\b/.test(ascii)) return 'cebula';
+            if (/\b(czosnek|czosnku|czosnkiem)\b/.test(ascii)) return 'czosnek';
+            if (/\b(ziemniak|ziemniaki|ziemniakow)\b/.test(ascii)) return 'ziemniaki';
+            if (/\b(pomidor|pomidory|pomidorow)\b/.test(ascii) && !ascii.includes('krojon') && !ascii.includes('puszk') && !ascii.includes('passat') && !ascii.includes('koncentrat')) return 'pomidory';
             if (ascii.includes('tunczyk')) return 'tunczyk';
-            if (ascii.includes('piers z kurczaka') || ascii.includes('filet z kurczaka') || ascii.includes('piersi z kurczaka')) return 'piers_z_kurczaka';
+            if (ascii.includes('piers z kurczaka') || ascii.includes('filet z kurczaka') || ascii.includes('piersi z kurczaka') || ascii === 'kurczak') return 'piers_z_kurczaka';
             if (ascii.includes('mieso mielone') || ascii.includes('miesa mielonego')) return 'mieso_mielone';
             if (ascii.includes('czerwona fasola') || ascii.includes('fasola czerwona')) return 'czerwona_fasola';
             if (ascii.includes('biala fasola') || ascii.includes('fasola biala')) return 'biala_fasola';
@@ -1979,7 +1980,20 @@
         };
 
         window.getPantryEntry = (key, allowZero = false) => {
-            const raw = window.appState.pantry[key];
+            const pantry = window.appState.pantry || {};
+            let raw = pantry[key];
+
+            // Jeśli pod dokładnym kluczem nie ma wpisu, przeszukaj wszystkie klucze w spiżarni po kanonicznej nazwie
+            if (raw === undefined || raw === null || raw === false) {
+                const canonTarget = window.normalizeKey(key);
+                for (const [k, v] of Object.entries(pantry)) {
+                    if (window.normalizeKey(k) === canonTarget && v !== undefined && v !== null && v !== false) {
+                        raw = v;
+                        break;
+                    }
+                }
+            }
+
             if (raw === undefined || raw === null || raw === false) return null;
             if (raw === true) return { qty: 1, unit: 'szt.', location: 'Spiżarnia' };
             if (typeof raw === 'object') {
