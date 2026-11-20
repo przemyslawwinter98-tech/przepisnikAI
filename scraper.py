@@ -1,397 +1,375 @@
 import os
-import json
 import re
-import unicodedata
-from difflib import SequenceMatcher
+import json
+import time
+import urllib.parse
 from datetime import datetime
-from bs4 import BeautifulSoup
-from playwright.sync_api import sync_playwright
+from difflib import SequenceMatcher
+import requests
 import firebase_admin
 from firebase_admin import credentials, firestore
-import requests
+from playwright.sync_api import sync_playwright
 
-# 1. Połączenie z Twoją bazą Firebase (klucz z GitHub Secrets)
-sa_json = os.environ.get("FIREBASE_SERVICE_ACCOUNT")
-if not sa_json:
-    raise ValueError("Brak sekretu FIREBASE_SERVICE_ACCOUNT w ustawieniach GitHub Actions!")
-
-cred_dict = json.loads(sa_json)
-cred = credentials.Certificate(cred_dict)
+# 1. Połączenie z Firebase Firestore
+service_account_info = json.loads(os.environ["FIREBASE_SERVICE_ACCOUNT"])
+cred = credentials.Certificate(service_account_info)
 firebase_admin.initialize_app(cred)
 db = firestore.client()
 
 HOUSEHOLD_ID = os.environ.get("HOUSEHOLD_ID", "KUCHNIA-2026").strip()
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "").strip()
 
-FALLBACK_TRACKED = [
-    {"name": "Pierś z kurczaka", "query": "filet z piersi kurczaka", "keywords": ["piers z kurczaka", "filet z kurczaka", "kurczak filet"], "maxPrice": 18.00},
-    {"name": "Mięso mielone", "query": "mięso mielone 500g", "keywords": ["mieso mielone", "mielone wieprzowe", "mielone wolowe"], "maxPrice": 11.50},
-    {"name": "Passata pomidorowa", "query": "passata pomidorowa 500g", "keywords": ["passata"], "maxPrice": 4.20},
-    {"name": "Tuńczyk w puszce", "query": "tuńczyk w sosie własnym puszka", "keywords": ["tunczyk"], "maxPrice": 5.50},
-    {"name": "Czerwona fasola", "query": "fasola czerwona puszka", "keywords": ["fasola czerwona", "czerwona fasola"], "maxPrice": 3.20},
-    {"name": "Kukurydza konserwowa", "query": "kukurydza konserwowa puszka", "keywords": ["kukurydza"], "maxPrice": 3.40}
-]
-
-PANTRY_DISCOVERY_KEYWORDS = [
-    "passata", "pomidory krojone", "pomidory w puszce", "koncentrat pomidorowy",
-    "fasola", "kukurydza", "ciecierzyca", "soczewica", "groszek", "tunczyk", "makrela", "szprot",
-    "piers z kurczaka", "filet z kurczaka", "udo z kurczaka", "indyk", "mieso mielone", "schab", "karkowka", "boczek", "kielbasa",
-    "makaron", "ryz", "kasza", "platki owsiane", "maka",
-    "warzywa na patelnie", "mrozone", "brokul", "kalafior", "szpinak", "ziemniaki", "cebula", "papryka", "pieczarki",
-    "ser zolty", "gouda", "mozzarella", "twarog", "jajka", "jaja", "smietana", "maslo", "olej", "oliwa", "mleczko kokosowe"
-]
-
-BLACKLIST_KEYWORDS = [
-    "piwo", "wino", "wodka", "chipsy", "czekolada", "ciastka", "lody", "napoj", "cola",
-    "karma", "papier", "proszek", "plyn do", "szampon", "krem do", "pieluchy", "parowki", "przyprawa do",
-    "jak zrobic", "ile piec", "czy to sie oplaca", "zobacz gotowanie", "zobacz jedzenie", "przepisy", "gazetka", "promocje w"
+# Słowa wskazujące na artykuły blogowe / śmieciowe nagłówki (twarda blokada)
+BLOG_BLACKLIST = [
+    "jak zrobić", "ile piec", "czy to się opłaca", "przepisy", "gotowanie",
+    "zobacz ", "sprawdź ", "poradnik", "blog", "artykuł", "gazetka ważna",
+    "godziny otwarcia", "regulamin", "polityka prywatności", "wszystkie gazetki"
 ]
 
 
-def strip_diacritics(text):
-    if not text:
-        return ""
-    text = text.lower().replace("ł", "l")
-    return "".join(
-        c for c in unicodedata.normalize("NFD", text)
-        if unicodedata.category(c) != "Mn"
-    )
+def normalize_text(text: str) -> str:
+    text = text.lower().strip()
+    replacements = str.maketrans("ąćęłńóśźż", "acelnoszz")
+    return re.sub(r"\s+", " ", text.translate(replacements))
 
 
-def is_blog_or_garbage(text, text_ascii):
-    # Odrzuć artykuły blogowe (pytajniki, daty typu 25.03.2025, nagłówki poradników)
-    if "?" in text:
+def is_junk_title(title: str) -> bool:
+    t = title.lower().strip()
+    if len(t) < 3 or len(t) > 110:
         return True
-    if re.search(r'\b\d{2}\.\d{2}\.\d{4}\b', text):
+    if "?" in t:
         return True
-    if any(bad in text_ascii for bad in BLACKLIST_KEYWORDS):
+    # Odrzuć tytuły zawierające daty (np. 25.03.2025), które myliły parser cen
+    if re.search(r"\b\d{2}\.\d{2}\.\d{4}\b", t):
         return True
-    return False
+    return any(bad in t for bad in BLOG_BLACKLIST)
 
 
-def fuzzy_matches(keyword_ascii, target_text_ascii):
-    if not keyword_ascii or not target_text_ascii:
-        return False
-    if keyword_ascii in target_text_ascii:
-        return True
+def extract_unit_price(title: str, price: float) -> tuple[str, float | None, str | None]:
+    """
+    Wyciąga gramaturę (np. '500 g', '1 kg', '250 ml', '1 l') i wylicza cenę za 1 kg / 1 l.
+    """
+    match = re.search(r"(\d+(?:[.,]\d+)?)\s*(kg|g|ml|l)\b", title.lower())
+    if not match:
+        return "", None, None
 
-    kw_words = keyword_ascii.split()
-    target_words = re.findall(r'[a-z0-9]+', target_text_ascii)
-    if len(kw_words) == 1 and len(kw_words[0]) >= 5:
-        kw = kw_words[0]
-        for tw in target_words:
-            if len(tw) >= 5 and SequenceMatcher(None, kw, tw).ratio() >= 0.85:
-                return True
-    return False
+    val = float(match.group(1).replace(",", "."))
+    unit = match.group(2)
 
-
-def extract_price_strict(text):
-    """Wymaga jawnego oznaczenia waluty (zł / PLN) przy cenie, aby wykluczyć daty i liczby."""
-    if not text:
-        return None
-    matches = re.findall(r'(?<!\d)(\d{1,3})[,.](\d{2})\s*(?:zł|PLN)\b', text, flags=re.IGNORECASE)
-    for zl, gr in matches:
-        val = float(f"{zl}.{gr}")
-        if 0.99 <= val <= 45.0:
-            return val
-    return None
-
-
-def extract_weight_and_unit_price(text, price):
-    """Wykrywa gramaturę (np. 500 g, 1 kg, 400 ml) i przelicza cenę za 1 kg / 1 l."""
-    if not text or not price:
-        return None, None
-    m = re.search(r'(\d+(?:[.,]\d+)?)\s*(kg|g|ml|l)\b', text, flags=re.IGNORECASE)
-    if not m:
-        return None, None
-
-    qty = float(m.group(1).replace(",", "."))
-    unit = m.group(2).lower()
-    if qty <= 0:
-        return None, None
+    if val <= 0:
+        return "", None, None
 
     if unit == "g":
-        unit_price = round((price / qty) * 1000.0, 2)
-        return f"{int(qty)} g", f"{unit_price:.2f} zł/kg"
-    elif unit == "kg":
-        unit_price = round(price / qty, 2)
-        return f"{qty:g} kg", f"{unit_price:.2f} zł/kg"
-    elif unit == "ml":
-        unit_price = round((price / qty) * 1000.0, 2)
-        return f"{int(qty)} ml", f"{unit_price:.2f} zł/l"
-    elif unit == "l":
-        unit_price = round(price / qty, 2)
-        return f"{qty:g} l", f"{unit_price:.2f} zł/l"
+        unit_price = round(price / (val / 1000.0), 2)
+        return f"{int(val)} g", unit_price, "kg"
+    if unit == "kg":
+        unit_price = round(price / val, 2)
+        return f"{val:g} kg", unit_price, "kg"
+    if unit == "ml":
+        unit_price = round(price / (val / 1000.0), 2)
+        return f"{int(val)} ml", unit_price, "l"
+    if unit == "l":
+        unit_price = round(price / val, 2)
+        return f"{val:g} l", unit_price, "l"
 
-    return None, None
-
-
-def clean_product_title(raw_txt):
-    cleaned = re.sub(r'^zobacz\s+', '', raw_txt, flags=re.IGNORECASE)
-    cleaned = re.sub(r'\d{1,3}[,.]\d{2}\s*(?:zł|PLN)?', '', cleaned, flags=re.IGNORECASE)
-    cleaned = re.sub(r'-\d{1,2}%', '', cleaned)
-    cleaned = re.sub(r'\s+', ' ', cleaned).strip(" -–•:,.")
-    return cleaned[:55].capitalize() if cleaned else raw_txt[:45]
+    return "", None, None
 
 
-def fetch_tracked_products_from_firebase():
-    try:
-        doc_snap = db.collection("households").document(HOUSEHOLD_ID).get()
-        if doc_snap.exists:
-            data = doc_snap.to_dict()
-            tracked = data.get("trackedProducts")
-            if isinstance(tracked, list) and len(tracked) > 0:
-                print(f"Pobrano {len(tracked)} śledzonych produktów z Firebase.")
-                return tracked
-    except Exception as e:
-        print(f"Ostrzeżenie przy odczycie trackedProducts z Firebase: {e}")
-    return FALLBACK_TRACKED
+def extract_json_offers(payload, source_hint: str) -> list[dict]:
+    """
+    Rekurencyjnie przeszukuje przechwycone pakiety JSON z API (Blix / Frisco)
+    i wyciąga wyłącznie ustrukturyzowane obiekty ofertowe (name + price).
+    """
+    found = []
+
+    def walk(node):
+        if isinstance(node, dict):
+            # Szukamy obiektów wyglądających jak karta produktu w API
+            name = (
+                node.get("name")
+                or node.get("title")
+                or node.get("productName")
+                or node.get("offerName")
+            )
+            raw_price = (
+                node.get("price")
+                or node.get("promoPrice")
+                or node.get("currentPrice")
+                or node.get("grossPrice")
+            )
+            if isinstance(raw_price, dict):
+                raw_price = raw_price.get("value") or raw_price.get("amount")
+
+            shop = (
+                node.get("shopName")
+                or node.get("retailerName")
+                or node.get("brandName")
+                or source_hint
+            )
+            if isinstance(shop, dict):
+                shop = shop.get("name") or source_hint
+
+            unit_str = node.get("unit") or node.get("weight") or node.get("packaging") or ""
+
+            if isinstance(name, str) and raw_price is not None:
+                try:
+                    price_val = float(str(raw_price).replace(",", ".").strip())
+                    # Jeśli API zwraca cenę w groszach (np. 1499 zamiast 14.99)
+                    if price_val > 250 and isinstance(raw_price, int):
+                        price_val = round(price_val / 100.0, 2)
+
+                    full_title = f"{name.strip()} {unit_str}".strip()
+                    if 0.5 <= price_val <= 250.0 and not is_junk_title(full_title):
+                        found.append({
+                            "title": full_title,
+                            "price": round(price_val, 2),
+                            "shop": str(shop).strip() or source_hint,
+                            "raw_text": f"{full_title} — {price_val:.2f} zł ({shop})"
+                        })
+                except (ValueError, TypeError):
+                    pass
+
+            for v in node.values():
+                walk(v)
+        elif isinstance(node, list):
+            for item in node:
+                walk(item)
+
+    walk(payload)
+    return found
 
 
-def scrape_with_browser(tracked_list):
-    tracked_promos = {}
-    general_discoveries = {}
-    frisco_results = {}
-
-    promo_sources = [
-        ("Lidl", "https://blix.pl/sklep/lidl/"),
-        ("Biedronka", "https://blix.pl/sklep/biedronka/"),
-        ("Netto", "https://blix.pl/sklep/netto/"),
-        ("Lidl", "https://ding.pl/promocje/lidl"),
-        ("Biedronka", "https://ding.pl/promocje/biedronka")
-    ]
+def scrape_product_queries(queries: list[str]) -> list[dict]:
+    """
+    Uruchamia Playwrighta, odpytuje wyszukiwarki Blix i Frisco dla konkretnych produktów
+    i przechwytuje czyste odpowiedzi JSON z ich wewnętrznych API (zero śmieci ze stopek).
+    """
+    collected = []
 
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         context = browser.new_context(
-            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
-            locale="pl-PL",
-            viewport={"width": 1280, "height": 900}
+            user_agent=(
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
+            ),
+            locale="pl-PL"
         )
         page = context.new_page()
+        current_source = "Gazetka"
 
-        # ETAP 1: Gazetki promocyjne (Blix / Ding)
-        for store_name, url in promo_sources:
+        def handle_response(response):
+            nonlocal collected
             try:
-                print(f"[Gazetki] Pobieram {store_name} ({url})...")
-                page.goto(url, wait_until="domcontentloaded", timeout=20000)
-                page.wait_for_timeout(2500)
-                page.mouse.wheel(0, 1600)
-                page.wait_for_timeout(1000)
+                content_type = response.headers.get("content-type", "")
+                if "application/json" in content_type and response.status == 200:
+                    url_l = response.url.lower()
+                    if any(k in url_l for k in ["search", "offer", "product", "promo", "catalog", "api"]):
+                        data = response.json()
+                        items = extract_json_offers(data, current_source)
+                        collected.extend(items)
+            except Exception:
+                pass
 
-                soup = BeautifulSoup(page.content(), "html.parser")
-                # Wytnij stopkę i sekcje artykułów blogowych
-                for bad_tag in soup.select("footer, nav, [class*='blog'], [class*='article'], [class*='news']"):
-                    bad_tag.decompose()
+        page.on("response", handle_response)
 
-                blocks = soup.find_all(["article", "li", "div", "a"], limit=800)
+        for query in queries[:15]:  # Limit 15 zapytań na przebieg, żeby akcja trwała < 60s
+            encoded = urllib.parse.quote(query)
 
-                for block in blocks:
-                    txt = block.get_text(" ", strip=True)
-                    if len(txt) < 8 or len(txt) > 125:
-                        continue
-
-                    txt_ascii = strip_diacritics(txt)
-                    if is_blog_or_garbage(txt, txt_ascii):
-                        continue
-
-                    price = extract_price_strict(txt)
-                    if not price:
-                        continue
-
-                    weight_str, unit_price_str = extract_weight_and_unit_price(txt, price)
-                    unit_badge = f" [{weight_str} • {unit_price_str}]" if weight_str else ""
-
-                    # 1) Dopasowanie do śledzonej listy
-                    matched_tracked = False
-                    for item in tracked_list:
-                        prod_name = item.get("name", "")
-                        max_p = item.get("maxPrice")
-                        kws = item.get("keywords") or [strip_diacritics(prod_name)]
-
-                        if any(fuzzy_matches(strip_diacritics(k), txt_ascii) for k in kws):
-                            matched_tracked = True
-                            if max_p and price > float(max_p):
-                                continue
-                            existing = tracked_promos.get(prod_name)
-                            if not existing or price < existing["price"]:
-                                tracked_promos[prod_name] = {
-                                    "price": price,
-                                    "oldPrice": float(max_p) if max_p else round(price * 1.2, 2),
-                                    "source": f"Promocja {store_name}",
-                                    "rawText": f"{txt[:105]}{unit_badge}",
-                                    "weight": weight_str,
-                                    "unitPrice": unit_price_str,
-                                    "isPromo": True
-                                }
-
-                    # 2) Ogólne okazje na półprodukty
-                    if not matched_tracked and len(general_discoveries) < 16:
-                        matched_kw = next((kw for kw in PANTRY_DISCOVERY_KEYWORDS if kw in txt_ascii), None)
-                        if matched_kw:
-                            nice_title = clean_product_title(txt)
-                            if weight_str and weight_str not in nice_title:
-                                nice_title = f"{nice_title} ({weight_str})"
-                            if len(nice_title) >= 5 and nice_title not in general_discoveries:
-                                general_discoveries[nice_title] = {
-                                    "name": nice_title,
-                                    "detectedPrice": price,
-                                    "oldPrice": round(price * 1.25, 2),
-                                    "source": f"Okazja {store_name}",
-                                    "rawText": f"{txt[:105]}{unit_badge}",
-                                    "isPromo": True,
-                                    "isDiscovery": True
-                                }
-            except Exception as e:
-                print(f"[Gazetki {store_name}] Błąd: {e}")
-
-        # ETAP 2: Frisco.pl dla śledzonych produktów nieznalezionych w gazetkach
-        for item in tracked_list:
-            name = item.get("name", "")
-            if name in tracked_promos:
-                continue
-            query = item.get("query", name)
+            # 1. Wyszukiwarka ofert Blix (Lidl, Biedronka, Netto itp.)
+            current_source = "Promocja Gazetka"
             try:
-                search_url = f"https://www.frisco.pl/stn,search/n,{query.replace(' ', '%20')}"
-                print(f"[Frisco] Szukam: {query}...")
-                page.goto(search_url, wait_until="domcontentloaded", timeout=20000)
-                page.wait_for_timeout(3000)
+                page.goto(f"https://blix.pl/szukaj/?q={encoded}", wait_until="networkidle", timeout=20000)
+                page.wait_for_timeout(1200)
 
-                soup = BeautifulSoup(page.content(), "html.parser")
-                candidates = soup.select("[class*='product'], [data-testid*='product'], article, li")
-                for cand in candidates[:25]:
-                    cand_txt = cand.get_text(" ", strip=True)
-                    if len(cand_txt) < 10 or len(cand_txt) > 180:
-                        continue
-                    price = extract_price_strict(cand_txt)
-                    if price:
-                        w_str, u_str = extract_weight_and_unit_price(cand_txt, price)
-                        badge = f" [{w_str} • {u_str}]" if w_str else ""
-                        frisco_results[name] = {
-                            "price": price,
-                            "rawText": f"{cand_txt[:105]}{badge}"
-                        }
-                        print(f"[Frisco] Znaleziono {name}: {price} zł")
-                        break
+                # Fallback na ustrukturyzowane karty ofertowe DOM (tylko elementy z jawnym 'zł')
+                cards = page.locator("[class*='offer'], [class*='product-card'], [data-offer-id]").all()
+                for card in cards[:15]:
+                    txt = re.sub(r"\s+", " ", card.inner_text()).strip()
+                    price_m = re.search(r"(\d{1,3}[.,]\d{2})\s*(?:zł|PLN)", txt, re.IGNORECASE)
+                    if price_m:
+                        price_val = float(price_m.group(1).replace(",", "."))
+                        clean_name = txt[:price_m.start()].strip(" -•|")
+                        if 0.5 <= price_val <= 250.0 and not is_junk_title(clean_name):
+                            shop_m = re.search(r"\b(Biedronka|Lidl|Netto|Kaufland|Auchan|Dino|Carrefour)\b", txt, re.I)
+                            shop_name = f"Promocja {shop_m.group(1).capitalize()}" if shop_m else "Promocja Gazetka"
+                            collected.append({
+                                "title": clean_name,
+                                "price": price_val,
+                                "shop": shop_name,
+                                "raw_text": f"{clean_name} — {price_val:.2f} zł"
+                            })
             except Exception as e:
-                print(f"[Frisco] Błąd dla '{query}': {e}")
+                print(f"Błąd Blix dla '{query}': {e}")
+
+            # 2. Wyszukiwarka Frisco
+            current_source = "Frisco"
+            try:
+                page.goto(f"https://www.frisco.pl/q,{encoded}/stn,searchResults", wait_until="networkidle", timeout=20000)
+                page.wait_for_timeout(1200)
+            except Exception as e:
+                print(f"Błąd Frisco dla '{query}': {e}")
 
         browser.close()
 
-    return tracked_promos, general_discoveries, frisco_results
+    # Deduplikacja po (znormalizowany tytuł + cena + sklep)
+    unique = {}
+    for item in collected:
+        key = (normalize_text(item["title"]), item["price"], item["shop"])
+        unique[key] = item
+
+    return list(unique.values())
 
 
-def clean_and_filter_with_gemini(pending_dict):
-    """Używa Gemini 3 Flash do odrzucenia błędnych dopasowań i wyczyszczenia nazw produktów."""
-    if not GEMINI_API_KEY or not pending_dict:
-        return pending_dict
+def verify_and_clean_with_gemini(candidates: list[dict]) -> list[dict]:
+    """
+    Używa gemini-3-flash-preview do oczyszczenia nazw produktów i odrzucenia
+    wszelkich niepasujących dopasowań (np. karma dla psa zamiast mięsa).
+    """
+    if not GEMINI_API_KEY or not candidates:
+        return candidates
+
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key={GEMINI_API_KEY}"
+    prompt_items = [
+        {
+            "id": i,
+            "tracked": c["tracked_name"],
+            "found_title": c["title"],
+            "price": c["price"],
+            "shop": c["shop"]
+        }
+        for i, c in enumerate(candidates)
+    ]
+
+    prompt = (
+        "Jesteś asystentem zakupów spożywczych. Oceń dopasowania ze sklepu do śledzonych produktów.\n"
+        "Zwróć WYŁĄCZNIE poprawny JSON w formacie listy obiektów:\n"
+        '[{"id": 0, "valid": true, "clean_title": "Czysta nazwa produktu z gramaturą"}]\n'
+        "Zasady:\n"
+        "1. Ustaw valid=false, jeśli oferta to artykuł, przepis, karma dla zwierząt, chemia lub zupełnie inny produkt.\n"
+        "2. W clean_title usuń śmieciowe dopiski typu 'Zobacz', 'Super cena', daty, zostaw nazwę i gramaturę.\n"
+        f"Dane:\n{json.dumps(prompt_items, ensure_ascii=False)}"
+    )
 
     try:
-        items_summary = [
-            {"key": k, "name": v["name"], "rawText": v["rawText"], "price": v["detectedPrice"]}
-            for k, v in pending_dict.items()
-        ]
-        prompt = f"""Jesteś kontrolerem jakości ofert spożywczych z gazetek.
-Przeanalizuj poniższą listę dopasowań.
-1. ODRZUĆ wszystko, co jest artykułem blogowym, poradnikiem kulinarnym, przyprawą w torebce zamiast mięsa, karmą dla zwierząt, słodyczami albo ma bzdurną cenę niepasującą do produktu (np. 1 kg kurczaka za 1 zł).
-2. Dla poprawnych ofert spożywczych podaj czystą, krótką nazwę produktu wraz z gramaturą (jeśli występuje w rawText, np. "Schab wędzony (100 g)" lub "Pierś z kurczaka (1 kg)").
-
-Zwróć TYLKO poprawny JSON (tablicę obiektów):
-[{{"key": "oryginalny klucz", "cleanName": "Poprawiona czysta nazwa produktu"}}]
-Lista wejściowa:
-{json.dumps(items_summary, ensure_ascii=False)}"""
-
         resp = requests.post(
-            f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key={GEMINI_API_KEY}",
-            headers={"Content-Type": "application/json"},
+            url,
             json={
                 "contents": [{"parts": [{"text": prompt}]}],
                 "generationConfig": {"responseMimeType": "application/json"}
             },
-            timeout=20
+            timeout=25
         )
-        if resp.status_code == 200:
-            raw_ans = resp.json()["candidates"][0]["content"]["parts"][0]["text"]
-            approved_list = json.loads(raw_ans)
-            filtered = {}
-            for entry in approved_list:
-                k = entry.get("key")
-                if k in pending_dict:
-                    item_copy = dict(pending_dict[k])
-                    if entry.get("cleanName") and item_copy.get("isDiscovery"):
-                        item_copy["name"] = entry["cleanName"]
-                    filtered[k] = item_copy
-            print(f"[Gemini 3 AI Filter] Zatwierdzono {len(filtered)}/{len(pending_dict)} prawdziwych ofert.")
-            return filtered
-        else:
-            print(f"[Gemini 3 AI Filter] HTTP {resp.status_code}: {resp.text[:150]}")
-    except Exception as e:
-        print(f"[Gemini 3 AI Filter] Pominięto z powodu błędu: {e}")
+        resp.raise_for_status()
+        raw_json = resp.json()["candidates"][0]["content"]["parts"][0]["text"]
+        decisions = {d["id"]: d for d in json.loads(raw_json)}
 
-    return pending_dict
+        cleaned = []
+        for i, c in enumerate(candidates):
+            dec = decisions.get(i)
+            if dec and dec.get("valid") is True:
+                if dec.get("clean_title"):
+                    c["title"] = dec["clean_title"].strip()
+                cleaned.append(c)
+        return cleaned
+    except Exception as e:
+        print(f"Ostrzeżenie Gemini AI (używam lokalnego filtra): {e}")
+        return candidates
 
 
 def main():
-    print(f"Start inteligentnego scrapera v2 dla domu: {HOUSEHOLD_ID}")
-    now_str = datetime.now().strftime("%d.%m.%Y %H:%M")
+    print(f"Start inteligentnego scrapera (JSON + Search) dla domu: {HOUSEHOLD_ID}")
+    house_ref = db.collection("households").document(HOUSEHOLD_ID)
 
-    tracked_list = fetch_tracked_products_from_firebase()
-    tracked_promos, general_discoveries, frisco_results = scrape_with_browser(tracked_list)
+    # Pobierz śledzone produkty z Radaru oraz półprodukty z cennika
+    tracked_docs = house_ref.collection("tracked_products").stream()
+    tracked = [{"id": d.id, **d.to_dict()} for d in tracked_docs]
 
-    pending_items = {}
+    ingredients_docs = house_ref.collection("ingredients").stream()
+    ingredients = [{"id": d.id, **d.to_dict()} for d in ingredients_docs]
 
-    for item in tracked_list:
-        name = item.get("name", "")
-        max_p = item.get("maxPrice")
+    # Zbuduj listę unikalnych haseł do wyszukania
+    queries = []
+    seen_q = set()
+    for item in tracked + ingredients:
+        name = (item.get("name") or "").strip()
+        norm = normalize_text(name)
+        if name and norm not in seen_q:
+            seen_q.add(norm)
+            queries.append(name)
 
-        if name in tracked_promos:
-            hit = tracked_promos[name]
-            display_name = f"{name} ({hit['weight']})" if hit.get("weight") else name
-            pending_items[name] = {
-                "name": display_name,
-                "detectedPrice": hit["price"],
-                "oldPrice": hit["oldPrice"],
-                "source": hit["source"],
-                "rawText": hit["rawText"],
-                "isPromo": True,
-                "isDiscovery": False,
-                "status": "pending",
-                "scrapedAt": now_str
-            }
-        elif name in frisco_results:
-            fr = frisco_results[name]
-            is_promo = bool(max_p and fr["price"] <= float(max_p))
-            pending_items[name] = {
-                "name": name,
-                "detectedPrice": fr["price"],
-                "oldPrice": float(max_p) if max_p else fr["price"],
-                "source": "Frisco.pl",
-                "rawText": fr["rawText"],
-                "isPromo": is_promo,
-                "isDiscovery": False,
-                "status": "pending",
-                "scrapedAt": now_str
-            }
+    if not queries:
+        queries = ["pierś z kurczaka", "masło", "ser żółty", "tuńczyk w puszce", "jajka"]
 
-    for disc_key, disc_item in general_discoveries.items():
-        if disc_key not in pending_items:
-            pending_items[disc_key] = {
-                **disc_item,
-                "status": "pending",
-                "scrapedAt": now_str
-            }
+    print(f"Wyszukiwane hasła ({len(queries)}): {', '.join(queries[:10])}")
+    raw_offers = scrape_product_queries(queries)
+    print(f"Pobrano {len(raw_offers)} czystych ofert ze sklepów.")
 
-    pending_items = clean_and_filter_with_gemini(pending_items)
+    # Dopasuj oferty do śledzonych produktów / bazy cenowej
+    candidates = []
+    for offer in raw_offers:
+        norm_offer = normalize_text(offer["title"])
+        best_match = None
+        best_score = 0.0
+        is_tracked = False
 
-    doc_ref = db.collection("households").document(HOUSEHOLD_ID)
-    doc_ref.set({
-        "pendingScraper": pending_items,
-        "lastScraped": now_str
-    }, merge=True)
+        for t in tracked:
+            t_name = t.get("name", "")
+            norm_t = normalize_text(t_name)
+            score = SequenceMatcher(None, norm_t, norm_offer).ratio()
+            if norm_t in norm_offer:
+                score = max(score, 0.85)
+            if score > best_score:
+                best_score = score
+                best_match = t
+                is_tracked = True
 
-    print(f"Zakończono! Wysłano {len(pending_items)} czystych pozycji do Poczekalni w Firebase.")
+        for ing in ingredients:
+            i_name = ing.get("name", "")
+            norm_i = normalize_text(i_name)
+            score = SequenceMatcher(None, norm_i, norm_offer).ratio()
+            if norm_i in norm_offer:
+                score = max(score, 0.82)
+            if score > best_score:
+                best_score = score
+                best_match = ing
+                is_tracked = False
+
+        if best_match and best_score >= 0.55:
+            pack_str, unit_price, base_unit = extract_unit_price(offer["title"], offer["price"])
+            base_price = float(best_match.get("price") or best_match.get("targetPrice") or 0)
+
+            # Jeśli w bazie cena jest za 1 kg/1 l i mamy wyliczoną cenę jednostkową, porównajmy jabłka do jabłek
+            compare_price = unit_price if (unit_price and base_price > 12.0) else offer["price"]
+            discount_pct = 0
+            if base_price > 0 and compare_price < base_price:
+                discount_pct = round(((base_price - compare_price) / base_price) * 100)
+
+            unit_info = f" ({pack_str} • {unit_price:.2f} zł/{base_unit})" if unit_price else ""
+            candidates.append({
+                "tracked_name": best_match.get("name", ""),
+                "ingredientId": best_match.get("id", ""),
+                "title": f"{offer['title']}{unit_info}",
+                "rawText": offer["raw_text"],
+                "price": offer["price"],
+                "unitPrice": unit_price,
+                "basePrice": base_price,
+                "discountPct": discount_pct,
+                "source": offer["shop"],
+                "isTracked": is_tracked,
+                "scrapedAt": datetime.now().strftime("%d.%m.%Y %H:%M")
+            })
+
+    verified = verify_and_clean_with_gemini(candidates)
+
+    # Wyczyść starą poczekalnię przed zapisem świeżych wyników (opcjonalnie można zostawić)
+    pending_ref = house_ref.collection("pending_deals")
+    for doc in verified[:30]:
+        pending_ref.add(doc)
+
+    house_ref.set({"lastScraped": datetime.now().strftime("%d.%m.%Y %H:%M")}, merge=True)
+    print(f"Zakończono! Wysłano {len(verified[:30])} zweryfikowanych pozycji do Poczekalni w Firebase.")
 
 
 if __name__ == "__main__":
     main()
-
