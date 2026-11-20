@@ -64,111 +64,76 @@ EXCLUDED_URL_PATTERNS = [
     "/polityka", "/o-nas", "/kariera", "/faq", "/godziny-otwarcia", "/sklepy-w-"
 ]
 
-# 1. BIAŁA LISTA: produkt MUSI zawierać przynajmniej jeden rdzeń prawdziwego jedzenia / składnika obiadowego
-REAL_FOOD_ROOTS = [
+# ESENCJA KUCHENNA: (czysta_nazwa, kategoria, slowa_kluczowe, wykluczenia, min_cena, max_cena)
+CORE_CULINARY_ITEMS = {
     # Mięso i wędliny
-    "kurczak", "indyk", "wieprzow", "wolow", "schab", "karkowk", "lopatk", "szynk",
-    "poledwic", "mielon", "kielbas", "boczek", "boczku", "parowk", "kabanos", "kaczk",
-    "gulasz", "zeberk", "udk", "skrzydelk", "filet", "piers",
-    # Ryby i owoce morza
-    "losos", "dorsz", "tunczyk", "sledz", "pstrag", "makrel", "mintaj", "morszczuk",
-    "krewetk", "ryb",
+    "piers_z_kurczaka": ("Pierś z kurczaka", "Mięso i świeże", ["piers z kurczaka", "filet z kurczaka", "filet z piersi"], ["przypraw", "wedlin", "szynk", "pasztet", "parowk", "kabanos", "panier", "nuggets", "strips", "konserw", "salatk", "karma"], 9.50, 24.00),
+    "mieso_mielone": ("Mięso mielone", "Mięso i świeże", ["mieso mielone", "mielone wieprzow", "mielone wolow", "mielone drobiow"], ["przypraw", "fix", "pomysl na", "sos", "pierogi", "krokiety", "nalesniki"], 5.50, 16.00),
+    "schab": ("Schab wieprzowy", "Mięso i świeże", ["schab wieprzow", "schab bez kosci", "schab ze"], ["wedlin", "szynk", "pieczon", "wedzon", "konserw"], 10.00, 22.00),
+    "karkowka": ("Karkówka wieprzowa", "Mięso i świeże", ["karkowk"], ["wedlin", "szynk", "pieczon", "wedzon"], 10.00, 22.00),
+    "kielbasa": ("Kiełbasa śląska", "Mięso i świeże", ["kielbasa slaska", "kielbasa podwawelska", "kielbasa zwyczajna"], ["sucha", "krakowska", "zywiecka", "salami", "kabanos"], 6.00, 24.00),
+    "boczek": ("Wędzony boczek", "Mięso i świeże", ["boczek wedzon", "boczek surowy"], ["chips", "chrupk", "przypraw"], 5.00, 32.00),
+
+    # Ryby
+    "losos": ("Łosoś filet", "Mięso i świeże", ["losos filet", "filet z lososia", "losos swiezy", "losos atlantycki"], ["salatk", "pasta", "wedzon", "plastr", "karma"], 12.00, 45.00),
+    "dorsz": ("Dorsz filet", "Mięso i świeże", ["dorsz", "filet z dorsza"], ["salatk", "pasta", "panier"], 8.00, 38.00),
+    "tunczyk": ("Tuńczyk w puszce", "Konserwy i słoiki", ["tunczyk"], ["salatk", "pasta", "karma", "dla kota"], 3.00, 9.00),
+
     # Nabiał i jaja
-    "mleko", "maslo", "ser ", "ser,", "sery", "ser zolty", "gouda", "edam", "edamski",
-    "ementaler", "morski", "salami", "mozzarell", "twarog", "serek", "jogurt",
-    "smietan", "kefir", "maslank", "jaj", "feta", "camembert", "parmezan", "ricotta", "mascarpone",
-    # Pieczywo, zboża, makarony, strączki
-    "chleb", "bulk", "bagietk", "tortill", "ryz", "makaron", "kasz", "platki owsiane",
-    "maka", "fasol", "ciecierzyc", "soczewic", "groszek", "kukurydz", "tofu",
-    # Warzywa i grzyby
-    "pomidor", "passat", "przecier", "koncentrat pomidor", "ogor", "papryk", "cebul",
-    "czosn", "ziemniak", "marchew", "pietruszk", "seler", "kapust", "brokul",
-    "kalafior", "cukini", "baklazan", "szpinak", "salat", "rzodkiew", "burak",
-    "por ", "pora", "pieczark", "dyni", "awokado",
-    # Owoce świeże i mrożone
-    "jablk", "banan", "cytryn", "pomarancz", "mandarynk", "grejpfrut", "borowk",
-    "malin", "truskawk", "winogron", "gruszk", "sliwk", "brzoskwini", "ananas",
-    "mango", "kiwi", "arbuz",
-    # Tłuszcze i podstawy
-    "oliw", "olej", "maslo orzechowe"
-]
+    "maslo": ("Masło", "Lodówka i mrożonki", ["maslo ekstra", "maslo polskie", "maslo 82", "maslo 83", "maslo"], ["orzech", "roslinn", "margaryn", "mix", "oselk", "krem", "balsam", "do ciala", "shea", "czekolad"], 3.50, 9.50),
+    "mleko": ("Mleko", "Lodówka i mrożonki", ["mleko uht", "mleko swieze", "mleko 3,2", "mleko 2%", "mleko"], ["kokos", "sojow", "owsian", "migdal", "zageszczon", "skondensowan", "w proszku", "czekolad", "do demakijazu", "balsam", "modifikowan", "bebiko", "nan", "ptasie"], 1.80, 4.80),
+    "jajka": ("Jajka", "Lodówka i mrożonki", ["jajka", "jaja sciolkow", "jaja z wolnego", "jaja klasa"], ["niespodziank", "czekolad", "makaron", "majonez", "kinder"], 4.50, 14.00),
+    "ser_zolty": ("Ser żółty", "Lodówka i mrożonki", ["ser zolty", "ser gouda", "ser edam", "ser morski", "ser ementaler", "gouda"], ["topion", "plesniow", "feta", "twarog", "wiejski", "mascarpone"], 4.00, 29.00),
+    "twarog": ("Twaróg", "Lodówka i mrożonki", ["twarog poltlusty", "twarog chudy", "twarog tlusty", "twarog sernikowy", "twarog"], ["deser", "danio", "sernik", "baton"], 2.50, 14.00),
+    "serek_wiejski": ("Serek wiejski", "Lodówka i mrożonki", ["serek wiejski"], ["deser"], 1.50, 4.50),
+    "jogurt_naturalny": ("Jogurt naturalny", "Lodówka i mrożonki", ["jogurt naturalny", "jogurt grecki"], ["owocow", "pitny", "deser", "stracciatella", "czekolad"], 1.20, 6.00),
+    "smietana": ("Śmietana", "Lodówka i mrożonki", ["smietana 18", "smietana 12", "smietanka 30"], ["deser", "spray", "w sprayu"], 1.50, 6.50),
+    "mozzarella": ("Mozzarella", "Lodówka i mrożonki", ["mozzarella"], ["paluszki", "panier", "pizza"], 2.00, 7.00),
 
-# 2. CZARNA LISTA: kosmetyki, chemia, słodycze, przekąski, alkohol, śmieci z UI
-EXCLUDED_NON_FOOD_AND_SWEETS = [
-    "blyszczyk", "pomadk", "szmink", "tusz do rzes", "podklad", "puder", "lakier do paznokci",
-    "chusteczk", "papier toaletowy", "recznik papierowy", "szampon", "zel pod prysznic",
-    "mydlo", "pasta do zebow", "szczoteczk", "dezodorant", "perfum", "krem do", "balsam",
-    "maseczk", "peeling", "serum do", "plyn micelarny", "wacik", "patyczki", "pieluch", "pampers",
-    "proszek", "plyn do", "kapsulki", "domestos", "zmywak", "gabk", "worek", "worki",
-    "folia aluminiowa", "papier do pieczenia", "baterie", "zarowka", "patelnia", "garnek",
-    "skarpetki", "koszulka", "spodnie", "buty", "zabawka", "wiertarka", "szlifierka",
-    "kosiarka", "doniczka", "ziemia ogrodowa", "karma", "zwirek", "dla kota", "dla psa",
-    "parkside", "esmara", "lupilu", "crivit", "silvercrest", "livarno", "reklamowka", "torba",
-    "czekolad", "baton", "wafel", "wafelk", "ciastk", "herbatnik", "biszkopt", "markiz",
-    "piernik", "cukierk", "zelk", "lizak", "guma do zucia", "lody", "lodow", "sorbet",
-    "ptasie mleczko", "pralin", "bombonierk", "nutella", "krem czekoladowy", "krem orzechowy",
-    "paczek", "paczki", "donut", "drozdzowk", "rogali", "croissant", "babeczk", "muffin",
-    "sernik", "szarlotk", "tiramisu", "budyn", "kisiel", "galaretk", "deser ", "monte",
-    "danio", "fantasia", "muller", "belriso", "kinder", "milka", "wedel", "wawel", "ferrer",
-    "raffaello", "merci", "toblerone", "snickers", "mars", "twix", "bounty", "kitkat",
-    "oreo", "delicje", "jezyki", "ptasie", "chalw", "sezamk", "krowk", "mieszanka krakowska",
-    "chipsy", "chrupki", "paluszki", "krakers", "popcorn", "zelki", "pianki",
-    "cola", "pepsi", "fanta", "sprite", "energetyk", "energy drink", "red bull", "tiger",
-    "piwo", "wodka", "wino", "whisky", "likier", "cydr", "prosecco", "szampan", "papierosy",
-    "przyprawa do", "przyprawy", "fix ", "pomysl na", "marynata", "zupa blyskawiczna",
-    "goracy kubek", "kostka rosolowa", "bulionetka", "zobacz aktualna", "gazetka ",
-    "strona ", "oferta wazna", "wszystkie promocje", "wybrane sklepy", "sprawdz oferte"
-]
+    # Suche i konserwy
+    "ryz": ("Ryż", "Suche i makarony", ["ryz bialy", "ryz basmati", "ryz jasminowy", "ryz parboiled", "ryz w woreczkach"], ["preparowan", "wafle", "mleczn", "deser", "belriso", "muller"], 2.00, 8.00),
+    "makaron": ("Makaron", "Suche i makarony", ["makaron penne", "makaron spaghetti", "makaron swiderki", "makaron fusilli", "makaron lubella", "makaron"], ["zupa", "blyskawiczn", "chinski", "kubek"], 2.00, 7.50),
+    "kasza": ("Kasza pęczak / gryczana", "Suche i makarony", ["kasza peczak", "kasza gryczana", "kasza jaglana"], ["kaszka", "dla dzieci", "mleczno"], 2.00, 7.50),
+    "czerwona_fasola": ("Czerwona fasola", "Konserwy i słoiki", ["fasola czerwona", "czerwona fasola"], ["po bretonsku", "zupa", "salatk"], 2.00, 5.50),
+    "biala_fasola": ("Biała fasola", "Konserwy i słoiki", ["fasola biala", "biala fasola"], ["po bretonsku", "zupa"], 2.00, 5.50),
+    "kukurydza": ("Kukurydza konserwowa", "Konserwy i słoiki", ["kukurydza konserwowa", "kukurydza zlocista", "kukurydza w puszce"], ["chrupki", "popcorn", "platki"], 2.00, 5.50),
+    "passata_pomidorowa": ("Passata pomidorowa", "Konserwy i słoiki", ["passata", "przecier pomidorowy"], ["zupa", "krem"], 2.20, 6.50),
+    "pomidory_krojone": ("Pomidory krojone", "Konserwy i słoiki", ["pomidory krojone", "pomidory pelati", "pomidory w puszce"], ["suszone", "zupa"], 2.20, 6.00),
 
-PRODUCT_GUARDRAILS = {
-    "piers_z_kurczaka": {
-        "must_have_any": ["piers", "filet"],
-        "exclude": ["przypraw", "wedlin", "szynk", "poledwic", "pasztet", "parowk", "kabanos", "panier", "nuggets", "strips", "konserw", "salatk", "karma"],
-        "min_price": 9.50,
-    },
-    "mieso_mielone": {
-        "must_have_any": ["mielon"],
-        "exclude": ["przypraw", "fix", "pomysl na", "sos", "pierogi", "krokiety", "nalesniki"],
-        "min_price": 5.50,
-    },
-    "maslo": {
-        "must_have_any": ["maslo"],
-        "exclude": ["orzech", "roslinn", "margaryn", "mix", "oselk", "krem", "balsam", "do ciala", "shea", "czekolad"],
-        "min_price": 3.50,
-    },
-    "mleko": {
-        "must_have_any": ["mleko"],
-        "exclude": ["kokos", "sojow", "owsian", "migdal", "zageszczon", "skondensowan", "w proszku", "czekolad", "do demakijazu", "balsam", "modifikowan", "bebiko", "nan", "ptasie"],
-        "min_price": 1.80,
-    },
-    "jajka": {
-        "must_have_any": ["jaj"],
-        "exclude": ["niespodziank", "czekolad", "makaron", "majonez", "kinder"],
-        "min_price": 4.50,
-    },
-    "tunczyk": {
-        "must_have_any": ["tunczyk"],
-        "exclude": ["salatk", "pasta", "karma", "dla kota"],
-        "min_price": 3.00,
-    },
-    "passata_pomidorowa": {
-        "must_have_any": ["passata", "przecier pomidor"],
-        "exclude": ["zupa", "krem"],
-        "min_price": 2.20,
-    },
+    # Warzywa i owoce
+    "ziemniaki": ("Ziemniaki", "Warzywa i owoce", ["ziemniaki"], ["frytki", "chipsy", "placki", "puree", "klusk"], 1.20, 8.00),
+    "cebula": ("Cebula", "Warzywa i owoce", ["cebula"], ["prazona", "suszon", "krazki", "zupa"], 1.50, 7.00),
+    "czosnek": ("Czosnek", "Warzywa i owoce", ["czosnek"], ["granulowan", "suszon", "sos", "bagietk", "maslo"], 1.20, 6.00),
+    "pomidory": ("Pomidory", "Warzywa i owoce", ["pomidory malinowe", "pomidory rzymskie", "pomidory koktajlowe", "pomidory galazka", "pomidory"], ["passata", "koncentrat", "krojone", "suszone", "ketchup", "sok", "zupa"], 3.00, 15.00),
+    "papryka": ("Papryka", "Warzywa i owoce", ["papryka czerwona", "papryka zolta", "papryka zielona", "papryka"], ["mielona", "slodka", "ostra", "wedzona", "przypraw", "chipsy"], 4.00, 16.00),
+    "ogorek": ("Ogórek", "Warzywa i owoce", ["ogorek zielony", "ogorki gruntowe", "ogorek szklarniowy", "ogorki"], ["kiszon", "konserwow", "salatk"], 2.50, 12.00),
+    "marchew": ("Marchew", "Warzywa i owoce", ["marchew", "marchewka"], ["sok", "kubus", "zupa", "groszek z"], 1.50, 6.00),
+    "pieczarki": ("Pieczarki", "Warzywa i owoce", ["pieczarki"], ["zupa", "sos", "marynowan"], 3.00, 12.00),
+    "brokul": ("Brokuł", "Warzywa i owoce", ["brokul", "brokuly"], ["zupa", "krem"], 3.00, 9.00),
+    "kalafior": ("Kalafior", "Warzywa i owoce", ["kalafior"], ["zupa"], 3.50, 10.00),
+    "cukinia": ("Cukinia", "Warzywa i owoce", ["cukinia"], ["leczo"], 3.00, 10.00),
+    "kapusta": ("Kapusta", "Warzywa i owoce", ["kapusta biala", "kapusta mloda", "kapusta pekinska"], ["kiszona", "zasma"], 2.00, 8.00),
+    "banany": ("Banany", "Warzywa i owoce", ["banany"], ["chipsy", "suszon", "jogurt", "deser", "sok"], 2.50, 7.50),
+    "jablka": ("Jabłka", "Warzywa i owoce", ["jablka"], ["sok", "mus", "chipsy", "ocet", "cydr", "szarlotk"], 1.80, 6.50),
+    "cytryny": ("Cytryny", "Warzywa i owoce", ["cytryny"], ["sok", "herbata", "napoj"], 3.00, 10.00),
+    "mandarynki": ("Mandarynki", "Warzywa i owoce", ["mandarynki"], ["puszk", "sok"], 3.50, 10.00),
+    "pomarancze": ("Pomarańcze", "Warzywa i owoce", ["pomarancze"], ["sok", "napoj"], 3.50, 10.00),
+    "borowki": ("Borówki amerykańskie", "Warzywa i owoce", ["borowki", "borowka amerykanska"], ["jogurt", "dzem", "sok"], 4.00, 14.00),
+    "winogrona": ("Winogrona", "Warzywa i owoce", ["winogrona", "winogrono"], ["sok", "wino"], 5.00, 15.00),
+
+    # Tłuszcze
+    "oliwa": ("Oliwa z oliwek", "Przyprawy i dodatki", ["oliwa z oliwek"], ["balsam", "krem", "mydlo", "szampon"], 12.00, 38.00),
+    "olej": ("Olej rzepakowy", "Przyprawy i dodatki", ["olej rzepakowy", "olej slonecznikowy"], ["silnikow", "do ciala", "olejek"], 4.50, 13.00),
 }
 
-BRAND_WORDS = [
-    "mlekovita", "piatnica", "laciate", "mlekpol", "lubelska", "krasnystaw",
-    "wloszczowa", "sierpc", "hochland", "president", "almette", "danone",
-    "bakoma", "zott", "pudliszki", "dawtona", "lowicz", "kotlin", "swiatowid",
-    "roleski", "winiary", "knorr", "prymat", "kamis", "bonduelle", "lisner",
-    "graal", "marinero", "sokolow", "morliny", "berlinki", "tarczynski",
-    "krakus", "pikok", "dulano", "milbona", "pilos", "lidl", "biedronka", "netto",
-    "fruvita", "mleczna dolina", "kraina wedlin", "kraina mies", "nasze smaki",
-    "lubella", "barilla", "sonko", "kupiec", "kujawski", "rama", "delma",
-    "kasia", "ekstra", "uht", "zobacz aktualna", "ryneczek lidla", "rzeznik",
-    "w plastrach", "plastry", "w kawalku", "kawalek"
+EXCLUDED_GLOBAL_NOISE = [
+    "blyszczyk", "pomadk", "szmink", "tusz do rzes", "chusteczk", "papier toaletowy",
+    "recznik papierowy", "szampon", "zel pod prysznic", "mydlo", "pasta do zebow",
+    "proszek", "plyn do", "kapsulki", "karma", "zwirek", "pieluchy", "pampers",
+    "czekolad", "baton", "wafel", "ciastk", "cukierk", "zelk", "lody", "lodow",
+    "ptasie mleczko", "nutella", "paczek", "donut", "drozdzowk", "chipsy", "chrupki",
+    "piwo", "wodka", "wino", "whisky", "likier", "cydr", "cola", "pepsi", "energetyk",
+    "zobacz aktualna", "gazetka ", "strona ", "oferta wazna", "wszystkie promocje"
 ]
 
 def normalize_ascii(text: str) -> str:
@@ -177,37 +142,37 @@ def normalize_ascii(text: str) -> str:
     text = "".join(ch for ch in text if unicodedata.category(ch) != "Mn")
     return text.replace("ł", "l")
 
-def canonical_product_key(name: str) -> str:
-    a = normalize_ascii(name)
-    if ("piers" in a and "kurczak" in a) or ("filet" in a and "kurczak" in a):
-        return "piers_z_kurczaka"
-    if "mielon" in a:
-        return "mieso_mielone"
-    if "masl" in a and "maslank" not in a and "orzech" not in a:
-        return "maslo"
-    if re.search(r"\bmlek[oa]\b", a):
-        return "mleko"
-    if "jajk" in a or re.search(r"\bjaj[ao]?\b", a):
-        return "jajka"
-    if "tunczyk" in a:
-        return "tunczyk"
-    if "passat" in a or "przecier pomidor" in a:
-        return "passata_pomidorowa"
-    if "serek wiejski" in a:
-        return "serek_wiejski_lekki" if ("lekk" in a or "light" in a) else "serek_wiejski"
-    if any(w in a for w in ["ser zolty", "gouda", "edam", "ementaler", "morski"]):
-        return "ser_zolty"
-    return re.sub(r"[^a-z0-9_]", "_", a).strip("_")
+def extract_weight_from_text(text: str) -> Optional[str]:
+    """Wyciąga gramaturę / pojemność / liczbę sztuk z tytułu oferty (np. '500 g', '1 kg', '200 g', '10 szt.')."""
+    if not text:
+        return None
+    # Ignorujemy przelicznik ceny za kilogram typu "24,99 zł/kg" lub "/ 1 kg"
+    cleaned = re.sub(r"\d+[.,]\d+\s*zł\s*/\s*(?:1\s*)?(?:kg|l|100\s*g)", " ", text, flags=re.I)
+    cleaned = re.sub(r"\(\s*\d+[.,]\d+\s*zł\s*/\s*[^)]+\)", " ", cleaned, flags=re.I)
+
+    # Wzorzec wielopaku np. "4 x 100 g"
+    m_multi = re.search(r"\b(\d+\s*[x×]\s*\d+(?:[.,]\d+)?\s*(?:kg|g|dag|ml|l))\b", cleaned, re.I)
+    if m_multi:
+        return re.sub(r"\s+", " ", m_multi.group(1).lower()).replace("×", "x")
+
+    # Standardowa gramatura / objętość / sztuki (np. 400 g, 1 kg, 250 ml, 1,5 l, 10 szt.)
+    m_std = re.search(r"\b(\d+(?:[.,]\d+)?)\s*(kg|g|dag|ml|l|szt\.?)\b", cleaned, re.I)
+    if m_std:
+        num = m_std.group(1).replace(".", ",")
+        unit = m_std.group(2).lower().rstrip(".")
+        if unit == "szt":
+            unit = "szt."
+        return f"{num} {unit}"
+
+    return None
 
 def is_valid_leaflet_url(url: str, store_slug: str, link_text: str = "") -> bool:
     low_url = normalize_ascii(url)
     low_txt = normalize_ascii(link_text)
-
     if any(bad in low_url for bad in EXCLUDED_URL_PATTERNS):
         return False
     if any(w in low_txt for w in ["blog", "artykul", "poradnik", "czytaj dalej", "przepis na", "godziny otwarcia"]):
         return False
-
     return (store_slug in low_url) or (store_slug in low_txt)
 
 def parse_polish_date(day_str: str, month_str: str, year_str: Optional[str] = None) -> Optional[str]:
@@ -225,15 +190,13 @@ def parse_polish_date(day_str: str, month_str: str, year_str: Optional[str] = No
                 y += 1
             elif now.month == 1 and m == 12:
                 y -= 1
-        dt = date(y, m, d)
-        return dt.strftime("%Y-%m-%d")
+        return date(y, m, d).strftime("%Y-%m-%d")
     except ValueError:
         return None
 
 def extract_validity_dates(text: str) -> tuple[Optional[str], Optional[str]]:
     if not text:
         return None, None
-
     m_range = re.search(
         r"(?:od\s*)?(\d{1,2})[./](\d{1,2})(?:[./](\d{2,4}))?\s*(?:-|–|—|do)\s*(\d{1,2})[./](\d{1,2})(?:[./](\d{2,4}))?",
         text,
@@ -241,69 +204,50 @@ def extract_validity_dates(text: str) -> tuple[Optional[str], Optional[str]]:
     )
     if m_range:
         d1, m1, y1, d2, m2, y2 = m_range.groups()
-        end_year = y2 or y1
-        start_year = y1 or y2
-        v_from = parse_polish_date(d1, m1, start_year)
-        v_to = parse_polish_date(d2, m2, end_year)
+        v_from = parse_polish_date(d1, m1, y1 or y2)
+        v_to = parse_polish_date(d2, m2, y2 or y1)
         if v_from and v_to:
             return v_from, v_to
-
     m_until = re.search(r"(?:wazn[ae]|obowiazuje|oferta)?\s*do\s*(\d{1,2})[./](\d{1,2})(?:[./](\d{2,4}))?", text, re.I)
     if m_until:
         d2, m2, y2 = m_until.groups()
         v_to = parse_polish_date(d2, m2, y2)
         if v_to:
             return None, v_to
-
     m_iso = re.findall(r"\b(202\d-\d{2}-\d{2})\b", text)
     if len(m_iso) >= 2:
         return m_iso[0], m_iso[1]
     if len(m_iso) == 1:
         return None, m_iso[0]
-
     return None, None
 
 def is_promotion_active(valid_to: Optional[str]) -> bool:
     if not valid_to:
         return True
     try:
-        end_dt = datetime.strptime(valid_to, "%Y-%m-%d").date()
-        return end_dt >= datetime.now().date()
+        return datetime.strptime(valid_to, "%Y-%m-%d").date() >= datetime.now().date()
     except ValueError:
         return True
 
-def clean_generic_name(raw_name: str) -> str:
-    s = re.sub(r"^zobacz\s+aktualn[aą]\s+", "", raw_name, flags=re.I)
-    s = re.sub(r"\b\d+(?:[.,]\d+)?\s*(?:kg|g|dag|ml|l|szt\.?|%)\b", " ", s, flags=re.I)
-    for b in BRAND_WORDS:
-        s = re.sub(r"\b" + re.escape(b) + r"\b", " ", s, flags=re.I)
-    s = re.sub(r"\s+", " ", s).strip(" -–|:•,")
-    ascii_s = normalize_ascii(s)
-
-    if "serek wiejski" in ascii_s:
-        return "Serek wiejski lekki" if ("lekk" in ascii_s or "light" in ascii_s) else "Serek wiejski"
-    if "masl" in ascii_s and "maslank" not in ascii_s and "orzech" not in ascii_s:
-        return "Masło"
-    if re.search(r"\bmlek[oa]\b", ascii_s):
-        return "Mleko"
-    if "jajk" in ascii_s or re.search(r"\bjaj[ao]?\b", ascii_s):
-        return "Jajka"
-    if any(w in ascii_s for w in ["ser zolty", "gouda", "edam", "ementaler", "morski"]):
-        return "Ser żółty"
-    return (s[0].upper() + s[1:]) if s else raw_name.strip()
-
-def is_food_offer(title: str) -> bool:
-    norm = normalize_ascii(title)
+def match_core_culinary_item(raw_title: str, price_val: float) -> Optional[tuple[str, str, str]]:
+    """Zwraca (canon_key, czysta_nazwa, kategoria) dla podstawowych składników kulinarnych."""
+    norm = normalize_ascii(raw_title)
     if len(norm) < 4 or len(norm) > 100:
-        return False
-    if len(re.findall(r"[a-z]", norm)) < 3:
-        return False
+        return None
+    if any(bad in norm for bad in EXCLUDED_GLOBAL_NOISE):
+        return None
 
-    if any(bad in norm for bad in EXCLUDED_NON_FOOD_AND_SWEETS):
-        return False
+    for canon_key, (clean_label, cat_name, must_kws, excl_kws, min_p, max_p) in CORE_CULINARY_ITEMS.items():
+        if price_val < min_p or price_val > max_p:
+            continue
+        if any(ex in norm for ex in excl_kws):
+            continue
+        if any(kw in norm for kw in must_kws):
+            if canon_key == "serek_wiejski" and ("lekk" in norm or "light" in norm):
+                return "serek_wiejski_lekki", "Serek wiejski lekki", cat_name
+            return canon_key, clean_label, cat_name
 
-    padded = f" {norm} "
-    return any(root in padded for root in REAL_FOOD_ROOTS)
+    return None
 
 def parse_offers(html: str, store_name: str, source_url: str) -> list[dict]:
     soup = BeautifulSoup(html, "html.parser")
@@ -319,7 +263,29 @@ def parse_offers(html: str, store_name: str, source_url: str) -> list[dict]:
     if not is_promotion_active(page_valid_to):
         return []
 
-    # 1. JSON w skryptach (__NEXT_DATA__, LD+JSON itp.)
+    def try_add(raw_prod: str, price_val: float, raw_text: str, v_from: Optional[str], v_to: Optional[str]):
+        matched = match_core_culinary_item(raw_prod, price_val)
+        if not matched:
+            return
+        canon_key, clean_label, cat_name = matched
+        weight_str = extract_weight_from_text(raw_prod) or extract_weight_from_text(raw_text)
+        sig = f"{canon_key}_{price_val}_{weight_str or ''}"
+        if sig not in seen:
+            seen.add(sig)
+            offers.append({
+                "store": store_name,
+                "canon_key": canon_key,
+                "category": cat_name,
+                "raw_name": raw_prod,
+                "generic_name": clean_label,
+                "weight": weight_str,
+                "price": round(price_val, 2),
+                "valid_from": v_from,
+                "valid_to": v_to,
+                "raw_text": raw_text,
+                "source_url": source_url,
+            })
+
     for script in soup.find_all("script"):
         s_text = script.string or ""
         if not s_text:
@@ -331,25 +297,8 @@ def parse_offers(html: str, store_name: str, source_url: str) -> list[dict]:
         ):
             raw_prod = m.group(1).encode("utf-8").decode("unicode_escape", errors="ignore").strip()
             price_val = float(m.group(2).replace(",", "."))
-            if 0.40 <= price_val <= 150.0 and is_food_offer(raw_prod):
-                generic = clean_generic_name(raw_prod)
-                if not is_food_offer(generic):
-                    continue
-                sig = f"{normalize_ascii(generic)}_{price_val}"
-                if sig not in seen:
-                    seen.add(sig)
-                    offers.append({
-                        "store": store_name,
-                        "raw_name": raw_prod,
-                        "generic_name": generic,
-                        "price": round(price_val, 2),
-                        "valid_from": page_valid_from,
-                        "valid_to": page_valid_to,
-                        "raw_text": f"{raw_prod} ({price_val:.2f} zł)",
-                        "source_url": source_url,
-                    })
+            try_add(raw_prod, price_val, f"{raw_prod} — {price_val:.2f} zł", page_valid_from, page_valid_to)
 
-    # 2. Atrybuty alt/title obrazków produktów
     for img in soup.find_all("img", alt=True):
         alt_txt = " ".join((img.get("alt") or "").split())
         if len(alt_txt) < 8 or len(alt_txt) > 220:
@@ -359,113 +308,59 @@ def parse_offers(html: str, store_name: str, source_url: str) -> list[dict]:
             first_m = price_matches[0]
             price_val = float(first_m.group(1).replace(",", "."))
             raw_prod = re.sub(r"^zobacz\s+aktualn[aą]\s+", "", alt_txt[:first_m.start()], flags=re.I).strip(" -–|:•,")
-            if 0.40 <= price_val <= 150.0 and is_food_offer(raw_prod):
-                generic = clean_generic_name(raw_prod)
-                if not is_food_offer(generic):
-                    continue
-                sig = f"{normalize_ascii(generic)}_{price_val}"
-                if sig not in seen:
-                    seen.add(sig)
-                    offers.append({
-                        "store": store_name,
-                        "raw_name": raw_prod,
-                        "generic_name": generic,
-                        "price": round(price_val, 2),
-                        "valid_from": page_valid_from,
-                        "valid_to": page_valid_to,
-                        "raw_text": alt_txt,
-                        "source_url": source_url,
-                    })
+            try_add(raw_prod, price_val, alt_txt, page_valid_from, page_valid_to)
 
-    # 3. Kafelki HTML (obsługuje również sytuacje gdy obok ceny głównej podana jest cena za 1 kg / 100 g!)
     for el in soup.find_all(["article", "div", "li", "a", "tr", "section"]):
         text = " ".join(el.get_text(" ", strip=True).split())
         if len(text) < 8 or len(text) > 260:
             continue
-
         price_matches = list(re.finditer(r"(\d{1,3}[.,]\d{2})\s*zł", text, re.I))
         if not (1 <= len(price_matches) <= 2):
             continue
-
         first_m = price_matches[0]
         price_val = float(first_m.group(1).replace(",", "."))
-        if price_val < 0.40 or price_val > 150.0:
-            continue
-
         raw_prod = re.sub(r"^zobacz\s+aktualn[aą]\s+", "", text[:first_m.start()], flags=re.I).strip(" -–|:•,")
-        if not is_food_offer(raw_prod):
-            continue
-
         card_from, card_to = extract_validity_dates(text)
         v_from = card_from or page_valid_from
         v_to = card_to or page_valid_to
-
         if not is_promotion_active(v_to):
             continue
-
-        generic = clean_generic_name(raw_prod)
-        if not is_food_offer(generic):
-            continue
-
-        sig = f"{normalize_ascii(generic)}_{price_val}"
-        if sig not in seen:
-            seen.add(sig)
-            offers.append({
-                "store": store_name,
-                "raw_name": raw_prod,
-                "generic_name": generic,
-                "price": round(price_val, 2),
-                "valid_from": v_from,
-                "valid_to": v_to,
-                "raw_text": f"{raw_prod} — {price_val:.2f} zł",
-                "source_url": source_url,
-            })
+        try_add(raw_prod, price_val, f"{raw_prod} — {price_val:.2f} zł", v_from, v_to)
 
     return offers
 
 def find_leaflet_links_from_home(session: requests.Session) -> dict[str, list[str]]:
     store_links = {s: list(DIRECT_STORE_SEEDS.get(s, [])) for s in STORES}
-
     for home in PORTAL_HOMES:
         try:
             resp = session.get(home, timeout=15)
-            print(f"[HOME] {home} -> HTTP {resp.status_code} ({len(resp.text)} B)", flush=True)
             if resp.status_code != 200 or len(resp.text) < 500:
                 continue
-
             soup = BeautifulSoup(resp.text, "html.parser")
             base_domain = urlparse(home).netloc
-
             for a in soup.find_all("a", href=True):
                 full = urljoin(home, a["href"]).split("#")[0]
                 if urlparse(full).netloc != base_domain:
                     continue
                 link_txt = a.get_text(" ", strip=True)
-
                 for store in STORES:
-                    slug = store.lower()
-                    if is_valid_leaflet_url(full, slug, link_txt):
-                        if full not in store_links[store]:
-                            store_links[store].append(full)
-        except Exception as exc:
-            print(f"[HOME] Błąd {home}: {exc}", flush=True)
-        time.sleep(0.4)
-
+                    if is_valid_leaflet_url(full, store.lower(), link_txt) and full not in store_links[store]:
+                        store_links[store].append(full)
+        except Exception:
+            pass
+        time.sleep(0.35)
     return store_links
 
 def fetch_all_store_offers() -> list[dict]:
     session = requests.Session()
     session.headers.update(HEADERS)
-
     discovered = find_leaflet_links_from_home(session)
     all_offers = []
 
     for store in STORES:
         slug = store.lower()
         links = discovered.get(store, [])
-        print(f"\n[{store}] Sprawdzam linki i podstrony gazetek...", flush=True)
         store_offers = []
-
         visited = set()
         queue = list(links[:15])
         expanded_leaflet_ids = set()
@@ -476,7 +371,6 @@ def fetch_all_store_offers() -> list[dict]:
                 continue
             visited.add(url)
 
-            # Jeśli to gazetka na Blix (/gazetka/537453/), automatycznie doklejamy strony 2..10, żeby nie zgubić dalszych stron!
             m_blix_gaz = re.match(r"^(https?://blix\.pl/sklep/[^/]+/gazetka/\d+/?)$", url)
             if m_blix_gaz and url not in expanded_leaflet_ids:
                 expanded_leaflet_ids.add(url)
@@ -487,15 +381,11 @@ def fetch_all_store_offers() -> list[dict]:
                         queue.insert(0, paged_url)
 
             try:
-                time.sleep(0.35)
+                time.sleep(0.3)
                 resp = session.get(url, timeout=15)
                 if resp.status_code != 200:
                     continue
-
-                found = parse_offers(resp.text, store, url)
-                if found:
-                    print(f"  -> {url} (+{len(found)} ofert)", flush=True)
-                store_offers.extend(found)
+                store_offers.extend(parse_offers(resp.text, store, url))
 
                 soup = BeautifulSoup(resp.text, "html.parser")
                 base_domain = urlparse(url).netloc
@@ -505,58 +395,31 @@ def fetch_all_store_offers() -> list[dict]:
                     if urlparse(sub).netloc == base_domain and sub not in visited and sub not in queue:
                         if is_valid_leaflet_url(sub, slug, sub_txt):
                             queue.append(sub)
-            except Exception as exc:
-                print(f"  -> Błąd {url}: {exc}", flush=True)
+            except Exception:
+                pass
 
         dedup = {}
         for o in store_offers:
-            k = f"{normalize_ascii(o['generic_name'])}_{o['price']}"
+            k = f"{o['canon_key']}_{o['price']}_{o.get('weight') or ''}"
             if k not in dedup:
                 dedup[k] = o
 
         final_list = list(dedup.values())
-        print(f"==> {store}: zebrano {len(final_list)} unikalnych, czystych ofert żywnościowych.", flush=True)
+        print(f"==> {store}: zebrano {len(final_list)} esencjonalnych ofert kulinarnych.", flush=True)
         all_offers.extend(final_list)
 
     return all_offers
 
-def passes_guardrails(canon_key: str, offer: dict) -> tuple[bool, str]:
-    rules = PRODUCT_GUARDRAILS.get(canon_key)
-    if not rules:
-        return True, "OK"
-
-    haystack = normalize_ascii(f"{offer['raw_name']} {offer['generic_name']}")
-    for bad in rules.get("exclude", []):
-        if bad in haystack:
-            return False, f"wykluczone słowo '{bad}'"
-
-    must_any = rules.get("must_have_any", [])
-    if must_any and not any(req in haystack for req in must_any):
-        return False, f"brak wymaganego {must_any}"
-
-    min_p = rules.get("min_price")
-    if min_p is not None and offer["price"] < float(min_p):
-        return False, f"cena {offer['price']:.2f} < min_price {min_p:.2f}"
-
-    return True, "OK"
-
-def build_all_food_pending(offers: list[dict], max_items: int = 300) -> dict:
-    """Buduje kompletny słownik aktualnych promocji na prawdziwą żywność (bez kosmetyków i słodyczy)."""
+def build_essential_food_pending(offers: list[dict], max_items: int = 85) -> dict:
+    """Zwraca 1 najtańszą ofertę na każdy podstawowy składnik kuchenny w danym sklepie wraz z gramaturą (weight) i kategorią."""
     best_per_store_prod = {}
     for off in offers:
-        generic = off["generic_name"]
-        canon = canonical_product_key(generic)
-        ok, _ = passes_guardrails(canon, off)
-        if not ok:
-            continue
-
-        key = f"{normalize_ascii(off['store'])}_{canon}"
-        if not key or len(key) < 4:
-            continue
-
+        key = f"{normalize_ascii(off['store'])}_{off['canon_key']}"
         if key not in best_per_store_prod or off["price"] < best_per_store_prod[key]["detectedPrice"]:
             best_per_store_prod[key] = {
-                "name": generic,
+                "name": off["generic_name"],
+                "weight": off.get("weight"),
+                "category": off.get("category") or "Inne",
                 "detectedPrice": off["price"],
                 "store": off["store"],
                 "validFrom": off.get("valid_from"),
@@ -569,15 +432,24 @@ def build_all_food_pending(offers: list[dict], max_items: int = 300) -> dict:
     sorted_items = sorted(best_per_store_prod.items(), key=lambda x: (x[1]["name"], x[1]["detectedPrice"]))[:max_items]
     return dict(sorted_items)
 
+def purge_expired_pending(existing_pending: dict) -> dict:
+    cleaned = {}
+    for k, v in (existing_pending or {}).items():
+        if isinstance(v, dict) and is_promotion_active(v.get("validTo")):
+            cleaned[k] = v
+    return cleaned
+
 def export_csv(offers: list[dict], filename="promocje_spozywcze.csv"):
     with open(filename, "w", encoding="utf-8-sig", newline="") as f:
         writer = csv.writer(f, delimiter=";")
-        writer.writerow(["store", "generic_name", "raw_name", "price", "valid_from", "valid_to", "source_url", "collection_date"])
+        writer.writerow(["store", "category", "generic_name", "weight", "raw_name", "price", "valid_from", "valid_to", "source_url", "collection_date"])
         today = datetime.now().strftime("%Y-%m-%d")
         for o in offers:
             writer.writerow([
                 o["store"],
+                o.get("category") or "Inne",
                 o["generic_name"],
+                o.get("weight") or "NULL",
                 o["raw_name"],
                 f"{o['price']:.2f}",
                 o.get("valid_from") or "NULL",
@@ -608,18 +480,18 @@ def main():
     offers = fetch_all_store_offers()
     export_csv(offers)
 
-    all_food_promos = build_all_food_pending(offers)
-    print(f"Przygotowano {len(all_food_promos)} czystych promocji żywnościowych dla wszystkich aktywnych kuchni.", flush=True)
+    essential_promos = build_essential_food_pending(offers)
+    print(f"Przygotowano {len(essential_promos)} esencjonalnych promocji (z gramaturą i kategorią Warzywa i owoce).", flush=True)
 
     if dry_run:
         with open("wynik_testu.json", "w", encoding="utf-8") as f:
-            json.dump({"total_offers": len(offers), "all_food_pending_count": len(all_food_promos), "sample_pending": dict(list(all_food_promos.items())[:30])}, f, ensure_ascii=False, indent=2)
-        print("\n[DRY-RUN] Zapisano wynik_testu.json. Przykładowe pozycje:", flush=True)
-        for v in list(all_food_promos.values())[:25]:
-            print(f"  ✓ [{v['store']}] {v['name']} -> {v['detectedPrice']:.2f} zł ({v['validFrom']} - {v['validTo']})", flush=True)
+            json.dump({"total_offers": len(offers), "essential_count": len(essential_promos), "items": essential_promos}, f, ensure_ascii=False, indent=2)
+        for v in essential_promos.values():
+            w_badge = f" [{v['weight']}]" if v.get("weight") else ""
+            print(f"  ✓ [{v['store']}] ({v['category']}) {v['name']}{w_badge} -> {v['detectedPrice']:.2f} zł ({v['validFrom']} - {v['validTo']})", flush=True)
         return
 
-    if not all_food_promos:
+    if not essential_promos:
         print("Brak pobranych ofert — przerywam zapis do Firebase.", flush=True)
         return
 
@@ -630,14 +502,15 @@ def main():
         if data.get("active") is False:
             continue
 
-        existing = data.get("pendingScraper") or {}
-        existing.update(all_food_promos)
+        active_existing = purge_expired_pending(data.get("pendingScraper") or {})
+        active_existing.update(essential_promos)
+
         db.collection("kuchnie").document(doc_snap.id).set({
-            "pendingScraper": existing,
+            "pendingScraper": active_existing,
             "lastScraped": datetime.now().isoformat(),
         }, merge=True)
         updated += 1
-        print(f"[Kuchnia {doc_snap.id}] Wysłano {len(all_food_promos)} promocji do Weryfikacji Scrapera.", flush=True)
+        print(f"[Kuchnia {doc_snap.id}] Aktywnych pozycji w poczekalni: {len(active_existing)}.", flush=True)
 
     print(f"=== ZAKOŃCZONO. Zaktualizowano {updated} kuchni w Firebase. ===", flush=True)
 
