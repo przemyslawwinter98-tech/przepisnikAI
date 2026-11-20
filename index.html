@@ -650,6 +650,14 @@
                         </div>
                     </div>
 
+                    <!-- Pasek filtrowania poczekalni po sklepie + wyszukiwarka -->
+                    <div class="flex flex-col sm:flex-row gap-3 justify-between">
+                        <div id="verify-store-filters" class="flex gap-2 overflow-x-auto no-scrollbar pb-1 -mx-4 px-4 sm:mx-0 sm:px-0"></div>
+                        <div class="relative sm:w-72">
+                            <input type="text" id="verify-search" oninput="renderVerifyScraper()" placeholder="Szukaj produktu w poczekalni..." class="w-full px-3.5 py-2 rounded-xl bg-[#1e293b] border border-slate-700/80 text-xs sm:text-sm text-white placeholder-slate-400 focus:outline-none focus:border-indigo-500">
+                        </div>
+                    </div>
+
                     <div id="verify-scraper-list" class="space-y-3"></div>
                 </section>
 
@@ -1169,6 +1177,7 @@
             activePlannerDay: 'mon',
             reviews: [],
             currentFilter: 'all',
+            verifyStoreFilter: 'all',
             unsubKitchen: null,
             unsubPublicRecipes: null,
             unsubAdminList: null,
@@ -3441,15 +3450,94 @@ BARDZO WAŻNE ZASADY:
             return 'bg-indigo-500/20 text-indigo-300 border-indigo-500/40';
         }
 
+        window.setVerifyStoreFilter = (storeKey) => {
+            window.appState.verifyStoreFilter = storeKey;
+            renderVerifyScraper();
+        };
+
+        function getNormalizedVerifyStore(item) {
+            const raw = item.store || (item.source ? item.source.replace(/^Promocja\s+/i, '').split('(')[0].trim() : 'Inne');
+            const low = raw.toLowerCase();
+            if (low.includes('lidl')) return 'Lidl';
+            if (low.includes('biedronka')) return 'Biedronka';
+            if (low.includes('netto')) return 'Netto';
+            return raw || 'Inne';
+        }
+
+        function getFilteredPendingEntries() {
+            const allItems = Object.entries(window.appState.pendingScraper || {});
+            const storeFilter = window.appState.verifyStoreFilter || 'all';
+            const query = (document.getElementById('verify-search')?.value || '').toLowerCase().trim();
+
+            return allItems.filter(([prodKey, item]) => {
+                const st = getNormalizedVerifyStore(item);
+                if (storeFilter !== 'all' && st !== storeFilter) return false;
+                if (query) {
+                    const cleanName = window.cleanGenericFoodName(item.name || prodKey).toLowerCase();
+                    const rawText = (item.rawText || '').toLowerCase();
+                    if (!cleanName.includes(query) && !rawText.includes(query)) return false;
+                }
+                return true;
+            });
+        }
+
         window.renderVerifyScraper = () => {
             const listEl = document.getElementById('verify-scraper-list');
-            const items = Object.entries(window.appState.pendingScraper || {});
+            const filtersEl = document.getElementById('verify-store-filters');
+            const allItems = Object.entries(window.appState.pendingScraper || {});
+
+            // Policz oferty dla każdego sklepu
+            const storeCounts = {};
+            allItems.forEach(([_, item]) => {
+                const st = getNormalizedVerifyStore(item);
+                storeCounts[st] = (storeCounts[st] || 0) + 1;
+            });
+
+            const activeFilter = window.appState.verifyStoreFilter || 'all';
+            if (activeFilter !== 'all' && !storeCounts[activeFilter]) {
+                window.appState.verifyStoreFilter = 'all';
+            }
+            const currentFilter = window.appState.verifyStoreFilter || 'all';
+
+            if (filtersEl) {
+                const knownStores = ['Lidl', 'Biedronka', 'Netto', ...Object.keys(storeCounts).filter(s => !['Lidl', 'Biedronka', 'Netto'].includes(s))];
+                const chips = [
+                    { id: 'all', label: `Wszystkie (${allItems.length})`, activeClass: 'bg-indigo-500 text-white' },
+                    ...knownStores.filter(st => storeCounts[st] > 0 || ['Lidl', 'Biedronka', 'Netto'].includes(st)).map(st => {
+                        const icon = st === 'Lidl' ? '🔵' : st === 'Biedronka' ? '🐞' : st === 'Netto' ? '🟡' : '🏪';
+                        const activeCls = st === 'Lidl'
+                            ? 'bg-blue-500 text-white'
+                            : st === 'Biedronka'
+                            ? 'bg-red-500 text-white'
+                            : st === 'Netto'
+                            ? 'bg-amber-400 text-slate-950'
+                            : 'bg-indigo-500 text-white';
+                        return { id: st, label: `${icon} ${st} (${storeCounts[st] || 0})`, activeClass: activeCls };
+                    })
+                ];
+
+                filtersEl.innerHTML = chips.map(ch => {
+                    const isAct = currentFilter === ch.id;
+                    return `<button type="button" onclick="setVerifyStoreFilter('${ch.id}')" class="px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${isAct ? ch.activeClass + ' shadow-md' : 'bg-[#1e293b] text-slate-300 border border-slate-700 hover:border-slate-500'}">${ch.label}</button>`;
+                }).join('');
+            }
+
+            const items = getFilteredPendingEntries();
             document.getElementById('verify-btn-count').textContent = items.length;
 
-            if (items.length === 0) {
+            if (allItems.length === 0) {
                 listEl.innerHTML = `<div class="bg-[#1e293b] rounded-2xl border border-slate-800 p-10 text-center">
                     <h3 class="text-base font-bold text-white">Poczekalnia jest pusta</h3>
                     <p class="text-sm text-slate-400 mt-1">Wszystkie pozycje ze scrapera zostały już zweryfikowane.</p>
+                </div>`;
+                return;
+            }
+
+            if (items.length === 0) {
+                listEl.innerHTML = `<div class="bg-[#1e293b] rounded-2xl border border-slate-800 p-8 text-center space-y-2">
+                    <h3 class="text-base font-bold text-white">Brak promocji dla wybranego filtra</h3>
+                    <p class="text-xs text-slate-400">Zmień sklep powyżej lub wyczyść wyszukiwarkę.</p>
+                    <button type="button" onclick="setVerifyStoreFilter('all'); if(document.getElementById('verify-search')) document.getElementById('verify-search').value='';" class="mt-2 px-4 py-2 rounded-xl bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 text-xs font-bold">Pokaż wszystkie sklepy</button>
                 </div>`;
                 return;
             }
@@ -3544,8 +3632,8 @@ BARDZO WAŻNE ZASADY:
         };
 
         window.approveAllPendingScraper = async () => {
-            const keys = Object.keys(window.appState.pendingScraper || {});
-            for (const k of keys) {
+            const filteredEntries = getFilteredPendingEntries();
+            for (const [k] of filteredEntries) {
                 await window.approveScraperItem(k);
             }
         };
