@@ -3,6 +3,7 @@ import re
 import json
 import time
 import unicodedata
+from urllib.parse import urljoin, urlparse
 from datetime import datetime
 import requests
 from bs4 import BeautifulSoup
@@ -33,7 +34,7 @@ NON_FOOD_KEYWORDS = [
     "karma", "zwirek", "pieluchy", "pampers", "patelnia", "garnek", "skarpetki",
     "koszulka", "spodnie", "buty", "zabawka", "baterie", "zarowka", "wiertarka",
     "szlifierka", "kosiarka", "doniczka", "ziemia ogrodowa", "piwo", "wodka",
-    "wino", "whisky", "likier", "cydr", "papierosy", "tyton"
+    "wino", "whisky", "likier", "cydr", "papierosy", "tyton", "krem do", "balsam"
 ]
 
 def normalize_ascii(text: str) -> str:
@@ -49,7 +50,7 @@ def is_food_offer(title: str) -> bool:
     return not any(bad in norm for bad in NON_FOOD_KEYWORDS)
 
 # ---------------------------------------------------------------------------
-# 3. POBIERANIE OFERT Z GAZETEK (LIDL, BIEDRONKA, NETTO)
+# 3. POBIERANIE STRON + AUTOMATYCZNE ODKRYWANIE LINKÓW DO GAZETEK/OFERT
 # ---------------------------------------------------------------------------
 HEADERS = {
     "User-Agent": (
@@ -57,83 +58,146 @@ HEADERS = {
         "AppleWebKit/537.36 (KHTML, like Gecko) "
         "Chrome/131.0.0.0 Safari/537.36"
     ),
-    "Accept-Language": "pl-PL,pl;q=0.9",
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    "Accept-Language": "pl-PL,pl;q=0.9,en;q=0.8",
 }
 
-STORE_SOURCES = {
+STORE_HUBS = {
     "Lidl": [
-        "https://www.ding.pl/sklepy/lidl/oferty",
-        "https://gazetkowo.pl/lidl/oferty",
+        "https://www.ding.pl/lidl",
+        "https://gazetkowo.pl/lidl",
+        "https://blix.pl/sklep/lidl/",
     ],
     "Biedronka": [
-        "https://www.ding.pl/sklepy/biedronka/oferty",
-        "https://gazetkowo.pl/biedronka/oferty",
+        "https://www.ding.pl/biedronka",
+        "https://gazetkowo.pl/biedronka",
+        "https://blix.pl/sklep/biedronka/",
     ],
     "Netto": [
-        "https://www.ding.pl/sklepy/netto/oferty",
-        "https://gazetkowo.pl/netto/oferty",
+        "https://www.ding.pl/netto",
+        "https://gazetkowo.pl/netto",
+        "https://blix.pl/sklep/netto/",
     ],
 }
 
-def extract_offers_from_html(store_name: str, url: str) -> list[dict]:
+def extract_offers_from_soup(store_name: str, soup: BeautifulSoup, source_url: str) -> list[dict]:
     offers = []
-    try:
-        resp = requests.get(url, headers=HEADERS, timeout=20)
-        print(f"[{store_name}] GET {url} -> HTTP {resp.status_code} ({len(resp.text)} B)")
-        if resp.status_code != 200 or len(resp.text) < 500:
-            return offers
+    seen_raw = set()
 
-        soup = BeautifulSoup(resp.text, "html.parser")
+    # A) Parsowanie bloków JSON-LD / Next.js jeśli są w HTML
+    for script in soup.find_all("script"):
+        s_text = script.string or ""
+        if "zł" in s_text or "PLN" in s_text:
+            for m in re.finditer(r'"(?:name|title)"\s*:\s*"([^"]{3,90})".{0,250}?"(?:price|lowPrice)"\s*:\s*"?(\d{1,3}[.,]\d{2})"?', s_text, re.S):
+                prod_name = m.group(1).encode("utf-8").decode("unicode_escape", errors="ignore").strip()
+                price_val = float(m.group(2).replace(",", "."))
+                if 0.20 < price_val <= 250.0 and is_food_offer(prod_name):
+                    key = f"{prod_name}_{price_val}"
+                    if key not in seen_raw:
+                        seen_raw.add(key)
+                        offers.append({
+                            "store": store_name,
+                            "raw_name": prod_name,
+                            "price": round(price_val, 2),
+                            "raw_text": f"{prod_name} - {price_val:.2f} zł",
+                            "source_url": source_url
+                        })
 
-        # Szukamy kart ofertowych zawierających cenę w zł
-        cards = soup.find_all(["article", "div", "li", "a"])
-        seen_raw = set()
+    # B) Parsowanie elementów HTML zawierających nazwę i cenę w zł
+    for el in soup.find_all(["article", "div", "li", "a", "section"]):
+        # Pomijamy duże kontenery mające wiele zagnieżdżonych cen
+        text = " ".join(el.get_text(" ", strip=True).split())
+        if len(text) < 8 or len(text) > 180 or text in seen_raw:
+            continue
 
-        for el in cards:
-            text = " ".join(el.get_text(" ", strip=True).split())
-            if len(text) < 8 or len(text) > 220 or text in seen_raw:
-                continue
+        prices = re.findall(r"(\d{1,3}[.,]\d{2})\s*zł", text, re.I)
+        if len(prices) != 1:
+            continue
 
-            price_match = re.search(r"(\d{1,3}[.,]\d{2})\s*zł", text, re.I)
-            if not price_match:
-                continue
+        price_val = float(prices[0].replace(",", "."))
+        if price_val <= 0.20 or price_val > 250.0:
+            continue
 
-            price_val = float(price_match.group(1).replace(",", "."))
-            if price_val <= 0.20 or price_val > 250.0:
-                continue
+        price_pos = re.search(r"\d{1,3}[.,]\d{2}\s*zł", text, re.I).start()
+        name_part = text[:price_pos].strip(" -–|:•,")
+        if len(name_part) < 3 or not is_food_offer(name_part):
+            continue
 
-            # Wyciągamy nazwę produktu przed ceną
-            name_part = text[:price_match.start()].strip(" -–|:•")
-            if len(name_part) < 3:
-                continue
-            if not is_food_offer(name_part):
-                continue
-
-            seen_raw.add(text)
-            offers.append({
-                "store": store_name,
-                "raw_name": name_part,
-                "price": round(price_val, 2),
-                "raw_text": text,
-                "source_url": url
-            })
-    except Exception as exc:
-        print(f"[{store_name}] Błąd pobierania {url}: {exc}")
+        seen_raw.add(text)
+        offers.append({
+            "store": store_name,
+            "raw_name": name_part,
+            "price": round(price_val, 2),
+            "raw_text": text,
+            "source_url": source_url
+        })
 
     return offers
 
-def fetch_all_store_offers() -> list[dict]:
-    all_offers = []
-    for store_name, urls in STORE_SOURCES.items():
-        store_found = []
-        for url in urls:
-            store_found = extract_offers_from_html(store_name, url)
-            if store_found:
+def discover_subpages(base_url: str, soup: BeautifulSoup, store_slug: str) -> list[str]:
+    base_domain = urlparse(base_url).netloc
+    found = []
+    for a in soup.find_all("a", href=True):
+        full_url = urljoin(base_url, a["href"]).split("#")[0]
+        parsed = urlparse(full_url)
+        if parsed.netloc != base_domain:
+            continue
+        low = full_url.lower()
+        if store_slug in low and any(k in low for k in ["gazetk", "ofert", "promocj", "produkt"]):
+            if full_url != base_url and full_url not in found:
+                found.append(full_url)
+    return found[:4]  # Maksymalnie 4 najnowsze podstrony na źródło
+
+def fetch_store_offers(session: requests.Session, store_name: str, hub_urls: list[str]) -> list[dict]:
+    store_slug = normalize_ascii(store_name)
+    collected = []
+
+    for hub_url in hub_urls:
+        try:
+            resp = session.get(hub_url, timeout=20)
+            print(f"[{store_name}] HUB {hub_url} -> HTTP {resp.status_code} ({len(resp.text)} B)")
+            if resp.status_code != 200 or len(resp.text) < 500:
+                continue
+
+            soup = BeautifulSoup(resp.text, "html.parser")
+            hub_offers = extract_offers_from_soup(store_name, soup, hub_url)
+            collected.extend(hub_offers)
+
+            # Jeśli na samej stronie sklepu było mało ofert, wchodzimy w odkryte linki gazetek/ofert
+            subpages = discover_subpages(hub_url, soup, store_slug)
+            print(f"  Odkryto {len(subpages)} podstron z gazetkami/ofertami dla {store_name}")
+            for sub_url in subpages:
+                time.sleep(1.2)
+                sub_resp = session.get(sub_url, timeout=20)
+                print(f"  -> SUB {sub_url} -> HTTP {sub_resp.status_code}")
+                if sub_resp.status_code == 200:
+                    sub_soup = BeautifulSoup(sub_resp.text, "html.parser")
+                    collected.extend(extract_offers_from_soup(store_name, sub_soup, sub_url))
+
+            if collected:
                 break
-            time.sleep(1.5)
-        print(f"-> Zebrano {len(store_found)} ofert spożywczych dla sieci: {store_name}")
-        all_offers.extend(store_found)
-        time.sleep(1.5)
+        except Exception as exc:
+            print(f"[{store_name}] Błąd dla {hub_url}: {exc}")
+        time.sleep(1.2)
+
+    # Deduplikacja po (nazwa + cena)
+    unique = {}
+    for item in collected:
+        k = f"{normalize_ascii(item['raw_name'])}_{item['price']}"
+        if k not in unique:
+            unique[k] = item
+    return list(unique.values())
+
+def fetch_all_store_offers() -> list[dict]:
+    session = requests.Session()
+    session.headers.update(HEADERS)
+    all_offers = []
+
+    for store_name, hubs in STORE_HUBS.items():
+        store_offers = fetch_store_offers(session, store_name, hubs)
+        print(f"==> Zebrano {len(store_offers)} unikalnych ofert spożywczych dla sieci: {store_name}")
+        all_offers.extend(store_offers)
+
     return all_offers
 
 # ---------------------------------------------------------------------------
@@ -181,7 +245,7 @@ def main():
     print(f"Łącznie znaleziono {len(all_offers)} aktualnych ofert spożywczych.")
 
     if not all_offers:
-        print("UWAGA: Nie pobrano żadnych ofert z indeksów gazetek. Sprawdź logi HTTP powyżej.")
+        print("UWAGA: Nie pobrano żadnych ofert. Sprawdź kody HTTP powyżej.")
         return
 
     kitchens_ref = db.collection("kuchnie").stream()
