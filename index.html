@@ -3241,18 +3241,14 @@ BARDZO WAŻNE ZASADY:
             const data = await proxyResp.json();
             const docParser = new DOMParser().parseFromString(data.contents || "", "text/html");
             docParser.querySelectorAll("script, style, nav, footer, header, aside").forEach(el => el.remove());
-            const cleanText = (docParser.body?.innerText || "").replace(/
-{3,}/g, "
-
-").trim();
+            const cleanText = (docParser.body?.innerText || "").replace(/\n{3,}/g, "\\n\\n").trim();
             if (cleanText.length < 100) throw new Error("Strona jest pusta lub zablokowana.");
             return cleanText.slice(0, 15000);
         }
 
         function parseRecipeLocallyFromText(rawText) {
             const lines = rawText
-                .split('
-')
+                .split('\\n')
                 .map(l => l.replace(/^#+\s*/, '').replace(/^\*+\s*/, '').replace(/^-\s*/, '').trim())
                 .filter(l => l && !l.startsWith('Title:') && !l.startsWith('URL Source:') && !l.startsWith('Markdown Content:') && !l.startsWith('Źródło:') && !l.startsWith('!['));
 
@@ -3290,10 +3286,8 @@ BARDZO WAŻNE ZASADY:
             const formattedSteps = stepLines.length > 0 ? stepLines.slice(0, 12) : lines.slice(1, 8).filter(l => l.length > 25);
             return {
                 title,
-                ingredientsText: formattedIngredients.join('
-'),
-                stepsText: (formattedSteps.length > 0 ? formattedSteps : ["Przygotuj składniki według opisu ze strony."]).join('
-')
+                ingredientsText: formattedIngredients.join('\\n'),
+                stepsText: (formattedSteps.length > 0 ? formattedSteps : ["Przygotuj składniki według opisu ze strony."]).join('\\n')
             };
         }
 
@@ -3312,9 +3306,7 @@ BARDZO WAŻNE ZASADY:
 
             try {
                 const pageContent = await fetchWebpageReadableText(rawUrl);
-                document.getElementById('ai-recipe-prompt').value = `Źródło: ${rawUrl}
-
-${pageContent}`;
+                document.getElementById('ai-recipe-prompt').value = `Źródło: ${rawUrl}\\n\\n${pageContent}`;
                 showToast("Pobrano treść przepisu ze strony! Przetwarzam...");
                 await generateRecipeWithAI();
                 urlInput.value = '';
@@ -3428,10 +3420,8 @@ ${pageContent}`;
             const category = document.getElementById('man-category').value;
             const time = Number(document.getElementById('man-time').value) || 25;
             const portions = Number(document.getElementById('man-portions').value) || 4;
-            const rawIngs = document.getElementById('man-ingredients').value.trim().split('
-');
-            const steps = document.getElementById('man-steps').value.trim().split('
-').filter(Boolean);
+            const rawIngs = document.getElementById('man-ingredients').value.trim().split('\\n');
+            const steps = document.getElementById('man-steps').value.trim().split('\\n').filter(Boolean);
             const sharePublic = document.getElementById('man-recipe-share-public').checked;
 
             const ingredients = rawIngs.map(line => {
