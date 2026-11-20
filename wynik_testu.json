@@ -1,320 +1,407 @@
 {
-  "total_offers": 901,
+  "total_offers": 1472,
   "matched_radar": {
     "maslo": {
       "name": "Masło",
-      "detectedPrice": 2.99,
+      "detectedPrice": 3.89,
+      "store": "Netto",
       "validFrom": "2026-11-19",
-      "validTo": "2026-11-25",
-      "source": "Promocja Biedronka (ważne: 2026-11-19 – 2026-11-25)",
-      "rawText": "Zobacz aktualna Masło ekstra z Polskiej Mleczarni — 2.99 zł (ważne: 2026-11-19 – 2026-11-25)",
-      "sourceUrl": "https://blix.pl/sklep/biedronka/gazetka/537453/"
+      "validTo": "2026-11-21",
+      "source": "Netto",
+      "rawText": "Masło z Łukowa Lumiko — 3.89 zł",
+      "sourceUrl": "https://blix.pl/sklep/netto/gazetka/536244/"
     },
     "mleko": {
       "name": "Mleko",
       "detectedPrice": 1.98,
+      "store": "Biedronka",
       "validFrom": "2026-11-19",
       "validTo": "2026-11-25",
-      "source": "Promocja Biedronka (ważne: 2026-11-19 – 2026-11-25)",
-      "rawText": "Zobacz aktualna Mleko UHT Mlekovita Łączka 3,2% — 1.98 zł (ważne: 2026-11-19 – 2026-11-25)",
+      "source": "Biedronka",
+      "rawText": "Mleko UHT Mlekovita Łączka 3,2% — 1.98 zł",
       "sourceUrl": "https://blix.pl/sklep/biedronka/gazetka/537453/"
     },
     "serek_wiejski": {
       "name": "Serek wiejski",
       "detectedPrice": 2.49,
+      "store": "Biedronka",
       "validFrom": "2026-11-16",
       "validTo": "2026-11-21",
-      "source": "Promocja Biedronka (ważne: 2026-11-16 – 2026-11-21)",
-      "rawText": "Zobacz aktualna Serek wiejski Piątnica — 2.49 zł (ważne: 2026-11-16 – 2026-11-21)",
+      "source": "Biedronka",
+      "rawText": "Serek wiejski Piątnica — 2.49 zł",
       "sourceUrl": "https://blix.pl/sklep/biedronka/gazetka/536667/"
     },
     "piers_z_kurczaka": {
       "name": "Pierś z kurczaka",
-      "detectedPrice": 2.49,
-      "validFrom": "2026-11-19",
-      "validTo": "2026-11-25",
-      "source": "Promocja Biedronka (ważne: 2026-11-19 – 2026-11-25)",
-      "rawText": "Zobacz aktualna Przyprawy Prymat przyprawa do kurczaka — 2.49 zł (ważne: 2026-11-19 – 2026-11-25)",
-      "sourceUrl": "https://blix.pl/sklep/biedronka/gazetka/537453/"
+      "detectedPrice": 14.49,
+      "store": "Lidl",
+      "validFrom": null,
+      "validTo": "2026-11-21",
+      "source": "Lidl",
+      "rawText": "filet z piersi indyka za — 14.49 zł",
+      "sourceUrl": "https://blix.pl/promocje/tania-sobota-w-lidlu/"
     },
     "mieso_mielone": {
       "name": "Mięso mielone",
       "detectedPrice": 7.99,
+      "store": "Netto",
       "validFrom": "2026-11-19",
       "validTo": "2026-11-21",
-      "source": "Promocja Netto (ważne: 2026-11-19 – 2026-11-21)",
-      "rawText": "Zobacz aktualna Mięso mielone z nogi kurczaka Sztuka Mięsa — 7.99 zł (ważne: 2026-11-19 – 2026-11-21)",
+      "source": "Netto",
+      "rawText": "Mięso mielone z nogi kurczaka Sztuka Mięsa — 7.99 zł",
       "sourceUrl": "https://blix.pl/sklep/netto/gazetka/536244/"
+    },
+    "tunczyk_w_puszce": {
+      "name": "Tuńczyk w puszce",
+      "detectedPrice": 7.49,
+      "store": "Biedronka",
+      "validFrom": "2026-11-19",
+      "validTo": "2026-11-25",
+      "source": "Biedronka",
+      "rawText": "Stek z tuńczyka Marinero — 7.49 zł",
+      "sourceUrl": "https://blix.pl/sklep/biedronka/gazetka/537453/"
     },
     "ryz": {
       "name": "Ryż",
       "detectedPrice": 2.79,
+      "store": "Biedronka",
       "validFrom": "2026-11-16",
       "validTo": "2026-11-21",
-      "source": "Promocja Biedronka (ważne: 2026-11-16 – 2026-11-21)",
-      "rawText": "Zobacz aktualna Ryż brązowy Plony Natury — 2.79 zł (ważne: 2026-11-16 – 2026-11-21)",
+      "source": "Biedronka",
+      "rawText": "Ryż brązowy Plony Natury — 2.79 zł",
       "sourceUrl": "https://blix.pl/sklep/biedronka/gazetka/536667/"
     },
     "makaron": {
       "name": "Makaron",
-      "detectedPrice": 3.99,
-      "validFrom": "2026-11-16",
+      "detectedPrice": 1.99,
+      "store": "Lidl",
+      "validFrom": "2026-09-16",
+      "validTo": "2026-12-31",
+      "source": "Lidl",
+      "rawText": "Makaron spaghetti Combino — 1.99 zł",
+      "sourceUrl": "https://blix.pl/sklep/lidl/gazetka/536685/?pageNumber=1"
+    },
+    "ser_zolty": {
+      "name": "Ser żółty",
+      "detectedPrice": 2.49,
+      "store": "Biedronka",
+      "validFrom": "2026-11-19",
+      "validTo": "2026-11-25",
+      "source": "Biedronka",
+      "rawText": "Ser żółty Oko na żubra OSM Hajnówka — 2.49 zł",
+      "sourceUrl": "https://blix.pl/sklep/biedronka/gazetka/537453/"
+    },
+    "oliwa_z_oliwek": {
+      "name": "Oliwa z oliwek",
+      "detectedPrice": 1.45,
+      "store": "Lidl",
+      "validFrom": "2026-11-19",
       "validTo": "2026-11-21",
-      "source": "Promocja Biedronka (ważne: 2026-11-16 – 2026-11-21)",
-      "rawText": "Zobacz aktualna Makaron protein świderki Go Active — 3.99 zł (ważne: 2026-11-16 – 2026-11-21)",
-      "sourceUrl": "https://blix.pl/sklep/biedronka/gazetka/536667/"
+      "source": "Lidl",
+      "rawText": "Bułka z oliwą z oliwek z wydłużonej fermentacji — 1.45 zł",
+      "sourceUrl": "https://blix.pl/sklep/lidl/gazetka/537102/"
     }
   },
   "sample_offers": [
     {
-      "store": "Biedronka",
-      "raw_name": "Zobacz Komplet pościeli z polaru Smukee",
-      "generic_name": "Zobacz Komplet pościeli z polaru Smukee",
-      "price": 69.9,
+      "store": "Lidl",
+      "raw_name": "Zobacz Whiskey Jameson",
+      "generic_name": "Zobacz Whiskey Jameson",
+      "price": 74.99,
       "valid_from": null,
       "valid_to": null,
-      "raw_text": "Zobacz Komplet pościeli z polaru Smukee 69,90 zł",
-      "source_url": "https://blix.pl/sklep/biedronka/"
+      "raw_text": "Zobacz Whiskey Jameson — 74.99 zł",
+      "source_url": "https://blix.pl/sklep/lidl/"
     },
     {
-      "store": "Biedronka",
-      "raw_name": "Zobacz Czapka Puccini",
-      "generic_name": "Zobacz Czapka Puccini",
+      "store": "Lidl",
+      "raw_name": "Zobacz Rum Bacardi Carta Blanca",
+      "generic_name": "Zobacz Rum Bacardi Carta Blanca",
+      "price": 54.99,
+      "valid_from": null,
+      "valid_to": null,
+      "raw_text": "Zobacz Rum Bacardi Carta Blanca — 54.99 zł",
+      "source_url": "https://blix.pl/sklep/lidl/"
+    },
+    {
+      "store": "Lidl",
+      "raw_name": "Zobacz Miód pitny Półtorak Jadwiga",
+      "generic_name": "Zobacz Miód pitny Półtorak Jadwiga",
+      "price": 89.99,
+      "valid_from": null,
+      "valid_to": null,
+      "raw_text": "Zobacz Miód pitny Półtorak Jadwiga — 89.99 zł",
+      "source_url": "https://blix.pl/sklep/lidl/"
+    },
+    {
+      "store": "Lidl",
+      "raw_name": "Zobacz Rum Bacardi Reserva Ocho",
+      "generic_name": "Zobacz Rum Bacardi Reserva Ocho",
+      "price": 139.99,
+      "valid_from": null,
+      "valid_to": null,
+      "raw_text": "Zobacz Rum Bacardi Reserva Ocho — 139.99 zł",
+      "source_url": "https://blix.pl/sklep/lidl/"
+    },
+    {
+      "store": "Lidl",
+      "raw_name": "Zobacz Puzzle drewniane Koci Domek Gabi Spin Master",
+      "generic_name": "Zobacz Puzzle drewniane Koci Domek Gabi Spin Master",
       "price": 29.99,
       "valid_from": null,
       "valid_to": null,
-      "raw_text": "Zobacz Czapka Puccini 29,99 zł",
-      "source_url": "https://blix.pl/sklep/biedronka/"
+      "raw_text": "Zobacz Puzzle drewniane Koci Domek Gabi Spin Master — 29.99 zł",
+      "source_url": "https://blix.pl/sklep/lidl/"
     },
     {
-      "store": "Biedronka",
-      "raw_name": "Zobacz Prostownik automatyczny Blow",
-      "generic_name": "Zobacz Prostownik automatyczny Blow",
-      "price": 69.9,
+      "store": "Lidl",
+      "raw_name": "Zobacz Odkurzacz bezprzewodowy Dyson Casdon",
+      "generic_name": "Zobacz Odkurzacz bezprzewodowy Dyson Casdon",
+      "price": 109.0,
       "valid_from": null,
       "valid_to": null,
-      "raw_text": "Zobacz Prostownik automatyczny Blow 69,90 zł",
-      "source_url": "https://blix.pl/sklep/biedronka/"
+      "raw_text": "Zobacz Odkurzacz bezprzewodowy Dyson Casdon — 109.00 zł",
+      "source_url": "https://blix.pl/sklep/lidl/"
     },
     {
-      "store": "Biedronka",
-      "raw_name": "Zobacz Whiskey Jameson",
-      "generic_name": "Zobacz Whiskey Jameson",
-      "price": 69.99,
-      "valid_from": null,
-      "valid_to": null,
-      "raw_text": "Zobacz Whiskey Jameson 69,99 zł",
-      "source_url": "https://blix.pl/sklep/biedronka/"
-    },
-    {
-      "store": "Biedronka",
-      "raw_name": "Zobacz Fileciki z łososia Marinero Kids",
-      "generic_name": "Zobacz Fileciki z łososia Kids",
-      "price": 6.49,
-      "valid_from": null,
-      "valid_to": null,
-      "raw_text": "Zobacz Fileciki z łososia Marinero Kids 6,49 zł",
-      "source_url": "https://blix.pl/sklep/biedronka/"
-    },
-    {
-      "store": "Biedronka",
-      "raw_name": "Zobacz Polędwice z dorsza Marinero",
-      "generic_name": "Zobacz Polędwice z dorsza",
-      "price": 19.99,
-      "valid_from": null,
-      "valid_to": null,
-      "raw_text": "Zobacz Polędwice z dorsza Marinero 19,99 zł",
-      "source_url": "https://blix.pl/sklep/biedronka/"
-    },
-    {
-      "store": "Biedronka",
-      "raw_name": "Zobacz Szynka delikatesowa z kurczaka Kraina Wędlin",
-      "generic_name": "Zobacz Szynka delikatesowa z kurczaka Kraina Wędlin",
-      "price": 2.99,
-      "valid_from": null,
-      "valid_to": null,
-      "raw_text": "Zobacz Szynka delikatesowa z kurczaka Kraina Wędlin 2,99 zł",
-      "source_url": "https://blix.pl/sklep/biedronka/"
-    },
-    {
-      "store": "Biedronka",
-      "raw_name": "Zobacz Salami klasyczne Kraina Wędlin",
-      "generic_name": "Zobacz Salami klasyczne Kraina Wędlin",
-      "price": 5.99,
-      "valid_from": null,
-      "valid_to": null,
-      "raw_text": "Zobacz Salami klasyczne Kraina Wędlin 5,99 zł",
-      "source_url": "https://blix.pl/sklep/biedronka/"
-    },
-    {
-      "store": "Biedronka",
-      "raw_name": "Zobacz Schab z beskidzkiej wędzarni Kraina Wędlin",
-      "generic_name": "Zobacz Schab z beskidzkiej wędzarni Kraina Wędlin",
-      "price": 5.99,
-      "valid_from": null,
-      "valid_to": null,
-      "raw_text": "Zobacz Schab z beskidzkiej wędzarni Kraina Wędlin 5,99 zł",
-      "source_url": "https://blix.pl/sklep/biedronka/"
-    },
-    {
-      "store": "Biedronka",
-      "raw_name": "Zobacz Lasagne bolognese Donatello",
-      "generic_name": "Zobacz Lasagne bolognese Donatello",
-      "price": 15.99,
-      "valid_from": null,
-      "valid_to": null,
-      "raw_text": "Zobacz Lasagne bolognese Donatello 15,99 zł",
-      "source_url": "https://blix.pl/sklep/biedronka/"
-    },
-    {
-      "store": "Biedronka",
-      "raw_name": "Zobacz aktualna Sinsay Akcesoria zimowe damskie - od",
-      "generic_name": "Zobacz aktualna Sinsay Akcesoria zimowe damskie - od",
-      "price": 9.99,
-      "valid_from": "2026-11-19",
-      "valid_to": "2026-11-25",
-      "raw_text": "Zobacz aktualna Sinsay Akcesoria zimowe damskie - od 9,99 zł",
-      "source_url": "https://blix.pl/sklep/biedronka/gazetka/537453/"
-    },
-    {
-      "store": "Biedronka",
+      "store": "Lidl",
       "raw_name": "Sinsay Akcesoria zimowe damskie - od",
       "generic_name": "Sinsay Akcesoria zimowe damskie - od",
       "price": 9.99,
       "valid_from": "2026-11-19",
-      "valid_to": "2026-11-25",
-      "raw_text": "Sinsay Akcesoria zimowe damskie - od 9,99 zł",
-      "source_url": "https://blix.pl/sklep/biedronka/gazetka/537453/"
+      "valid_to": "2026-11-21",
+      "raw_text": "Sinsay Akcesoria zimowe damskie - od — 9.99 zł",
+      "source_url": "https://blix.pl/sklep/lidl/gazetka/537102/"
     },
     {
-      "store": "Biedronka",
-      "raw_name": "Zobacz aktualna Ser gouda w plastrach Światowid",
-      "generic_name": "Zobacz aktualna Ser gouda w plastrach Światowid",
-      "price": 16.99,
+      "store": "Lidl",
+      "raw_name": "Szynka wieprzowa XXL Rzeźnik",
+      "generic_name": "Szynka wieprzowa XXL Rzeźnik",
+      "price": 9.99,
       "valid_from": "2026-11-19",
-      "valid_to": "2026-11-25",
-      "raw_text": "Zobacz aktualna Ser gouda w plastrach Światowid 16,99 zł",
-      "source_url": "https://blix.pl/sklep/biedronka/gazetka/537453/"
+      "valid_to": "2026-11-21",
+      "raw_text": "Szynka wieprzowa XXL Rzeźnik — 9.99 zł",
+      "source_url": "https://blix.pl/sklep/lidl/gazetka/537102/"
     },
     {
-      "store": "Biedronka",
-      "raw_name": "Zobacz od dziś Banany",
-      "generic_name": "Zobacz od dziś Banany",
-      "price": 2.99,
-      "valid_from": "2026-11-19",
-      "valid_to": "2026-11-25",
-      "raw_text": "Zobacz od dziś Banany 2,99 zł",
-      "source_url": "https://blix.pl/sklep/biedronka/gazetka/537453/"
-    },
-    {
-      "store": "Biedronka",
-      "raw_name": "Zobacz aktualna Łopatka wieprzowa",
-      "generic_name": "Zobacz aktualna Łopatka wieprzowa",
-      "price": 10.99,
-      "valid_from": "2026-11-19",
-      "valid_to": "2026-11-25",
-      "raw_text": "Zobacz aktualna Łopatka wieprzowa 10,99 zł",
-      "source_url": "https://blix.pl/sklep/biedronka/gazetka/537453/"
-    },
-    {
-      "store": "Biedronka",
-      "raw_name": "Zobacz aktualna Pomidory na gałązce na wagę",
-      "generic_name": "Zobacz aktualna Pomidory na gałązce na wagę",
-      "price": 7.99,
-      "valid_from": "2026-11-19",
-      "valid_to": "2026-11-25",
-      "raw_text": "Zobacz aktualna Pomidory na gałązce na wagę 7,99 zł",
-      "source_url": "https://blix.pl/sklep/biedronka/gazetka/537453/"
-    },
-    {
-      "store": "Biedronka",
-      "raw_name": "Zobacz aktualna Masło ekstra z Polskiej Mleczarni",
+      "store": "Lidl",
+      "raw_name": "Zobacz od dziś Masło ekstra Pilos 83%",
       "generic_name": "Masło",
       "price": 2.99,
       "valid_from": "2026-11-19",
-      "valid_to": "2026-11-25",
-      "raw_text": "Zobacz aktualna Masło ekstra z Polskiej Mleczarni 2,99 zł",
-      "source_url": "https://blix.pl/sklep/biedronka/gazetka/537453/"
+      "valid_to": "2026-11-21",
+      "raw_text": "Zobacz od dziś Masło ekstra Pilos 83% — 2.99 zł",
+      "source_url": "https://blix.pl/sklep/lidl/gazetka/537102/"
     },
     {
-      "store": "Biedronka",
-      "raw_name": "Zobacz aktualna Masło Ekstra Polskie Mlekovita",
-      "generic_name": "Masło",
-      "price": 4.49,
+      "store": "Lidl",
+      "raw_name": "Mandarynki luzem",
+      "generic_name": "Mandarynki luzem",
+      "price": 4.99,
       "valid_from": "2026-11-19",
-      "valid_to": "2026-11-25",
-      "raw_text": "Zobacz aktualna Masło Ekstra Polskie Mlekovita 4,49 zł",
-      "source_url": "https://blix.pl/sklep/biedronka/gazetka/537453/"
+      "valid_to": "2026-11-21",
+      "raw_text": "Mandarynki luzem — 4.99 zł",
+      "source_url": "https://blix.pl/sklep/lidl/gazetka/537102/"
     },
     {
-      "store": "Biedronka",
-      "raw_name": "Zobacz aktualna Mleko UHT Mlekovita Łączka 3,2%",
+      "store": "Lidl",
+      "raw_name": "Banany luzem",
+      "generic_name": "Banany luzem",
+      "price": 2.99,
+      "valid_from": "2026-11-19",
+      "valid_to": "2026-11-21",
+      "raw_text": "Banany luzem — 2.99 zł",
+      "source_url": "https://blix.pl/sklep/lidl/gazetka/537102/"
+    },
+    {
+      "store": "Lidl",
+      "raw_name": "Zobacz już za 1 dzień Pomidory rzymskie luzem",
+      "generic_name": "Zobacz już za 1 dzień Pomidory rzymskie luzem",
+      "price": 8.99,
+      "valid_from": "2026-11-19",
+      "valid_to": "2026-11-21",
+      "raw_text": "Zobacz już za 1 dzień Pomidory rzymskie luzem — 8.99 zł",
+      "source_url": "https://blix.pl/sklep/lidl/gazetka/537102/"
+    },
+    {
+      "store": "Lidl",
+      "raw_name": "Zobacz już za 1 dzień Polski kurczak Biesiadny z chowu bez antybiotyków – tuszka Rzeźnik",
+      "generic_name": "Zobacz już za 1 dzień Polski kurczak Biesiadny z chowu bez antybiotyków – tuszka Rzeźnik",
+      "price": 9.99,
+      "valid_from": "2026-11-19",
+      "valid_to": "2026-11-21",
+      "raw_text": "Zobacz już za 1 dzień Polski kurczak Biesiadny z chowu bez antybiotyków – tuszka Rzeźnik — 9.99 zł",
+      "source_url": "https://blix.pl/sklep/lidl/gazetka/537102/"
+    },
+    {
+      "store": "Lidl",
+      "raw_name": "Kaczka tuszka Rzeźnik",
+      "generic_name": "Kaczka tuszka Rzeźnik",
+      "price": 9.99,
+      "valid_from": "2026-11-19",
+      "valid_to": "2026-11-21",
+      "raw_text": "Kaczka tuszka Rzeźnik — 9.99 zł",
+      "source_url": "https://blix.pl/sklep/lidl/gazetka/537102/"
+    },
+    {
+      "store": "Lidl",
+      "raw_name": "Ser gouda w plastrach XXL Pilos",
+      "generic_name": "Ser gouda w plastrach XXL",
+      "price": 7.49,
+      "valid_from": "2026-11-19",
+      "valid_to": "2026-11-21",
+      "raw_text": "Ser gouda w plastrach XXL Pilos — 7.49 zł",
+      "source_url": "https://blix.pl/sklep/lidl/gazetka/537102/"
+    },
+    {
+      "store": "Lidl",
+      "raw_name": "Ser edam w plastrach XXL Pilos",
+      "generic_name": "Ser edam w plastrach XXL",
+      "price": 7.49,
+      "valid_from": "2026-11-19",
+      "valid_to": "2026-11-21",
+      "raw_text": "Ser edam w plastrach XXL Pilos — 7.49 zł",
+      "source_url": "https://blix.pl/sklep/lidl/gazetka/537102/"
+    },
+    {
+      "store": "Lidl",
+      "raw_name": "Parówki z szynki XXL Pikok Pure",
+      "generic_name": "Parówki z szynki XXL Pure",
+      "price": 9.99,
+      "valid_from": "2026-11-19",
+      "valid_to": "2026-11-21",
+      "raw_text": "Parówki z szynki XXL Pikok Pure — 9.99 zł",
+      "source_url": "https://blix.pl/sklep/lidl/gazetka/537102/"
+    },
+    {
+      "store": "Lidl",
+      "raw_name": "Mleko UHT edycja limitowana Łaciate 3,2%",
       "generic_name": "Mleko",
-      "price": 1.98,
+      "price": 2.25,
       "valid_from": "2026-11-19",
-      "valid_to": "2026-11-25",
-      "raw_text": "Zobacz aktualna Mleko UHT Mlekovita Łączka 3,2% 1,98 zł",
-      "source_url": "https://blix.pl/sklep/biedronka/gazetka/537453/"
+      "valid_to": "2026-11-21",
+      "raw_text": "Mleko UHT edycja limitowana Łaciate 3,2% — 2.25 zł",
+      "source_url": "https://blix.pl/sklep/lidl/gazetka/537102/"
     },
     {
-      "store": "Biedronka",
-      "raw_name": "Zobacz aktualna Ser żółty gouda w plastrach Światowid",
-      "generic_name": "Zobacz aktualna Ser żółty gouda w plastrach Światowid",
-      "price": 16.99,
+      "store": "Lidl",
+      "raw_name": "Seler naciowy",
+      "generic_name": "Seler naciowy",
+      "price": 3.99,
       "valid_from": "2026-11-19",
-      "valid_to": "2026-11-25",
-      "raw_text": "Zobacz aktualna Ser żółty gouda w plastrach Światowid 16,99 zł",
-      "source_url": "https://blix.pl/sklep/biedronka/gazetka/537453/"
+      "valid_to": "2026-11-21",
+      "raw_text": "Seler naciowy — 3.99 zł",
+      "source_url": "https://blix.pl/sklep/lidl/gazetka/537102/"
     },
     {
-      "store": "Biedronka",
-      "raw_name": "Zobacz aktualna Ser żółty edamski Światowid",
-      "generic_name": "Zobacz aktualna Ser żółty edamski Światowid",
-      "price": 3.75,
+      "store": "Lidl",
+      "raw_name": "Praliny Ferrero Rocher",
+      "generic_name": "Praliny Ferrero Rocher",
+      "price": 34.99,
       "valid_from": "2026-11-19",
-      "valid_to": "2026-11-25",
-      "raw_text": "Zobacz aktualna Ser żółty edamski Światowid 3,75 zł",
-      "source_url": "https://blix.pl/sklep/biedronka/gazetka/537453/"
+      "valid_to": "2026-11-21",
+      "raw_text": "Praliny Ferrero Rocher — 34.99 zł",
+      "source_url": "https://blix.pl/sklep/lidl/gazetka/537102/"
     },
     {
-      "store": "Biedronka",
-      "raw_name": "Zobacz aktualna Świeży filet z łososia atlantyckiego Marinero",
-      "generic_name": "Zobacz aktualna Świeży filet z łososia atlantyckiego",
-      "price": 5.99,
+      "store": "Lidl",
+      "raw_name": "Woda źródlana gazowana Żywiec Zdrój Mocny Gaz 6-pak",
+      "generic_name": "Woda źródlana gazowana Żywiec Zdrój Mocny Gaz 6-pak",
+      "price": 11.34,
       "valid_from": "2026-11-19",
-      "valid_to": "2026-11-25",
-      "raw_text": "Zobacz aktualna Świeży filet z łososia atlantyckiego Marinero 5,99 zł",
-      "source_url": "https://blix.pl/sklep/biedronka/gazetka/537453/"
+      "valid_to": "2026-11-21",
+      "raw_text": "Woda źródlana gazowana Żywiec Zdrój Mocny Gaz 6-pak — 11.34 zł",
+      "source_url": "https://blix.pl/sklep/lidl/gazetka/537102/"
     },
     {
-      "store": "Biedronka",
-      "raw_name": "Zobacz aktualna Krewetki gotowane Marinero",
-      "generic_name": "Zobacz aktualna Krewetki gotowane",
-      "price": 15.99,
+      "store": "Lidl",
+      "raw_name": "Napój gazowany Coca-Cola Zero 2-pak 1 l",
+      "generic_name": "Napój gazowany Coca-Cola Zero 2-pak",
+      "price": 9.98,
       "valid_from": "2026-11-19",
-      "valid_to": "2026-11-25",
-      "raw_text": "Zobacz aktualna Krewetki gotowane Marinero 15,99 zł",
-      "source_url": "https://blix.pl/sklep/biedronka/gazetka/537453/"
+      "valid_to": "2026-11-21",
+      "raw_text": "Napój gazowany Coca-Cola Zero 2-pak 1 l — 9.98 zł",
+      "source_url": "https://blix.pl/sklep/lidl/gazetka/537102/"
     },
     {
-      "store": "Biedronka",
-      "raw_name": "Zobacz aktualna Czekolada Nussbeisser",
-      "generic_name": "Zobacz aktualna Czekolada Nussbeisser",
-      "price": 5.89,
+      "store": "Lidl",
+      "raw_name": "Napój gazowany Fanta 2-pak 1 l",
+      "generic_name": "Napój gazowany Fanta 2-pak",
+      "price": 9.98,
       "valid_from": "2026-11-19",
-      "valid_to": "2026-11-25",
-      "raw_text": "Zobacz aktualna Czekolada Nussbeisser 5,89 zł",
-      "source_url": "https://blix.pl/sklep/biedronka/gazetka/537453/"
+      "valid_to": "2026-11-21",
+      "raw_text": "Napój gazowany Fanta 2-pak 1 l — 9.98 zł",
+      "source_url": "https://blix.pl/sklep/lidl/gazetka/537102/"
     },
     {
-      "store": "Biedronka",
-      "raw_name": "Zobacz aktualna Kiwi",
-      "generic_name": "Zobacz aktualna Kiwi",
-      "price": 7.99,
+      "store": "Lidl",
+      "raw_name": "Napój gazowany Coca-Cola 2-pak 1 l",
+      "generic_name": "Napój gazowany Coca-Cola 2-pak",
+      "price": 9.98,
       "valid_from": "2026-11-19",
-      "valid_to": "2026-11-25",
-      "raw_text": "Zobacz aktualna Kiwi 7,99 zł",
-      "source_url": "https://blix.pl/sklep/biedronka/gazetka/537453/"
+      "valid_to": "2026-11-21",
+      "raw_text": "Napój gazowany Coca-Cola 2-pak 1 l — 9.98 zł",
+      "source_url": "https://blix.pl/sklep/lidl/gazetka/537102/"
+    },
+    {
+      "store": "Lidl",
+      "raw_name": "Napój gazowany Sprite 2-pak 1 l",
+      "generic_name": "Napój gazowany Sprite 2-pak",
+      "price": 9.98,
+      "valid_from": "2026-11-19",
+      "valid_to": "2026-11-21",
+      "raw_text": "Napój gazowany Sprite 2-pak 1 l — 9.98 zł",
+      "source_url": "https://blix.pl/sklep/lidl/gazetka/537102/"
+    },
+    {
+      "store": "Lidl",
+      "raw_name": "Napój gazowany Pepsi XXL 2-pak",
+      "generic_name": "Napój gazowany Pepsi XXL 2-pak",
+      "price": 15.98,
+      "valid_from": "2026-11-19",
+      "valid_to": "2026-11-21",
+      "raw_text": "Napój gazowany Pepsi XXL 2-pak — 15.98 zł",
+      "source_url": "https://blix.pl/sklep/lidl/gazetka/537102/"
+    },
+    {
+      "store": "Lidl",
+      "raw_name": "Napój gazowany Coca-Cola Zero 2-pak",
+      "generic_name": "Napój gazowany Coca-Cola Zero 2-pak",
+      "price": 15.98,
+      "valid_from": "2026-11-19",
+      "valid_to": "2026-11-21",
+      "raw_text": "Napój gazowany Coca-Cola Zero 2-pak — 15.98 zł",
+      "source_url": "https://blix.pl/sklep/lidl/gazetka/537102/"
+    },
+    {
+      "store": "Lidl",
+      "raw_name": "Napój gazowany Sprite 2-pak",
+      "generic_name": "Napój gazowany Sprite 2-pak",
+      "price": 15.98,
+      "valid_from": "2026-11-19",
+      "valid_to": "2026-11-21",
+      "raw_text": "Napój gazowany Sprite 2-pak — 15.98 zł",
+      "source_url": "https://blix.pl/sklep/lidl/gazetka/537102/"
+    },
+    {
+      "store": "Lidl",
+      "raw_name": "Napój gazowany Fanta 2-pak",
+      "generic_name": "Napój gazowany Fanta 2-pak",
+      "price": 15.98,
+      "valid_from": "2026-11-19",
+      "valid_to": "2026-11-21",
+      "raw_text": "Napój gazowany Fanta 2-pak — 15.98 zł",
+      "source_url": "https://blix.pl/sklep/lidl/gazetka/537102/"
+    },
+    {
+      "store": "Lidl",
+      "raw_name": "Żel do prania kolorów Persil Color Deep Clean",
+      "generic_name": "Żel do prania kolorów Persil Color Deep Clean",
+      "price": 59.99,
+      "valid_from": "2026-11-19",
+      "valid_to": "2026-11-21",
+      "raw_text": "Żel do prania kolorów Persil Color Deep Clean — 59.99 zł",
+      "source_url": "https://blix.pl/sklep/lidl/gazetka/537102/"
     }
   ]
 }

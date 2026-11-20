@@ -34,20 +34,36 @@ PORTAL_HOMES = [
     "https://blix.pl/",
 ]
 
+DIRECT_STORE_SEEDS = {
+    "Lidl": [
+        "https://blix.pl/sklep/lidl/",
+        "https://www.okazjum.pl/lidl",
+        "https://www.ding.pl/sklepy/lidl",
+        "https://gazetkowo.pl/sklep/lidl",
+    ],
+    "Biedronka": [
+        "https://blix.pl/sklep/biedronka/",
+        "https://www.okazjum.pl/biedronka",
+        "https://www.ding.pl/sklepy/biedronka",
+        "https://gazetkowo.pl/sklep/biedronka",
+    ],
+    "Netto": [
+        "https://blix.pl/sklep/netto/",
+        "https://www.okazjum.pl/netto",
+        "https://www.ding.pl/sklepy/netto",
+        "https://gazetkowo.pl/sklep/netto",
+    ],
+}
+
 STORES = ["Lidl", "Biedronka", "Netto"]
 
 EXCLUDED_URL_PATTERNS = [
     "/blog", "blog.", "/artykul", "/artykuly", "/poradnik", "/poradniki",
     "/aktualnosci", "/news", "/przepis", "/przepisy", "/ciekawostki",
     "/ranking", "/test-", "/opinie", "/konkurs", "/kontakt", "/regulamin",
-    "/polityka", "/o-nas", "/kariera", "/faq"
+    "/polityka", "/o-nas", "/kariera", "/faq", "/godziny-otwarcia", "/sklepy-w-"
 ]
 
-LEAFLET_URL_HINTS = [
-    "gazetk", "ulotk", "ofert", "promocj", "katalog", "sklep"
-]
-
-# Produkty niespożywcze oraz gotowe przyprawy/fixy udające mięso lub warzywa
 NON_FOOD_AND_NOISE_KEYWORDS = [
     "proszek", "plyn do", "kapsulki", "papier toaletowy", "recznik papierowy",
     "szampon", "zel pod prysznic", "mydlo", "pasta do zebow", "dezodorant",
@@ -57,10 +73,12 @@ NON_FOOD_AND_NOISE_KEYWORDS = [
     "wino", "whisky", "likier", "cydr", "papierosy", "tyton", "krem do", "balsam",
     "reklamowka", "torba na zakupy", "folia aluminiowa", "papier do pieczenia",
     "przyprawa do", "przyprawy", "fix ", "pomysl na", "marynata", "zupa blyskawiczna",
-    "goracy kubek", "kostka rosolowa", "bulionetka", "karma dla"
+    "goracy kubek", "kostka rosolowa", "bulionetka", "karma dla", "parkside", "esmara",
+    "lupilu", "crivit", "silvercrest", "livarno", "zobacz aktualna", "gazetka ",
+    "strona ", "oferta wazna", "wszystkie promocje", "wybrane sklepy", "sprawdz oferte",
+    "kup teraz", "dodaj do koszyka", "cena regularna", "najtaniej w"
 ]
 
-# Reguły bezpieczeństwa dla konkretnych produktów (wykluczenia + minimalna sensowna cena)
 PRODUCT_GUARDRAILS = {
     "piers_z_kurczaka": {
         "must_have_any": ["piers", "filet"],
@@ -74,7 +92,7 @@ PRODUCT_GUARDRAILS = {
     },
     "maslo": {
         "must_have_any": ["maslo"],
-        "exclude": ["orzech", "roslinn", "margaryn", "mix", "osełk", "oselk", "krem", "balsam", "do ciala", "shea"],
+        "exclude": ["orzech", "roslinn", "margaryn", "mix", "oselk", "krem", "balsam", "do ciala", "shea"],
         "min_price": 3.50,
     },
     "mleko": {
@@ -105,27 +123,10 @@ BRAND_WORDS = [
     "bakoma", "zott", "muller", "pudliszki", "dawtona", "lowicz", "kotlin",
     "roleski", "winiary", "knorr", "prymat", "kamis", "bonduelle", "lisner",
     "graal", "marinero", "sokolow", "morliny", "berlinki", "tarczynski",
-    "krakus", "pikok", "dulano", "milbona", "pilos", "lidl", "biedronka",
+    "krakus", "pikok", "dulano", "milbona", "pilos", "lidl", "biedronka", "netto",
     "fruvita", "mleczna dolina", "kraina wedlin", "kraina mies", "nasze smaki",
     "lubella", "barilla", "sonko", "kupiec", "kujawski", "rama", "delma",
-    "kasia", "ekstra", "uht", "zobacz aktualna"
-]
-
-SAMPLE_TRACKED_FOR_DRY_RUN = [
-    {"name": "Masło", "keywords": ["maslo"], "maxPrice": 8.50},
-    {"name": "Mleko", "keywords": ["mleko"], "maxPrice": 4.20},
-    {"name": "Serek wiejski", "keywords": ["serek wiejski"], "maxPrice": 3.80},
-    {"name": "Pierś z kurczaka", "keywords": ["piers z kurczaka", "filet z kurczaka", "filet z piersi"], "maxPrice": 22.00},
-    {"name": "Mięso mielone", "keywords": ["mieso mielone", "mielone"], "maxPrice": 13.50},
-    {"name": "Jajka", "keywords": ["jajka", "jaja"], "maxPrice": 12.50},
-    {"name": "Passata pomidorowa", "keywords": ["passata", "przecier pomidorowy"], "maxPrice": 5.50},
-    {"name": "Tuńczyk w puszce", "keywords": ["tunczyk"], "maxPrice": 7.50},
-    {"name": "Czerwona fasola", "keywords": ["fasola czerwona", "czerwona fasola", "fasola"], "maxPrice": 4.50},
-    {"name": "Kukurydza konserwowa", "keywords": ["kukurydza"], "maxPrice": 4.50},
-    {"name": "Ryż", "keywords": ["ryz"], "maxPrice": 6.50},
-    {"name": "Makaron", "keywords": ["makaron"], "maxPrice": 5.50},
-    {"name": "Ser żółty", "keywords": ["ser zolty", "gouda", "edamski"], "maxPrice": 28.00},
-    {"name": "Oliwa z oliwek", "keywords": ["oliwa"], "maxPrice": 28.00},
+    "kasia", "ekstra", "uht", "zobacz aktualna", "ryneczek lidla", "rzeznik"
 ]
 
 def normalize_ascii(text: str) -> str:
@@ -136,7 +137,7 @@ def normalize_ascii(text: str) -> str:
 
 def canonical_product_key(name: str) -> str:
     a = normalize_ascii(name)
-    if "piers" in a and "kurczak" in a or "filet" in a and "kurczak" in a:
+    if ("piers" in a and "kurczak" in a) or ("filet" in a and "kurczak" in a):
         return "piers_z_kurczaka"
     if "mielon" in a:
         return "mieso_mielone"
@@ -150,7 +151,24 @@ def canonical_product_key(name: str) -> str:
         return "tunczyk"
     if "passat" in a or "przecier pomidor" in a:
         return "passata_pomidorowa"
-    return re.sub(r"[^a-z0-9_]", "_", a)
+    return re.sub(r"[^a-z0-9_]", "_", a).strip("_")
+
+def expand_keywords(t_name: str, raw_kws: list[str]) -> list[str]:
+    canon = canonical_product_key(t_name)
+    kws = set(normalize_ascii(k) for k in raw_kws if k)
+    kws.add(normalize_ascii(t_name))
+
+    if canon == "piers_z_kurczaka":
+        kws.discard("kurczak")
+        kws.update(["piers z kurczaka", "filet z kurczaka", "filet z piersi", "piers kurczaka", "filet kurczaka"])
+    elif canon == "jajka":
+        kws.update(["jajka", "jaja", "jaj"])
+    elif canon == "passata_pomidorowa":
+        kws.update(["passata", "przecier pomidorowy"])
+    elif canon == "mieso_mielone":
+        kws.update(["mieso mielone", "mielone"])
+
+    return [k for k in kws if len(k) >= 3]
 
 def is_valid_leaflet_url(url: str, store_slug: str, link_text: str = "") -> bool:
     low_url = normalize_ascii(url)
@@ -158,16 +176,10 @@ def is_valid_leaflet_url(url: str, store_slug: str, link_text: str = "") -> bool
 
     if any(bad in low_url for bad in EXCLUDED_URL_PATTERNS):
         return False
-    if any(w in low_txt for w in ["blog", "artykul", "poradnik", "czytaj dalej", "przepis na"]):
+    if any(w in low_txt for w in ["blog", "artykul", "poradnik", "czytaj dalej", "przepis na", "godziny otwarcia"]):
         return False
 
-    if store_slug not in low_url and store_slug not in low_txt:
-        return False
-
-    parsed_path = urlparse(low_url).path.strip("/")
-    if parsed_path in [store_slug, f"sklep/{store_slug}", f"sklepy/{store_slug}"]:
-        return True
-    return any(hint in low_url or hint in low_txt for hint in LEAFLET_URL_HINTS)
+    return (store_slug in low_url) or (store_slug in low_txt)
 
 def parse_polish_date(day_str: str, month_str: str, year_str: Optional[str] = None) -> Optional[str]:
     try:
@@ -232,7 +244,8 @@ def is_promotion_active(valid_to: Optional[str]) -> bool:
         return True
 
 def clean_generic_name(raw_name: str) -> str:
-    s = re.sub(r"\b\d+(?:[.,]\d+)?\s*(?:kg|g|dag|ml|l|szt\.?|%)\b", " ", raw_name, flags=re.I)
+    s = re.sub(r"^zobacz\s+aktualn[aą]\s+", "", raw_name, flags=re.I)
+    s = re.sub(r"\b\d+(?:[.,]\d+)?\s*(?:kg|g|dag|ml|l|szt\.?|%)\b", " ", s, flags=re.I)
     for b in BRAND_WORDS:
         s = re.sub(r"\b" + re.escape(b) + r"\b", " ", s, flags=re.I)
     s = re.sub(r"\s+", " ", s).strip(" -–|:•,")
@@ -250,7 +263,10 @@ def clean_generic_name(raw_name: str) -> str:
 
 def is_food_offer(title: str) -> bool:
     norm = normalize_ascii(title)
-    if len(norm) < 3:
+    if len(norm) < 4 or len(norm) > 85:
+        return False
+    # Musi zawierać przynajmniej 3 litery (odrzuca same liczby/kody)
+    if len(re.findall(r"[a-z]", norm)) < 3:
         return False
     return not any(bad in norm for bad in NON_FOOD_AND_NOISE_KEYWORDS)
 
@@ -273,14 +289,16 @@ def parse_offers(html: str, store_name: str, source_url: str) -> list[dict]:
         if not s_text:
             continue
         for m in re.finditer(
-            r'"(?:name|title|productName)"\s*:\s*"([^"]{3,95})".{0,350}?"(?:price|lowPrice|promoPrice)"\s*:\s*"?(\d{1,3}[.,]\d{2})"?',
+            r'"(?:name|title|productName)"\s*:\s*"([^"]{3,95})".{0,400}?"(?:price|lowPrice|promoPrice|value)"\s*:\s*"?(\d{1,3}[.,]\d{2})"?',
             s_text,
             re.S,
         ):
             raw_prod = m.group(1).encode("utf-8").decode("unicode_escape", errors="ignore").strip()
             price_val = float(m.group(2).replace(",", "."))
-            if 0.25 <= price_val <= 200.0 and is_food_offer(raw_prod):
+            if 0.40 <= price_val <= 150.0 and is_food_offer(raw_prod):
                 generic = clean_generic_name(raw_prod)
+                if not is_food_offer(generic):
+                    continue
                 sig = f"{normalize_ascii(generic)}_{price_val}"
                 if sig not in seen:
                     seen.add(sig)
@@ -295,9 +313,36 @@ def parse_offers(html: str, store_name: str, source_url: str) -> list[dict]:
                         "source_url": source_url,
                     })
 
+    for img in soup.find_all("img", alt=True):
+        alt_txt = " ".join((img.get("alt") or "").split())
+        if len(alt_txt) < 8 or len(alt_txt) > 180:
+            continue
+        prices = re.findall(r"(\d{1,3}[.,]\d{2})\s*zł", alt_txt, re.I)
+        if len(prices) == 1:
+            price_val = float(prices[0].replace(",", "."))
+            price_pos = re.search(r"\d{1,3}[.,]\d{2}\s*zł", alt_txt, re.I).start()
+            raw_prod = re.sub(r"^zobacz\s+aktualn[aą]\s+", "", alt_txt[:price_pos], flags=re.I).strip(" -–|:•,")
+            if 0.40 <= price_val <= 150.0 and is_food_offer(raw_prod):
+                generic = clean_generic_name(raw_prod)
+                if not is_food_offer(generic):
+                    continue
+                sig = f"{normalize_ascii(generic)}_{price_val}"
+                if sig not in seen:
+                    seen.add(sig)
+                    offers.append({
+                        "store": store_name,
+                        "raw_name": raw_prod,
+                        "generic_name": generic,
+                        "price": round(price_val, 2),
+                        "valid_from": page_valid_from,
+                        "valid_to": page_valid_to,
+                        "raw_text": alt_txt,
+                        "source_url": source_url,
+                    })
+
     for el in soup.find_all(["article", "div", "li", "a", "tr", "section"]):
         text = " ".join(el.get_text(" ", strip=True).split())
-        if len(text) < 8 or len(text) > 210:
+        if len(text) < 8 or len(text) > 200:
             continue
 
         prices = re.findall(r"(\d{1,3}[.,]\d{2})\s*zł", text, re.I)
@@ -305,12 +350,12 @@ def parse_offers(html: str, store_name: str, source_url: str) -> list[dict]:
             continue
 
         price_val = float(prices[0].replace(",", "."))
-        if price_val < 0.25 or price_val > 200.0:
+        if price_val < 0.40 or price_val > 150.0:
             continue
 
         price_pos = re.search(r"\d{1,3}[.,]\d{2}\s*zł", text, re.I).start()
         raw_prod = re.sub(r"^zobacz\s+aktualn[aą]\s+", "", text[:price_pos], flags=re.I).strip(" -–|:•,")
-        if len(raw_prod) < 3 or not is_food_offer(raw_prod):
+        if not is_food_offer(raw_prod):
             continue
 
         card_from, card_to = extract_validity_dates(text)
@@ -321,6 +366,9 @@ def parse_offers(html: str, store_name: str, source_url: str) -> list[dict]:
             continue
 
         generic = clean_generic_name(raw_prod)
+        if not is_food_offer(generic):
+            continue
+
         sig = f"{normalize_ascii(generic)}_{price_val}"
         if sig not in seen:
             seen.add(sig)
@@ -338,7 +386,7 @@ def parse_offers(html: str, store_name: str, source_url: str) -> list[dict]:
     return offers
 
 def find_leaflet_links_from_home(session: requests.Session) -> dict[str, list[str]]:
-    store_links = {s: [] for s in STORES}
+    store_links = {s: list(DIRECT_STORE_SEEDS.get(s, [])) for s in STORES}
 
     for home in PORTAL_HOMES:
         try:
@@ -363,7 +411,7 @@ def find_leaflet_links_from_home(session: requests.Session) -> dict[str, list[st
                             store_links[store].append(full)
         except Exception as exc:
             print(f"[HOME] Błąd {home}: {exc}", flush=True)
-        time.sleep(0.6)
+        time.sleep(0.5)
 
     return store_links
 
@@ -377,20 +425,20 @@ def fetch_all_store_offers() -> list[dict]:
     for store in STORES:
         slug = store.lower()
         links = discovered.get(store, [])
-        print(f"\n[{store}] Odkryto {len(links)} linków gazetek (bez blogów).", flush=True)
+        print(f"\n[{store}] Sprawdzam {len(links)} linków startowych (bez blogów)...", flush=True)
         store_offers = []
 
         visited = set()
-        queue = list(links[:12])
+        queue = list(links[:15])
 
-        while queue and len(visited) < 18:
+        while queue and len(visited) < 22:
             url = queue.pop(0)
             if url in visited or not is_valid_leaflet_url(url, slug):
                 continue
             visited.add(url)
 
             try:
-                time.sleep(0.5)
+                time.sleep(0.45)
                 resp = session.get(url, timeout=15)
                 if resp.status_code != 200:
                     continue
@@ -423,64 +471,100 @@ def fetch_all_store_offers() -> list[dict]:
 
     return all_offers
 
-def passes_guardrails(canon_key: str, offer: dict) -> bool:
+def passes_guardrails(canon_key: str, offer: dict) -> tuple[bool, str]:
     rules = PRODUCT_GUARDRAILS.get(canon_key)
     if not rules:
-        return True
+        return True, "OK"
 
     haystack = normalize_ascii(f"{offer['raw_name']} {offer['generic_name']}")
-    if any(bad in haystack for bad in rules.get("exclude", [])):
-        return False
+    for bad in rules.get("exclude", []):
+        if bad in haystack:
+            return False, f"wykluczone słowo '{bad}'"
 
     must_any = rules.get("must_have_any", [])
     if must_any and not any(req in haystack for req in must_any):
-        return False
+        return False, f"brak wymaganego {must_any}"
 
     min_p = rules.get("min_price")
     if min_p is not None and offer["price"] < float(min_p):
-        return False
+        return False, f"cena {offer['price']:.2f} < min_price {min_p:.2f}"
 
-    return True
+    return True, "OK"
 
-def match_offers(offers: list[dict], tracked_products: list[dict]) -> dict:
+def build_all_food_pending(offers: list[dict], max_items: int = 250) -> dict:
+    """Gdy lista śledzonych jest pusta — zwraca wszystkie unikalne promocje spożywcze (najtańsza dla każdego produktu w danym sklepie)."""
+    best_per_store_prod = {}
+    for off in offers:
+        generic = off["generic_name"]
+        canon = canonical_product_key(generic)
+        ok, _ = passes_guardrails(canon, off)
+        if not ok:
+            continue
+
+        key = f"{normalize_ascii(off['store'])}_{canon}"
+        if not key or len(key) < 4:
+            continue
+
+        if key not in best_per_store_prod or off["price"] < best_per_store_prod[key]["detectedPrice"]:
+            best_per_store_prod[key] = {
+                "name": generic,
+                "detectedPrice": off["price"],
+                "store": off["store"],
+                "validFrom": off.get("valid_from"),
+                "validTo": off.get("valid_to"),
+                "source": off["store"],
+                "rawText": off["raw_text"],
+                "sourceUrl": off["source_url"],
+            }
+
+    # Sortujemy po nazwie produktu, limitujemy do max_items żeby nie przeciążyć dokumentu Firestore (1 MB)
+    sorted_items = sorted(best_per_store_prod.items(), key=lambda x: (x[1]["name"], x[1]["detectedPrice"]))[:max_items]
+    return dict(sorted_items)
+
+def match_offers(offers: list[dict], tracked_products: list[dict], debug: bool = True) -> dict:
+    # TRYB WSZYSTKICH PROMOCJI: jeśli lista śledzonych jest pusta -> wyślij wszystkie czyste promocje na żywność!
+    if not tracked_products:
+        all_food = build_all_food_pending(offers)
+        if debug:
+            print(f"[TRYB WSZYSTKIE PROMOCJE] Brak filtrów śledzonych -> przygotowano {len(all_food)} promocji spożywczych.", flush=True)
+        return all_food
+
     pending = {}
-
     for tracked in tracked_products:
         t_name = tracked.get("name", "")
         canon_key = canonical_product_key(t_name)
-
-        # Czyścimy zbyt ogólne słowo kluczowe "kurczak" jeśli dotyczy piersi z kurczaka
-        raw_kws = [normalize_ascii(k) for k in tracked.get("keywords", []) if k]
-        if canon_key == "piers_z_kurczaka":
-            keywords = [k for k in raw_kws if k != "kurczak"] or ["piers z kurczaka", "filet z kurczaka", "filet z piersi"]
-        else:
-            keywords = raw_kws or [normalize_ascii(t_name)]
-
+        keywords = expand_keywords(t_name, tracked.get("keywords", []))
         max_price = tracked.get("maxPrice")
 
-        best = None
+        candidates = []
         for off in offers:
             haystack = f"{normalize_ascii(off['raw_name'])} {normalize_ascii(off['generic_name'])}"
             if any(kw in haystack for kw in keywords):
-                if not passes_guardrails(canon_key, off):
+                ok, _ = passes_guardrails(canon_key, off)
+                if not ok:
                     continue
-                if max_price is not None and off["price"] > float(max_price) * 1.15:
-                    continue
-                if best is None or off["price"] < best["price"]:
-                    best = off
+                candidates.append(off)
 
-        if best:
-            safe_key = re.sub(r"[^a-z0-9_]", "_", normalize_ascii(t_name))
-            pending[safe_key] = {
-                "name": t_name,
-                "detectedPrice": best["price"],
-                "store": best["store"],
-                "validFrom": best.get("valid_from"),
-                "validTo": best.get("valid_to"),
-                "source": best["store"],
-                "rawText": best["raw_text"],
-                "sourceUrl": best["source_url"],
-            }
+        if not candidates:
+            continue
+
+        candidates.sort(key=lambda x: x["price"])
+        best = candidates[0]
+        price_note = ""
+        if max_price is not None and best["price"] > float(max_price):
+            price_note = f" [powyżej progu {float(max_price):.2f} zł]"
+
+        safe_key = re.sub(r"[^a-z0-9_]", "_", normalize_ascii(t_name))
+        pending[safe_key] = {
+            "name": t_name,
+            "detectedPrice": best["price"],
+            "store": best["store"],
+            "validFrom": best.get("valid_from"),
+            "validTo": best.get("valid_to"),
+            "source": best["store"],
+            "rawText": f"{best['raw_text']}{price_note}",
+            "sourceUrl": best["source_url"],
+        }
     return pending
 
 def export_csv(offers: list[dict], filename="promocje_spozywcze.csv"):
@@ -523,12 +607,13 @@ def main():
     export_csv(offers)
 
     if dry_run:
-        matched = match_offers(offers, SAMPLE_TRACKED_FOR_DRY_RUN)
+        # Test trybu pustej listy (wszystkie promocje na żywność)
+        matched = match_offers(offers, [], debug=True)
         with open("wynik_testu.json", "w", encoding="utf-8") as f:
-            json.dump({"total_offers": len(offers), "matched_radar": matched, "sample_offers": offers[:30]}, f, ensure_ascii=False, indent=2)
-        print(f"\n[DRY-RUN] Dopasowano {len(matched)} produktów z radaru! Szczegóły w wynik_testu.json.", flush=True)
-        for v in matched.values():
-            print(f"  ✓ {v['name']} | {v['detectedPrice']:.2f} zł | Sklep: {v['store']} | Od: {v['validFrom']} Do: {v['validTo']} | ({v['rawText']})", flush=True)
+            json.dump({"total_offers": len(offers), "all_food_pending_count": len(matched), "sample_pending": dict(list(matched.items())[:25])}, f, ensure_ascii=False, indent=2)
+        print(f"\n[DRY-RUN] Wygenerowano {len(matched)} promocji spożywczych do poczekalni! Szczegóły w wynik_testu.json.", flush=True)
+        for v in list(matched.values())[:15]:
+            print(f"  ✓ [{v['store']}] {v['name']} -> {v['detectedPrice']:.2f} zł ({v['validFrom']} - {v['validTo']})", flush=True)
         return
 
     if not offers:
@@ -541,10 +626,9 @@ def main():
         data = doc_snap.to_dict() or {}
         if data.get("active") is False:
             continue
-        tracked = data.get("trackedProducts", [])
-        if not tracked:
-            continue
-        matched = match_offers(offers, tracked)
+        tracked = data.get("trackedProducts") or []
+        print(f"\n--- Dopasowuję dla kuchni {doc_snap.id} (śledzone: {len(tracked)} -> {'WSZYSTKIE ŻYWNOŚCIOWE' if not tracked else 'FILTR RADARU'}) ---", flush=True)
+        matched = match_offers(offers, tracked, debug=True)
         if matched:
             existing = data.get("pendingScraper") or {}
             existing.update(matched)
