@@ -74,9 +74,9 @@ REAL_FOOD_ROOTS = [
     "losos", "dorsz", "tunczyk", "sledz", "pstrag", "makrel", "mintaj", "morszczuk",
     "krewetk", "ryb",
     # Nabiał i jaja
-    "mleko", "maslo", "ser ", "ser,", "sery", "gouda", "edam", "mozzarell", "twarog",
-    "serek", "jogurt", "smietan", "kefir", "maslank", "jaj", "feta", "camembert",
-    "parmezan", "ricotta", "mascarpone",
+    "mleko", "maslo", "ser ", "ser,", "sery", "ser zolty", "gouda", "edam", "edamski",
+    "ementaler", "morski", "salami", "mozzarell", "twarog", "serek", "jogurt",
+    "smietan", "kefir", "maslank", "jaj", "feta", "camembert", "parmezan", "ricotta", "mascarpone",
     # Pieczywo, zboża, makarony, strączki
     "chleb", "bulk", "bagietk", "tortill", "ryz", "makaron", "kasz", "platki owsiane",
     "maka", "fasol", "ciecierzyc", "soczewic", "groszek", "kukurydz", "tofu",
@@ -95,18 +95,15 @@ REAL_FOOD_ROOTS = [
 
 # 2. CZARNA LISTA: kosmetyki, chemia, słodycze, przekąski, alkohol, śmieci z UI
 EXCLUDED_NON_FOOD_AND_SWEETS = [
-    # Kosmetyki i higiena
     "blyszczyk", "pomadk", "szmink", "tusz do rzes", "podklad", "puder", "lakier do paznokci",
     "chusteczk", "papier toaletowy", "recznik papierowy", "szampon", "zel pod prysznic",
     "mydlo", "pasta do zebow", "szczoteczk", "dezodorant", "perfum", "krem do", "balsam",
     "maseczk", "peeling", "serum do", "plyn micelarny", "wacik", "patyczki", "pieluch", "pampers",
-    # Chemia i dom
     "proszek", "plyn do", "kapsulki", "domestos", "zmywak", "gabk", "worek", "worki",
     "folia aluminiowa", "papier do pieczenia", "baterie", "zarowka", "patelnia", "garnek",
     "skarpetki", "koszulka", "spodnie", "buty", "zabawka", "wiertarka", "szlifierka",
     "kosiarka", "doniczka", "ziemia ogrodowa", "karma", "zwirek", "dla kota", "dla psa",
     "parkside", "esmara", "lupilu", "crivit", "silvercrest", "livarno", "reklamowka", "torba",
-    # Słodycze, desery i słone przekąski
     "czekolad", "baton", "wafel", "wafelk", "ciastk", "herbatnik", "biszkopt", "markiz",
     "piernik", "cukierk", "zelk", "lizak", "guma do zucia", "lody", "lodow", "sorbet",
     "ptasie mleczko", "pralin", "bombonierk", "nutella", "krem czekoladowy", "krem orzechowy",
@@ -116,10 +113,8 @@ EXCLUDED_NON_FOOD_AND_SWEETS = [
     "raffaello", "merci", "toblerone", "snickers", "mars", "twix", "bounty", "kitkat",
     "oreo", "delicje", "jezyki", "ptasie", "chalw", "sezamk", "krowk", "mieszanka krakowska",
     "chipsy", "chrupki", "paluszki", "krakers", "popcorn", "zelki", "pianki",
-    # Napoje słodzone i alkohol
     "cola", "pepsi", "fanta", "sprite", "energetyk", "energy drink", "red bull", "tiger",
     "piwo", "wodka", "wino", "whisky", "likier", "cydr", "prosecco", "szampan", "papierosy",
-    # Przyprawy w proszku / fixy / nawigacja portalu
     "przyprawa do", "przyprawy", "fix ", "pomysl na", "marynata", "zupa blyskawiczna",
     "goracy kubek", "kostka rosolowa", "bulionetka", "zobacz aktualna", "gazetka ",
     "strona ", "oferta wazna", "wszystkie promocje", "wybrane sklepy", "sprawdz oferte"
@@ -166,13 +161,14 @@ PRODUCT_GUARDRAILS = {
 BRAND_WORDS = [
     "mlekovita", "piatnica", "laciate", "mlekpol", "lubelska", "krasnystaw",
     "wloszczowa", "sierpc", "hochland", "president", "almette", "danone",
-    "bakoma", "zott", "pudliszki", "dawtona", "lowicz", "kotlin",
+    "bakoma", "zott", "pudliszki", "dawtona", "lowicz", "kotlin", "swiatowid",
     "roleski", "winiary", "knorr", "prymat", "kamis", "bonduelle", "lisner",
     "graal", "marinero", "sokolow", "morliny", "berlinki", "tarczynski",
     "krakus", "pikok", "dulano", "milbona", "pilos", "lidl", "biedronka", "netto",
     "fruvita", "mleczna dolina", "kraina wedlin", "kraina mies", "nasze smaki",
     "lubella", "barilla", "sonko", "kupiec", "kujawski", "rama", "delma",
-    "kasia", "ekstra", "uht", "zobacz aktualna", "ryneczek lidla", "rzeznik"
+    "kasia", "ekstra", "uht", "zobacz aktualna", "ryneczek lidla", "rzeznik",
+    "w plastrach", "plastry", "w kawalku", "kawalek"
 ]
 
 def normalize_ascii(text: str) -> str:
@@ -197,6 +193,10 @@ def canonical_product_key(name: str) -> str:
         return "tunczyk"
     if "passat" in a or "przecier pomidor" in a:
         return "passata_pomidorowa"
+    if "serek wiejski" in a:
+        return "serek_wiejski_lekki" if ("lekk" in a or "light" in a) else "serek_wiejski"
+    if any(w in a for w in ["ser zolty", "gouda", "edam", "ementaler", "morski"]):
+        return "ser_zolty"
     return re.sub(r"[^a-z0-9_]", "_", a).strip("_")
 
 def is_valid_leaflet_url(url: str, store_slug: str, link_text: str = "") -> bool:
@@ -288,20 +288,20 @@ def clean_generic_name(raw_name: str) -> str:
         return "Mleko"
     if "jajk" in ascii_s or re.search(r"\bjaj[ao]?\b", ascii_s):
         return "Jajka"
+    if any(w in ascii_s for w in ["ser zolty", "gouda", "edam", "ementaler", "morski"]):
+        return "Ser żółty"
     return (s[0].upper() + s[1:]) if s else raw_name.strip()
 
 def is_food_offer(title: str) -> bool:
     norm = normalize_ascii(title)
-    if len(norm) < 4 or len(norm) > 85:
+    if len(norm) < 4 or len(norm) > 100:
         return False
     if len(re.findall(r"[a-z]", norm)) < 3:
         return False
 
-    # 1. Twarde odrzucenie kosmetyków, chemii, słodyczy i przekąsek
     if any(bad in norm for bad in EXCLUDED_NON_FOOD_AND_SWEETS):
         return False
 
-    # 2. Musi zawierać przynajmniej jeden rdzeń prawdziwego jedzenia / składnika spożywczego
     padded = f" {norm} "
     return any(root in padded for root in REAL_FOOD_ROOTS)
 
@@ -319,12 +319,13 @@ def parse_offers(html: str, store_name: str, source_url: str) -> list[dict]:
     if not is_promotion_active(page_valid_to):
         return []
 
+    # 1. JSON w skryptach (__NEXT_DATA__, LD+JSON itp.)
     for script in soup.find_all("script"):
         s_text = script.string or ""
         if not s_text:
             continue
         for m in re.finditer(
-            r'"(?:name|title|productName)"\s*:\s*"([^"]{3,95})".{0,400}?"(?:price|lowPrice|promoPrice|value)"\s*:\s*"?(\d{1,3}[.,]\d{2})"?',
+            r'"(?:name|title|productName)"\s*:\s*"([^"]{3,110})".{0,450}?"(?:price|lowPrice|promoPrice|value)"\s*:\s*"?(\d{1,3}[.,]\d{2})"?',
             s_text,
             re.S,
         ):
@@ -348,15 +349,16 @@ def parse_offers(html: str, store_name: str, source_url: str) -> list[dict]:
                         "source_url": source_url,
                     })
 
+    # 2. Atrybuty alt/title obrazków produktów
     for img in soup.find_all("img", alt=True):
         alt_txt = " ".join((img.get("alt") or "").split())
-        if len(alt_txt) < 8 or len(alt_txt) > 180:
+        if len(alt_txt) < 8 or len(alt_txt) > 220:
             continue
-        prices = re.findall(r"(\d{1,3}[.,]\d{2})\s*zł", alt_txt, re.I)
-        if len(prices) == 1:
-            price_val = float(prices[0].replace(",", "."))
-            price_pos = re.search(r"\d{1,3}[.,]\d{2}\s*zł", alt_txt, re.I).start()
-            raw_prod = re.sub(r"^zobacz\s+aktualn[aą]\s+", "", alt_txt[:price_pos], flags=re.I).strip(" -–|:•,")
+        price_matches = list(re.finditer(r"(\d{1,3}[.,]\d{2})\s*zł", alt_txt, re.I))
+        if 1 <= len(price_matches) <= 2:
+            first_m = price_matches[0]
+            price_val = float(first_m.group(1).replace(",", "."))
+            raw_prod = re.sub(r"^zobacz\s+aktualn[aą]\s+", "", alt_txt[:first_m.start()], flags=re.I).strip(" -–|:•,")
             if 0.40 <= price_val <= 150.0 and is_food_offer(raw_prod):
                 generic = clean_generic_name(raw_prod)
                 if not is_food_offer(generic):
@@ -375,21 +377,22 @@ def parse_offers(html: str, store_name: str, source_url: str) -> list[dict]:
                         "source_url": source_url,
                     })
 
+    # 3. Kafelki HTML (obsługuje również sytuacje gdy obok ceny głównej podana jest cena za 1 kg / 100 g!)
     for el in soup.find_all(["article", "div", "li", "a", "tr", "section"]):
         text = " ".join(el.get_text(" ", strip=True).split())
-        if len(text) < 8 or len(text) > 200:
+        if len(text) < 8 or len(text) > 260:
             continue
 
-        prices = re.findall(r"(\d{1,3}[.,]\d{2})\s*zł", text, re.I)
-        if len(prices) != 1:
+        price_matches = list(re.finditer(r"(\d{1,3}[.,]\d{2})\s*zł", text, re.I))
+        if not (1 <= len(price_matches) <= 2):
             continue
 
-        price_val = float(prices[0].replace(",", "."))
+        first_m = price_matches[0]
+        price_val = float(first_m.group(1).replace(",", "."))
         if price_val < 0.40 or price_val > 150.0:
             continue
 
-        price_pos = re.search(r"\d{1,3}[.,]\d{2}\s*zł", text, re.I).start()
-        raw_prod = re.sub(r"^zobacz\s+aktualn[aą]\s+", "", text[:price_pos], flags=re.I).strip(" -–|:•,")
+        raw_prod = re.sub(r"^zobacz\s+aktualn[aą]\s+", "", text[:first_m.start()], flags=re.I).strip(" -–|:•,")
         if not is_food_offer(raw_prod):
             continue
 
@@ -446,7 +449,7 @@ def find_leaflet_links_from_home(session: requests.Session) -> dict[str, list[st
                             store_links[store].append(full)
         except Exception as exc:
             print(f"[HOME] Błąd {home}: {exc}", flush=True)
-        time.sleep(0.5)
+        time.sleep(0.4)
 
     return store_links
 
@@ -460,20 +463,31 @@ def fetch_all_store_offers() -> list[dict]:
     for store in STORES:
         slug = store.lower()
         links = discovered.get(store, [])
-        print(f"\n[{store}] Sprawdzam {len(links)} linków startowych (bez blogów)...", flush=True)
+        print(f"\n[{store}] Sprawdzam linki i podstrony gazetek...", flush=True)
         store_offers = []
 
         visited = set()
         queue = list(links[:15])
+        expanded_leaflet_ids = set()
 
-        while queue and len(visited) < 22:
+        while queue and len(visited) < 35:
             url = queue.pop(0)
             if url in visited or not is_valid_leaflet_url(url, slug):
                 continue
             visited.add(url)
 
+            # Jeśli to gazetka na Blix (/gazetka/537453/), automatycznie doklejamy strony 2..10, żeby nie zgubić dalszych stron!
+            m_blix_gaz = re.match(r"^(https?://blix\.pl/sklep/[^/]+/gazetka/\d+/?)$", url)
+            if m_blix_gaz and url not in expanded_leaflet_ids:
+                expanded_leaflet_ids.add(url)
+                base_gaz = m_blix_gaz.group(1).rstrip("/") + "/"
+                for page_num in range(2, 11):
+                    paged_url = f"{base_gaz}?pageNumber={page_num}"
+                    if paged_url not in visited and paged_url not in queue:
+                        queue.insert(0, paged_url)
+
             try:
-                time.sleep(0.45)
+                time.sleep(0.35)
                 resp = session.get(url, timeout=15)
                 if resp.status_code != 200:
                     continue
@@ -526,7 +540,7 @@ def passes_guardrails(canon_key: str, offer: dict) -> tuple[bool, str]:
 
     return True, "OK"
 
-def build_all_food_pending(offers: list[dict], max_items: int = 250) -> dict:
+def build_all_food_pending(offers: list[dict], max_items: int = 300) -> dict:
     """Buduje kompletny słownik aktualnych promocji na prawdziwą żywność (bez kosmetyków i słodyczy)."""
     best_per_store_prod = {}
     for off in offers:
