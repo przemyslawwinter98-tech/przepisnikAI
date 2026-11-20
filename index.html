@@ -650,11 +650,28 @@
                         </div>
                     </div>
 
-                    <!-- Pasek filtrowania poczekalni po sklepie + wyszukiwarka -->
-                    <div class="flex flex-col sm:flex-row gap-3 justify-between">
-                        <div id="verify-store-filters" class="flex gap-2 overflow-x-auto no-scrollbar pb-1 -mx-4 px-4 sm:mx-0 sm:px-0"></div>
-                        <div class="relative sm:w-72">
-                            <input type="text" id="verify-search" oninput="renderVerifyScraper()" placeholder="Szukaj produktu w poczekalni..." class="w-full px-3.5 py-2 rounded-xl bg-[#1e293b] border border-slate-700/80 text-xs sm:text-sm text-white placeholder-slate-400 focus:outline-none focus:border-indigo-500">
+                    <!-- Rozbudowany pasek filtrowania poczekalni: Sklep + Kategoria produktu + Zakres dat + Szukaj -->
+                    <div class="bg-[#1e293b]/70 border border-slate-800 rounded-2xl p-3.5 sm:p-4 space-y-3">
+                        <div class="flex flex-col lg:flex-row gap-3 justify-between">
+                            <div id="verify-store-filters" class="flex gap-2 overflow-x-auto no-scrollbar pb-1"></div>
+                            <div class="relative lg:w-72 shrink-0">
+                                <input type="text" id="verify-search" oninput="renderVerifyScraper()" placeholder="Szukaj produktu w poczekalni..." class="w-full px-3.5 py-2 rounded-xl bg-slate-950 border border-slate-700/80 text-xs sm:text-sm text-white placeholder-slate-400 focus:outline-none focus:border-indigo-500">
+                            </div>
+                        </div>
+
+                        <!-- Pigułki kategorii spożywczych (Mięso, Nabiał, Warzywa/Owoce, Pieczywo, Suche/Konserwy, Ryby, Tłuszcze) -->
+                        <div id="verify-category-filters" class="flex gap-2 overflow-x-auto no-scrollbar pb-1 pt-1 border-t border-slate-800/80"></div>
+
+                        <!-- Filtr zakresu dat obowiązywania promocji -->
+                        <div class="flex flex-wrap items-center justify-between gap-2.5 pt-2 border-t border-slate-800/80">
+                            <div id="verify-date-presets" class="flex flex-wrap items-center gap-1.5"></div>
+                            <div class="flex flex-wrap items-center gap-2 text-xs">
+                                <span class="text-slate-400 font-semibold">📅 Zakres dat:</span>
+                                <input type="date" id="verify-date-from" onchange="setVerifyCustomDates()" class="px-2.5 py-1.5 rounded-lg bg-slate-950 border border-slate-700 text-xs text-slate-200 focus:outline-none focus:border-sky-500">
+                                <span class="text-slate-500">–</span>
+                                <input type="date" id="verify-date-to" onchange="setVerifyCustomDates()" class="px-2.5 py-1.5 rounded-lg bg-slate-950 border border-slate-700 text-xs text-slate-200 focus:outline-none focus:border-sky-500">
+                                <button type="button" onclick="resetAllVerifyFilters()" class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs">Resetuj filtry</button>
+                            </div>
                         </div>
                     </div>
 
@@ -1178,6 +1195,10 @@
             reviews: [],
             currentFilter: 'all',
             verifyStoreFilter: 'all',
+            verifyCategoryFilter: 'all',
+            verifyDateFilter: 'all',
+            verifyCustomDateFrom: '',
+            verifyCustomDateTo: '',
             unsubKitchen: null,
             unsubPublicRecipes: null,
             unsubAdminList: null,
@@ -3455,6 +3476,70 @@ BARDZO WAŻNE ZASADY:
             renderVerifyScraper();
         };
 
+        window.setVerifyCategoryFilter = (catKey) => {
+            window.appState.verifyCategoryFilter = catKey;
+            renderVerifyScraper();
+        };
+
+        window.setVerifyDatePreset = (presetKey) => {
+            window.appState.verifyDateFilter = presetKey;
+            if (presetKey !== 'custom') {
+                window.appState.verifyCustomDateFrom = '';
+                window.appState.verifyCustomDateTo = '';
+                const fEl = document.getElementById('verify-date-from');
+                const tEl = document.getElementById('verify-date-to');
+                if (fEl) fEl.value = '';
+                if (tEl) tEl.value = '';
+            }
+            renderVerifyScraper();
+        };
+
+        window.setVerifyCustomDates = () => {
+            const fVal = document.getElementById('verify-date-from')?.value || '';
+            const tVal = document.getElementById('verify-date-to')?.value || '';
+            window.appState.verifyCustomDateFrom = fVal;
+            window.appState.verifyCustomDateTo = tVal;
+            window.appState.verifyDateFilter = (fVal || tVal) ? 'custom' : 'all';
+            renderVerifyScraper();
+        };
+
+        window.resetAllVerifyFilters = () => {
+            window.appState.verifyStoreFilter = 'all';
+            window.appState.verifyCategoryFilter = 'all';
+            window.appState.verifyDateFilter = 'all';
+            window.appState.verifyCustomDateFrom = '';
+            window.appState.verifyCustomDateTo = '';
+            const sEl = document.getElementById('verify-search');
+            const fEl = document.getElementById('verify-date-from');
+            const tEl = document.getElementById('verify-date-to');
+            if (sEl) sEl.value = '';
+            if (fEl) fEl.value = '';
+            if (tEl) tEl.value = '';
+            renderVerifyScraper();
+        };
+
+        const VERIFY_CATEGORIES = [
+            { id: 'all', label: 'Wszystkie działy', icon: '🍽️' },
+            { id: 'mieso', label: 'Mięso i wędliny', icon: '🥩' },
+            { id: 'nabial', label: 'Nabiał i jaja', icon: '🧀' },
+            { id: 'warzywa', label: 'Warzywa i owoce', icon: '🥦' },
+            { id: 'pieczywo', label: 'Pieczywo', icon: '🥖' },
+            { id: 'suche', label: 'Suche i konserwy', icon: '🥫' },
+            { id: 'ryby', label: 'Ryby', icon: '🐟' },
+            { id: 'tluszcze', label: 'Tłuszcze i dodatki', icon: '🫒' }
+        ];
+
+        function classifyVerifyFoodCategory(item, prodKey = '') {
+            const text = window.stripDiacritics(`${item.name || ''} ${prodKey} ${item.rawText || ''}`);
+            if (/(kurczak|indyk|wieprzow|wolow|schab|karkowk|lopatk|szynk|poledwic|mielon|kielbas|boczek|boczku|parowk|kabanos|kaczk|gulasz|zeberk|udk|skrzydelk|filet|piers|mieso)/.test(text)) return 'mieso';
+            if (/(losos|dorsz|tunczyk|sledz|pstrag|makrel|mintaj|morszczuk|krewetk|ryb)/.test(text)) return 'ryby';
+            if (/(mleko|maslo|ser|gouda|edam|ementaler|morski|mozzarell|twarog|serek|jogurt|smietan|kefir|maslank|jaj|feta|camembert|parmezan|ricotta|mascarpone)/.test(text) && !text.includes('maslo orzechowe')) return 'nabial';
+            if (/(chleb|bulk|bagietk|tortill|pieczyw|tostow|kajzerk|graham)/.test(text)) return 'pieczywo';
+            if (/(pomidor|passat|przecier|koncentrat pomidor|ogor|papryk|cebul|czosn|ziemniak|marchew|pietruszk|seler|kapust|brokul|kalafior|cukini|baklazan|szpinak|salat|rzodkiew|burak|por|pieczark|dyni|awokado|jablk|banan|cytryn|pomarancz|mandarynk|grejpfrut|borowk|malin|truskawk|winogron|gruszk|sliwk|brzoskwini|ananas|mango|kiwi|arbuz)/.test(text)) return 'warzywa';
+            if (/(oliw|olej|maslo orzechowe|sos sojowy|bulion)/.test(text)) return 'tluszcze';
+            return 'suche';
+        }
+
         function getNormalizedVerifyStore(item) {
             const raw = item.store || (item.source ? item.source.replace(/^Promocja\s+/i, '').split('(')[0].trim() : 'Inne');
             const low = raw.toLowerCase();
@@ -3464,14 +3549,82 @@ BARDZO WAŻNE ZASADY:
             return raw || 'Inne';
         }
 
+        function matchesVerifyDateFilter(item) {
+            const mode = window.appState.verifyDateFilter || 'all';
+            if (mode === 'all') return true;
+
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const toIso = (d) => d.toISOString().slice(0, 10);
+            const todayStr = toIso(today);
+
+            const vFrom = item.validFrom || null;
+            const vTo = item.validTo || null;
+
+            if (mode === 'active_today') {
+                if (vFrom && vFrom > todayStr) return false;
+                if (vTo && vTo < todayStr) return false;
+                return Boolean(vFrom || vTo);
+            }
+
+            if (mode === 'ending_soon') {
+                if (!vTo) return false;
+                const in3Days = new Date(today);
+                in3Days.setDate(in3Days.getDate() + 3);
+                const maxStr = toIso(in3Days);
+                return vTo >= todayStr && vTo <= maxStr;
+            }
+
+            if (mode === 'this_week') {
+                const day = today.getDay() || 7;
+                const monday = new Date(today);
+                monday.setDate(today.getDate() - day + 1);
+                const sunday = new Date(monday);
+                sunday.setDate(monday.getDate() + 6);
+                const monStr = toIso(monday);
+                const sunStr = toIso(sunday);
+                const effFrom = vFrom || vTo;
+                const effTo = vTo || vFrom;
+                if (!effFrom && !effTo) return false;
+                return effFrom <= sunStr && effTo >= monStr;
+            }
+
+            if (mode === 'has_dates') {
+                return Boolean(vFrom || vTo);
+            }
+
+            if (mode === 'custom') {
+                const cFrom = window.appState.verifyCustomDateFrom;
+                const cTo = window.appState.verifyCustomDateTo;
+                if (!cFrom && !cTo) return true;
+                const effFrom = vFrom || vTo;
+                const effTo = vTo || vFrom;
+                if (!effFrom && !effTo) return false;
+                if (cFrom && effTo < cFrom) return false;
+                if (cTo && effFrom > cTo) return false;
+                return true;
+            }
+
+            return true;
+        }
+
         function getFilteredPendingEntries() {
             const allItems = Object.entries(window.appState.pendingScraper || {});
             const storeFilter = window.appState.verifyStoreFilter || 'all';
+            const catFilter = window.appState.verifyCategoryFilter || 'all';
             const query = (document.getElementById('verify-search')?.value || '').toLowerCase().trim();
 
             return allItems.filter(([prodKey, item]) => {
                 const st = getNormalizedVerifyStore(item);
                 if (storeFilter !== 'all' && st !== storeFilter) return false;
+
+                if (catFilter !== 'all') {
+                    const itemCat = classifyVerifyFoodCategory(item, prodKey);
+                    if (itemCat !== catFilter) return false;
+                }
+
+                if (!matchesVerifyDateFilter(item)) return false;
+
                 if (query) {
                     const cleanName = window.cleanGenericFoodName(item.name || prodKey).toLowerCase();
                     const rawText = (item.rawText || '').toLowerCase();
@@ -3484,13 +3637,18 @@ BARDZO WAŻNE ZASADY:
         window.renderVerifyScraper = () => {
             const listEl = document.getElementById('verify-scraper-list');
             const filtersEl = document.getElementById('verify-store-filters');
+            const catFiltersEl = document.getElementById('verify-category-filters');
+            const datePresetsEl = document.getElementById('verify-date-presets');
             const allItems = Object.entries(window.appState.pendingScraper || {});
 
-            // Policz oferty dla każdego sklepu
+            // 1. Pigułki sklepów
             const storeCounts = {};
-            allItems.forEach(([_, item]) => {
+            const catCounts = {};
+            allItems.forEach(([prodKey, item]) => {
                 const st = getNormalizedVerifyStore(item);
                 storeCounts[st] = (storeCounts[st] || 0) + 1;
+                const cat = classifyVerifyFoodCategory(item, prodKey);
+                catCounts[cat] = (catCounts[cat] || 0) + 1;
             });
 
             const activeFilter = window.appState.verifyStoreFilter || 'all';
@@ -3502,7 +3660,7 @@ BARDZO WAŻNE ZASADY:
             if (filtersEl) {
                 const knownStores = ['Lidl', 'Biedronka', 'Netto', ...Object.keys(storeCounts).filter(s => !['Lidl', 'Biedronka', 'Netto'].includes(s))];
                 const chips = [
-                    { id: 'all', label: `Wszystkie (${allItems.length})`, activeClass: 'bg-indigo-500 text-white' },
+                    { id: 'all', label: `Wszystkie sklepy (${allItems.length})`, activeClass: 'bg-indigo-500 text-white' },
                     ...knownStores.filter(st => storeCounts[st] > 0 || ['Lidl', 'Biedronka', 'Netto'].includes(st)).map(st => {
                         const icon = st === 'Lidl' ? '🔵' : st === 'Biedronka' ? '🐞' : st === 'Netto' ? '🟡' : '🏪';
                         const activeCls = st === 'Lidl'
@@ -3518,7 +3676,32 @@ BARDZO WAŻNE ZASADY:
 
                 filtersEl.innerHTML = chips.map(ch => {
                     const isAct = currentFilter === ch.id;
-                    return `<button type="button" onclick="setVerifyStoreFilter('${ch.id}')" class="px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${isAct ? ch.activeClass + ' shadow-md' : 'bg-[#1e293b] text-slate-300 border border-slate-700 hover:border-slate-500'}">${ch.label}</button>`;
+                    return `<button type="button" onclick="setVerifyStoreFilter('${ch.id}')" class="px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${isAct ? ch.activeClass + ' shadow-md' : 'bg-slate-900 text-slate-300 border border-slate-700 hover:border-slate-500'}">${ch.label}</button>`;
+                }).join('');
+            }
+
+            // 2. Pigułki kategorii spożywczych (Mięso, Nabiał, Warzywa/Owoce, Pieczywo, Suche/Konserwy, Ryby, Tłuszcze)
+            const currentCat = window.appState.verifyCategoryFilter || 'all';
+            if (catFiltersEl) {
+                catFiltersEl.innerHTML = VERIFY_CATEGORIES.map(c => {
+                    const count = c.id === 'all' ? allItems.length : (catCounts[c.id] || 0);
+                    const isAct = currentCat === c.id;
+                    return `<button type="button" onclick="setVerifyCategoryFilter('${c.id}')" class="px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${isAct ? 'bg-emerald-500 text-slate-950 font-bold shadow-sm' : 'bg-slate-950/90 text-slate-300 border border-slate-800 hover:border-slate-600'}">${c.icon} ${c.label} (${count})</button>`;
+                }).join('');
+            }
+
+            // 3. Szybkie filtry dat
+            const currentDateMode = window.appState.verifyDateFilter || 'all';
+            if (datePresetsEl) {
+                const datePresets = [
+                    { id: 'all', label: 'Wszystkie daty' },
+                    { id: 'active_today', label: '✅ Ważne dzisiaj' },
+                    { id: 'ending_soon', label: '⏳ Kończą się (do 3 dni)' },
+                    { id: 'this_week', label: '📆 Ten tydzień' }
+                ];
+                datePresetsEl.innerHTML = datePresets.map(dp => {
+                    const isAct = currentDateMode === dp.id;
+                    return `<button type="button" onclick="setVerifyDatePreset('${dp.id}')" class="px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${isAct ? 'bg-sky-500 text-slate-950 font-bold' : 'bg-slate-950 text-slate-300 border border-slate-800 hover:border-slate-600'}">${dp.label}</button>`;
                 }).join('');
             }
 
@@ -3535,9 +3718,9 @@ BARDZO WAŻNE ZASADY:
 
             if (items.length === 0) {
                 listEl.innerHTML = `<div class="bg-[#1e293b] rounded-2xl border border-slate-800 p-8 text-center space-y-2">
-                    <h3 class="text-base font-bold text-white">Brak promocji dla wybranego filtra</h3>
-                    <p class="text-xs text-slate-400">Zmień sklep powyżej lub wyczyść wyszukiwarkę.</p>
-                    <button type="button" onclick="setVerifyStoreFilter('all'); if(document.getElementById('verify-search')) document.getElementById('verify-search').value='';" class="mt-2 px-4 py-2 rounded-xl bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 text-xs font-bold">Pokaż wszystkie sklepy</button>
+                    <h3 class="text-base font-bold text-white">Brak promocji dla wybranych filtrów</h3>
+                    <p class="text-xs text-slate-400">Zmień sklep, dział produktu lub zakres dat obowiązywania promocji.</p>
+                    <button type="button" onclick="resetAllVerifyFilters()" class="mt-2 px-4 py-2 rounded-xl bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 text-xs font-bold">Wyczyść wszystkie filtry</button>
                 </div>`;
                 return;
             }
