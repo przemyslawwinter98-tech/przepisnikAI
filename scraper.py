@@ -47,40 +47,85 @@ LEAFLET_URL_HINTS = [
     "gazetk", "ulotk", "ofert", "promocj", "katalog", "sklep"
 ]
 
-NON_FOOD_KEYWORDS = [
+# Produkty niespożywcze oraz gotowe przyprawy/fixy udające mięso lub warzywa
+NON_FOOD_AND_NOISE_KEYWORDS = [
     "proszek", "plyn do", "kapsulki", "papier toaletowy", "recznik papierowy",
     "szampon", "zel pod prysznic", "mydlo", "pasta do zebow", "dezodorant",
     "karma", "zwirek", "pieluchy", "pampers", "patelnia", "garnek", "skarpetki",
     "koszulka", "spodnie", "buty", "zabawka", "baterie", "zarowka", "wiertarka",
     "szlifierka", "kosiarka", "doniczka", "ziemia ogrodowa", "piwo", "wodka",
     "wino", "whisky", "likier", "cydr", "papierosy", "tyton", "krem do", "balsam",
-    "reklamowka", "torba na zakupy", "folia aluminiowa", "papier do pieczenia"
+    "reklamowka", "torba na zakupy", "folia aluminiowa", "papier do pieczenia",
+    "przyprawa do", "przyprawy", "fix ", "pomysl na", "marynata", "zupa blyskawiczna",
+    "goracy kubek", "kostka rosolowa", "bulionetka", "karma dla"
 ]
+
+# Reguły bezpieczeństwa dla konkretnych produktów (wykluczenia + minimalna sensowna cena)
+PRODUCT_GUARDRAILS = {
+    "piers_z_kurczaka": {
+        "must_have_any": ["piers", "filet"],
+        "exclude": ["przypraw", "wedlin", "szynk", "poledwic", "pasztet", "parowk", "kabanos", "panier", "nuggets", "strips", "konserw", "salatk", "karma"],
+        "min_price": 9.50,
+    },
+    "mieso_mielone": {
+        "must_have_any": ["mielon"],
+        "exclude": ["przypraw", "fix", "pomysl na", "sos", "pierogi", "krokiety", "nalesniki"],
+        "min_price": 5.50,
+    },
+    "maslo": {
+        "must_have_any": ["maslo"],
+        "exclude": ["orzech", "roslinn", "margaryn", "mix", "osełk", "oselk", "krem", "balsam", "do ciala", "shea"],
+        "min_price": 3.50,
+    },
+    "mleko": {
+        "must_have_any": ["mleko"],
+        "exclude": ["kokos", "sojow", "owsian", "migdal", "zageszczon", "skondensowan", "w proszku", "czekolad", "do demakijazu", "balsam", "modifikowan", "bebiko", "nan"],
+        "min_price": 1.80,
+    },
+    "jajka": {
+        "must_have_any": ["jaj"],
+        "exclude": ["niespodziank", "czekolad", "makaron", "majonez", "kinder"],
+        "min_price": 4.50,
+    },
+    "tunczyk": {
+        "must_have_any": ["tunczyk"],
+        "exclude": ["salatk", "pasta", "karma", "dla kota"],
+        "min_price": 3.00,
+    },
+    "passata_pomidorowa": {
+        "must_have_any": ["passata", "przecier pomidor"],
+        "exclude": ["zupa", "krem"],
+        "min_price": 2.20,
+    },
+}
 
 BRAND_WORDS = [
     "mlekovita", "piatnica", "laciate", "mlekpol", "lubelska", "krasnystaw",
     "wloszczowa", "sierpc", "hochland", "president", "almette", "danone",
     "bakoma", "zott", "muller", "pudliszki", "dawtona", "lowicz", "kotlin",
-    "roleski", "winiary", "knorr", "bonduelle", "lisner", "graal", "marinero",
-    "sokolow", "morliny", "berlinki", "tarczynski", "krakus", "pikok", "dulano",
-    "milbona", "pilos", "lidl", "biedronka", "fruvita", "mleczna dolina",
-    "kraina wedlin", "kraina mies", "nasze smaki", "lubella", "barilla",
-    "sonko", "kupiec", "kujawski", "rama", "delma", "kasia", "ekstra", "uht"
+    "roleski", "winiary", "knorr", "prymat", "kamis", "bonduelle", "lisner",
+    "graal", "marinero", "sokolow", "morliny", "berlinki", "tarczynski",
+    "krakus", "pikok", "dulano", "milbona", "pilos", "lidl", "biedronka",
+    "fruvita", "mleczna dolina", "kraina wedlin", "kraina mies", "nasze smaki",
+    "lubella", "barilla", "sonko", "kupiec", "kujawski", "rama", "delma",
+    "kasia", "ekstra", "uht", "zobacz aktualna"
 ]
 
 SAMPLE_TRACKED_FOR_DRY_RUN = [
-    {"name": "Masło", "keywords": ["maslo"], "maxPrice": 7.50},
-    {"name": "Mleko", "keywords": ["mleko"], "maxPrice": 3.50},
-    {"name": "Serek wiejski", "keywords": ["serek wiejski"], "maxPrice": 3.20},
-    {"name": "Pierś z kurczaka", "keywords": ["piers z kurczaka", "filet z kurczaka", "kurczak"], "maxPrice": 18.00},
-    {"name": "Mięso mielone", "keywords": ["mieso mielone", "mielone"], "maxPrice": 11.50},
-    {"name": "Jajka", "keywords": ["jajka", "jaja"], "maxPrice": 11.00},
-    {"name": "Passata pomidorowa", "keywords": ["passata"], "maxPrice": 4.50},
-    {"name": "Tuńczyk w puszce", "keywords": ["tunczyk"], "maxPrice": 6.00},
-    {"name": "Czerwona fasola", "keywords": ["fasola"], "maxPrice": 3.50},
-    {"name": "Kukurydza konserwowa", "keywords": ["kukurydza"], "maxPrice": 3.80},
-    {"name": "Ryż", "keywords": ["ryz"], "maxPrice": 5.50},
-    {"name": "Makaron", "keywords": ["makaron"], "maxPrice": 5.00},
+    {"name": "Masło", "keywords": ["maslo"], "maxPrice": 8.50},
+    {"name": "Mleko", "keywords": ["mleko"], "maxPrice": 4.20},
+    {"name": "Serek wiejski", "keywords": ["serek wiejski"], "maxPrice": 3.80},
+    {"name": "Pierś z kurczaka", "keywords": ["piers z kurczaka", "filet z kurczaka", "filet z piersi"], "maxPrice": 22.00},
+    {"name": "Mięso mielone", "keywords": ["mieso mielone", "mielone"], "maxPrice": 13.50},
+    {"name": "Jajka", "keywords": ["jajka", "jaja"], "maxPrice": 12.50},
+    {"name": "Passata pomidorowa", "keywords": ["passata", "przecier pomidorowy"], "maxPrice": 5.50},
+    {"name": "Tuńczyk w puszce", "keywords": ["tunczyk"], "maxPrice": 7.50},
+    {"name": "Czerwona fasola", "keywords": ["fasola czerwona", "czerwona fasola", "fasola"], "maxPrice": 4.50},
+    {"name": "Kukurydza konserwowa", "keywords": ["kukurydza"], "maxPrice": 4.50},
+    {"name": "Ryż", "keywords": ["ryz"], "maxPrice": 6.50},
+    {"name": "Makaron", "keywords": ["makaron"], "maxPrice": 5.50},
+    {"name": "Ser żółty", "keywords": ["ser zolty", "gouda", "edamski"], "maxPrice": 28.00},
+    {"name": "Oliwa z oliwek", "keywords": ["oliwa"], "maxPrice": 28.00},
 ]
 
 def normalize_ascii(text: str) -> str:
@@ -88,6 +133,24 @@ def normalize_ascii(text: str) -> str:
     text = unicodedata.normalize("NFD", text)
     text = "".join(ch for ch in text if unicodedata.category(ch) != "Mn")
     return text.replace("ł", "l")
+
+def canonical_product_key(name: str) -> str:
+    a = normalize_ascii(name)
+    if "piers" in a and "kurczak" in a or "filet" in a and "kurczak" in a:
+        return "piers_z_kurczaka"
+    if "mielon" in a:
+        return "mieso_mielone"
+    if "masl" in a and "maslank" not in a and "orzech" not in a:
+        return "maslo"
+    if re.search(r"\bmlek[oa]\b", a):
+        return "mleko"
+    if "jajk" in a or re.search(r"\bjaj[ao]?\b", a):
+        return "jajka"
+    if "tunczyk" in a:
+        return "tunczyk"
+    if "passat" in a or "przecier pomidor" in a:
+        return "passata_pomidorowa"
+    return re.sub(r"[^a-z0-9_]", "_", a)
 
 def is_valid_leaflet_url(url: str, store_slug: str, link_text: str = "") -> bool:
     low_url = normalize_ascii(url)
@@ -189,7 +252,7 @@ def is_food_offer(title: str) -> bool:
     norm = normalize_ascii(title)
     if len(norm) < 3:
         return False
-    return not any(bad in norm for bad in NON_FOOD_KEYWORDS)
+    return not any(bad in norm for bad in NON_FOOD_AND_NOISE_KEYWORDS)
 
 def parse_offers(html: str, store_name: str, source_url: str) -> list[dict]:
     soup = BeautifulSoup(html, "html.parser")
@@ -203,7 +266,6 @@ def parse_offers(html: str, store_name: str, source_url: str) -> list[dict]:
     page_valid_from, page_valid_to = extract_validity_dates(page_header_text)
 
     if not is_promotion_active(page_valid_to):
-        print(f"   [POMINIĘTO] Gazetka wygasła ({page_valid_to}): {source_url}", flush=True)
         return []
 
     for script in soup.find_all("script"):
@@ -229,7 +291,7 @@ def parse_offers(html: str, store_name: str, source_url: str) -> list[dict]:
                         "price": round(price_val, 2),
                         "valid_from": page_valid_from,
                         "valid_to": page_valid_to,
-                        "raw_text": f"{raw_prod} -> {price_val:.2f} zł",
+                        "raw_text": f"{raw_prod} ({price_val:.2f} zł)",
                         "source_url": source_url,
                     })
 
@@ -247,7 +309,7 @@ def parse_offers(html: str, store_name: str, source_url: str) -> list[dict]:
             continue
 
         price_pos = re.search(r"\d{1,3}[.,]\d{2}\s*zł", text, re.I).start()
-        raw_prod = text[:price_pos].strip(" -–|:•,")
+        raw_prod = re.sub(r"^zobacz\s+aktualn[aą]\s+", "", text[:price_pos], flags=re.I).strip(" -–|:•,")
         if len(raw_prod) < 3 or not is_food_offer(raw_prod):
             continue
 
@@ -269,7 +331,7 @@ def parse_offers(html: str, store_name: str, source_url: str) -> list[dict]:
                 "price": round(price_val, 2),
                 "valid_from": v_from,
                 "valid_to": v_to,
-                "raw_text": text,
+                "raw_text": f"{raw_prod} — {price_val:.2f} zł",
                 "source_url": source_url,
             })
 
@@ -301,7 +363,7 @@ def find_leaflet_links_from_home(session: requests.Session) -> dict[str, list[st
                             store_links[store].append(full)
         except Exception as exc:
             print(f"[HOME] Błąd {home}: {exc}", flush=True)
-        time.sleep(0.8)
+        time.sleep(0.6)
 
     return store_links
 
@@ -315,26 +377,27 @@ def fetch_all_store_offers() -> list[dict]:
     for store in STORES:
         slug = store.lower()
         links = discovered.get(store, [])
-        print(f"\n[{store}] Odkryto {len(links)} linków gazetek (bez blogów): {links[:4]}", flush=True)
+        print(f"\n[{store}] Odkryto {len(links)} linków gazetek (bez blogów).", flush=True)
         store_offers = []
 
         visited = set()
-        queue = list(links[:6])
+        queue = list(links[:12])
 
-        while queue and len(visited) < 10:
+        while queue and len(visited) < 18:
             url = queue.pop(0)
             if url in visited or not is_valid_leaflet_url(url, slug):
                 continue
             visited.add(url)
 
             try:
-                time.sleep(0.8)
+                time.sleep(0.5)
                 resp = session.get(url, timeout=15)
                 if resp.status_code != 200:
                     continue
 
                 found = parse_offers(resp.text, store, url)
-                print(f"  -> {url} -> HTTP 200 (+{len(found)} aktualnych ofert)", flush=True)
+                if found:
+                    print(f"  -> {url} (+{len(found)} ofert)", flush=True)
                 store_offers.extend(found)
 
                 soup = BeautifulSoup(resp.text, "html.parser")
@@ -360,44 +423,62 @@ def fetch_all_store_offers() -> list[dict]:
 
     return all_offers
 
-def format_validity_badge(v_from: Optional[str], v_to: Optional[str]) -> str:
-    if v_from and v_to:
-        return f"ważne: {v_from} – {v_to}"
-    if v_to:
-        return f"ważne do {v_to}"
-    if v_from:
-        return f"ważne od {v_from}"
-    return "brak daty w gazetce"
+def passes_guardrails(canon_key: str, offer: dict) -> bool:
+    rules = PRODUCT_GUARDRAILS.get(canon_key)
+    if not rules:
+        return True
+
+    haystack = normalize_ascii(f"{offer['raw_name']} {offer['generic_name']}")
+    if any(bad in haystack for bad in rules.get("exclude", [])):
+        return False
+
+    must_any = rules.get("must_have_any", [])
+    if must_any and not any(req in haystack for req in must_any):
+        return False
+
+    min_p = rules.get("min_price")
+    if min_p is not None and offer["price"] < float(min_p):
+        return False
+
+    return True
 
 def match_offers(offers: list[dict], tracked_products: list[dict]) -> dict:
     pending = {}
 
     for tracked in tracked_products:
         t_name = tracked.get("name", "")
-        keywords = [normalize_ascii(k) for k in tracked.get("keywords", []) if k]
-        if not keywords and t_name:
-            keywords = [normalize_ascii(t_name)]
+        canon_key = canonical_product_key(t_name)
+
+        # Czyścimy zbyt ogólne słowo kluczowe "kurczak" jeśli dotyczy piersi z kurczaka
+        raw_kws = [normalize_ascii(k) for k in tracked.get("keywords", []) if k]
+        if canon_key == "piers_z_kurczaka":
+            keywords = [k for k in raw_kws if k != "kurczak"] or ["piers z kurczaka", "filet z kurczaka", "filet z piersi"]
+        else:
+            keywords = raw_kws or [normalize_ascii(t_name)]
+
         max_price = tracked.get("maxPrice")
 
         best = None
         for off in offers:
             haystack = f"{normalize_ascii(off['raw_name'])} {normalize_ascii(off['generic_name'])}"
             if any(kw in haystack for kw in keywords):
-                if max_price is not None and off["price"] > float(max_price):
+                if not passes_guardrails(canon_key, off):
+                    continue
+                if max_price is not None and off["price"] > float(max_price) * 1.15:
                     continue
                 if best is None or off["price"] < best["price"]:
                     best = off
 
         if best:
             safe_key = re.sub(r"[^a-z0-9_]", "_", normalize_ascii(t_name))
-            validity_str = format_validity_badge(best.get("valid_from"), best.get("valid_to"))
             pending[safe_key] = {
                 "name": t_name,
                 "detectedPrice": best["price"],
+                "store": best["store"],
                 "validFrom": best.get("valid_from"),
                 "validTo": best.get("valid_to"),
-                "source": f"Promocja {best['store']} ({validity_str})",
-                "rawText": f"{best['raw_name']} — {best['price']:.2f} zł ({validity_str})",
+                "source": best["store"],
+                "rawText": best["raw_text"],
                 "sourceUrl": best["source_url"],
             }
     return pending
@@ -444,10 +525,10 @@ def main():
     if dry_run:
         matched = match_offers(offers, SAMPLE_TRACKED_FOR_DRY_RUN)
         with open("wynik_testu.json", "w", encoding="utf-8") as f:
-            json.dump({"total_offers": len(offers), "matched_radar": matched, "sample_offers": offers[:25]}, f, ensure_ascii=False, indent=2)
+            json.dump({"total_offers": len(offers), "matched_radar": matched, "sample_offers": offers[:30]}, f, ensure_ascii=False, indent=2)
         print(f"\n[DRY-RUN] Dopasowano {len(matched)} produktów z radaru! Szczegóły w wynik_testu.json.", flush=True)
         for v in matched.values():
-            print(f"  ✓ {v['name']}: {v['detectedPrice']:.2f} zł | {v['source']} -> {v['rawText']}", flush=True)
+            print(f"  ✓ {v['name']} | {v['detectedPrice']:.2f} zł | Sklep: {v['store']} | Od: {v['validFrom']} Do: {v['validTo']} | ({v['rawText']})", flush=True)
         return
 
     if not offers:
