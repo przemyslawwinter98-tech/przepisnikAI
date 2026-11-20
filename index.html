@@ -2233,6 +2233,82 @@
             .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
             .replace(/ł/g, "l");
 
+        const BRAND_AND_FILLER_WORDS = [
+            "mlekovita", "piatnica", "laciate", "mlekpol", "lubelska", "krasnystaw",
+            "wloszczowa", "sierpc", "hochland", "president", "almette", "philadelphia",
+            "danone", "bakoma", "zott", "muller", "fantasia", "activia", "jogobella",
+            "pudliszki", "dawtona", "lowicz", "kotlin", "roleski", "winiary", "knorr",
+            "kamis", "prymat", "bonduelle", "lisner", "graal", "amerigo", "marinero",
+            "sokolow", "morliny", "berlinki", "tarczynski", "krakus", "duda", "henry",
+            "pikok", "dulano", "milbona", "pilos", "lidl", "biedronka", "fruvita",
+            "mleczna dolina", "kraina wedlin", "kraina mies", "nasze smaki", "culinea",
+            "chef select", "freshona", "k classic", "kaufland", "netto", "premieur",
+            "lubella", "barilla", "malma", "arrighi", "sonko", "kupiec", "halina",
+            "risana", " Uncle Bens", "uncle bens", "kujawski", "beskidzki", "rama",
+            "delma", "kasia", "finuu", "osełka", "oselka", "ekstra", "polskie", "polski",
+            "swieze", "swiezy", "uht", "pasteryzowane", "bio", "eko", "xxl", "mega",
+            "promocja", "gazetka", "rodzinne", "klasyczne", "tradycyjne", "wiejskie"
+        ];
+
+        window.cleanGenericFoodName = (rawStr) => {
+            let s = String(rawStr || '').trim();
+            if (!s) return 'Produkt';
+
+            // Usuń gramatury i procenty tłuszczu z nazwy (np. "200g", "3,2%", "1L", "2%")
+            s = s.replace(/\b\d+(?:[.,]\d+)?\s*(?:kg|g|dag|ml|l|szt\.?|%)\b/gi, ' ');
+            s = s.replace(/\b\d+[.,]\d+%?/g, ' ');
+
+            // Usuń nazwy marek i zbędne przymiotniki handlowe
+            BRAND_AND_FILLER_WORDS.forEach(brand => {
+                const escaped = brand.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                if (escaped) {
+                    s = s.replace(new RegExp('\\b' + escaped + '\\b', 'gi'), ' ');
+                }
+            });
+
+            s = s.replace(/\s+/g, ' ').trim();
+            const ascii = window.stripDiacritics(s);
+
+            // Kanoniczne, czyste nazwy ogólne produktów
+            if (ascii.includes('serek wiejski')) {
+                return ascii.includes('lekk') || ascii.includes('light') || ascii.includes('odtluszcz')
+                    ? 'Serek wiejski lekki'
+                    : 'Serek wiejski';
+            }
+            if (ascii.includes('maslo orzech')) return 'Masło orzechowe';
+            if (ascii.includes('masl') && !ascii.includes('maslank')) return 'Masło';
+            if (ascii.includes('maslank')) return 'Maślanka';
+            if (ascii.includes('mleczko kokos')) return 'Mleczko kokosowe';
+            if (/\bmlek[oa]\b/.test(ascii) && !ascii.includes('czekolad')) return 'Mleko';
+            if (ascii.includes('jajk') || /\bjaj[ao]?\b/.test(ascii)) return 'Jajka';
+            if (ascii.includes('smietan') && !ascii.includes('smietank')) return 'Śmietana';
+            if (ascii.includes('smietank')) return 'Śmietanka';
+            if (ascii.includes('jogurt natural')) return 'Jogurt naturalny';
+            if (ascii.includes('jogurt greck')) return 'Jogurt grecki';
+            if (ascii.includes('twarog')) return 'Twaróg';
+            if (ascii.includes('ser zolty') || ascii.includes('gouda') || ascii.includes('edamski') || ascii.includes('ementaler') || ascii.includes('morski')) return 'Ser żółty';
+            if (ascii.includes('mozzarell')) return 'Mozzarella';
+            if (ascii.includes('piers') && ascii.includes('kurczak')) return 'Pierś z kurczaka';
+            if (ascii.includes('mielon')) return 'Mięso mielone';
+            if (ascii.includes('chleb')) return 'Chleb świeży';
+            if (ascii.includes('cebul')) return 'Cebula';
+            if (ascii.includes('czosnk') || ascii.includes('czosnek')) return 'Czosnek';
+            if (ascii.includes('ziemniak')) return 'Ziemniaki';
+            if (ascii.includes('passat')) return 'Passata pomidorowa';
+            if (ascii.includes('koncentrat pomidor')) return 'Koncentrat pomidorowy';
+            if (ascii.includes('pomidor') && (ascii.includes('krojon') || ascii.includes('puszk') || ascii.includes('pelati'))) return 'Pomidory krojone';
+            if (ascii.includes('czerwon') && ascii.includes('fasol')) return 'Czerwona fasola';
+            if (ascii.includes('bial') && ascii.includes('fasol')) return 'Biała fasola';
+            if (ascii.includes('kukurydz')) return 'Kukurydza konserwowa';
+            if (ascii.includes('tunczyk')) return 'Tuńczyk w puszce';
+            if (ascii.includes('ananas')) return 'Ananas w puszce';
+            if (/\bryz\b/.test(ascii)) return 'Ryż';
+            if (ascii.includes('makaron')) return 'Makaron';
+
+            if (!s) return rawStr.trim();
+            return s.charAt(0).toUpperCase() + s.slice(1);
+        };
+
         window.normalizeKey = (str) => {
             const ascii = window.stripDiacritics(str)
                 .replace(/\(.*?\)/g, ' ')
@@ -2243,6 +2319,9 @@
 
             if (!ascii) return '';
 
+            if (ascii.includes('serek wiejski')) {
+                return (ascii.includes('lekk') || ascii.includes('light')) ? 'serek_wiejski_lekki' : 'serek_wiejski';
+            }
             if (ascii.includes('jajk') || /\bjaj[ao]?\b/.test(ascii)) return 'jajka';
             if (ascii.includes('cebul')) return 'cebula';
             if (ascii.includes('czosnk') || ascii.includes('czosnek')) return 'czosnek';
@@ -2258,7 +2337,9 @@
             if (ascii.includes('ananas')) return 'ananas_w_puszce';
             if (/\bryz/.test(ascii)) return 'ryz';
             if (ascii.includes('makaron')) return 'makaron';
-            if (ascii.includes('masl')) return 'maslo';
+            if (ascii.includes('maslo orzech')) return 'maslo_orzechowe';
+            if (ascii.includes('masl') && !ascii.includes('maslank')) return 'maslo';
+            if (/\bmlek[oa]\b/.test(ascii)) return 'mleko';
             if (/^sol[ia]?$/.test(ascii)) return 'sol';
             if (ascii.includes('pieprz')) return 'pieprz';
 
@@ -2959,11 +3040,20 @@
 
                 const prompt = `Przeanalizuj zdjęcie paragonu ze sklepu (Lidl, Biedronka, Netto, Frisco itp.).
 BARDZO WAŻNE ZASADY:
-1. IGNORUJ CAŁKOWICIE WSZYSTKIE PRODUKTY NIESPOŻYWCZE! Nie zwracaj reklamówek, toreb na zakupy, chemii gospodarczej, kosmetyków, środków czystości, papieru toaletowego, ręczników papierowych, karmy dla zwierząt, kaucji za butelki ani rabatów jako osobnych pozycji (jeśli pod produktem spożywczym jest rabat/opust, odejmij go od ceny tego produktu). Zwracaj WYŁĄCZNIE jedzenie, napoje i przyprawy kuchenne ("isFood": true).
-2. Jeśli kupiono wielosztuki (np. "3 x 5,50 = 16,50") lub wagę (np. "0,650 kg x 24,99 = 16,24"), pole "unitPrice" MUSI zawierać CENĘ ZA 1 JEDNOSTKĘ (czyli 5.50 za 1 puszkę/szt. lub 24.99 za 1 kg), a pole "purchasedQty" kupioną ilość (np. 3 lub 0.65)! Dla jajek (10 szt.) użyj "unit": "10 szt.".
-3. Rozwiń skróty z paragonu na ładną polską nazwę i dopasuj do istniejącego cennika jeśli to ten sam produkt: [${existingNames}].
+1. USUWAJ CAŁKOWICIE MARKI, PRODUCENTÓW, PROCENTY TŁUSZCZU I GRAMATURY Z NAZWY PRODUKTU!
+   Zwracaj wyłącznie OGÓLNĄ, BAZOWĄ NAZWĘ PRODUKTU po polsku (w mianowniku, wielką literą):
+   - "MASŁO EKSTRA MLEKOVITA 200G" -> "Masło"
+   - "MLEKO ŁACIATE 3,2% 1L" -> "Mleko"
+   - "SEREK WIEJSKI PIĄTNICA 200G" -> "Serek wiejski"
+   - "SEREK WIEJSKI LEKKI PIĄTNICA" -> "Serek wiejski lekki" (wariant lekki/light zachowaj osobno!)
+   - "RYŻ BIAŁY SONKO 4X100G" -> "Ryż"
+   - "MAKARON PENNE LUBELLA 500G" -> "Makaron"
+   - "JAJA ŚCIÓŁKOWE M 10SZT" -> "Jajka" (z "unit": "10 szt.")
+   Dopasuj nazwę do istniejącego cennika, jeśli to ten sam produkt bazowy: [${existingNames}].
+2. IGNORUJ CAŁKOWICIE WSZYSTKIE PRODUKTY NIESPOŻYWCZE (reklamówki, torby, chemię, kosmetyki, papier toaletowy, ręczniki papierowe, karmę dla zwierząt, kaucje). Jeśli pod produktem spożywczym jest rabat/opust, odejmij go od ceny tego produktu. Zwracaj WYŁĄCZNIE żywność ("isFood": true).
+3. Jeśli kupiono wielosztuki (np. "3 x 5,50 = 16,50") lub wagę (np. "0,650 kg x 24,99 = 16,24"), pole "unitPrice" MUSI zawierać CENĘ ZA 1 JEDNOSTKĘ (np. 5.50 za 1 szt./opak. lub 24.99 za 1 kg), a pole "purchasedQty" kupioną ilość (np. 3 lub 0.65).
 4. Zwróć WYŁĄCZNIE poprawny JSON:
-[{"name": "Ananas w puszce", "isFood": true, "unit": "1 puszka", "unitPrice": 5.50, "purchasedQty": 3, "pantryUnit": "puszka", "category": "Konserwy i słoiki", "store": "Lidl"}]`;
+[{"name": "Masło", "isFood": true, "unit": "1 szt.", "unitPrice": 6.49, "purchasedQty": 1, "pantryUnit": "szt.", "category": "Lodówka i mrożonki", "store": "Lidl"}]`;
 
                 const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${activeGeminiKey}`, {
                     method: 'POST',
@@ -2987,13 +3077,16 @@ BARDZO WAŻNE ZASADY:
                 const onlyFood = parsed.filter(isFoodReceiptItem);
 
                 window.appState.scannedReceiptItems = onlyFood.map((item, idx) => {
-                    const canonKey = window.normalizeKey(item.name || "Produkt");
+                    const cleanedName = window.cleanGenericFoodName(item.name || "Produkt");
+                    const canonKey = window.normalizeKey(cleanedName);
                     const isEggs = canonKey === 'jajka';
+                    const existingPb = window.appState.pricebook[canonKey];
+                    const finalName = isEggs ? 'Jajka' : (existingPb ? existingPb.name : cleanedName);
                     return {
                         id: 'rcp_' + idx,
                         selected: true,
-                        name: isEggs ? 'Jajka' : String(item.name || "Produkt").trim(),
-                        unit: isEggs ? '10 szt.' : (item.unit || "1 szt."),
+                        name: finalName,
+                        unit: isEggs ? '10 szt.' : (existingPb ? existingPb.unit : (item.unit || "1 szt.")),
                         unitPrice: Number(parseFloat(item.unitPrice || 0).toFixed(2)),
                         purchasedQty: Number(parseFloat(item.purchasedQty || 1).toFixed(2)),
                         pantryUnit: item.pantryUnit || "szt.",
