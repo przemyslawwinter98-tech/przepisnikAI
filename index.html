@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KuchniaBudżet PRO — Wspólna Spiżarnia, Zamrażarka & Radar</title>
+    <title>KuchniaBudżet PRO — Wspólna Spiżarnia, Zamrażarka & Cennik</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script>
@@ -51,17 +51,21 @@
                 </div>
             </div>
 
-            <!-- Kod Domu (Synchronizacja Mąż & Żona) -->
+            <!-- Kod Domu & Status AI -->
             <div class="mt-5 p-3 rounded-xl bg-slate-900/80 border border-slate-700/80">
                 <div class="flex items-center justify-between text-xs text-slate-400 mb-1">
                     <span class="flex items-center gap-1.5">
                         <span id="sync-dot" class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
                         Kod Domu (Live Sync)
                     </span>
-                    <button onclick="openKitchenModal()" class="text-emerald-400 hover:text-emerald-300 font-medium underline">Zmień</button>
+                    <button onclick="openKitchenModal()" class="text-emerald-400 hover:text-emerald-300 font-medium underline">Ustawienia</button>
                 </div>
                 <div id="desktop-kitchen-code" class="font-mono text-sm font-bold text-white tracking-wider truncate">KUCHNIA-2026</div>
-                <div id="scraper-last-sync-desktop" class="text-[11px] text-slate-400 mt-1.5 pt-1.5 border-t border-slate-800 flex items-center gap-1">
+                <div id="ai-key-status-desktop" class="text-[11px] text-slate-400 mt-1 flex items-center justify-between">
+                    <span>✨ Gemini AI:</span>
+                    <span id="ai-key-badge" class="font-semibold text-amber-400">Parser lokalny</span>
+                </div>
+                <div id="scraper-last-sync-desktop" class="text-[11px] text-slate-400 mt-1 pt-1 border-t border-slate-800 flex items-center gap-1">
                     <span>🤖 Robot cen:</span>
                     <span id="scraper-timestamp-desktop" class="text-slate-300 font-medium">oczekuje na dane</span>
                 </div>
@@ -80,12 +84,19 @@
                 </span>
                 <span id="badge-pantry-ready" class="px-2 py-0.5 text-xs rounded-full bg-emerald-500/20 text-emerald-400 font-semibold">0</span>
             </button>
+            <button onclick="switchTab('pricebook')" data-tab="pricebook" class="nav-btn w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800/70 transition-all">
+                <span class="flex items-center gap-3">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    Cennik & Promocje
+                </span>
+                <span id="badge-promos-count" class="px-2 py-0.5 text-xs rounded-full bg-amber-500/20 text-amber-400 font-semibold">0</span>
+            </button>
             <button onclick="switchTab('promos')" data-tab="promos" class="nav-btn w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800/70 transition-all">
                 <span class="flex items-center gap-3">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path></svg>
-                    Radar & Śledzone Produkty
+                    Radar Śledzonych
                 </span>
-                <span id="badge-promos-count" class="px-2 py-0.5 text-xs rounded-full bg-amber-500/20 text-amber-400 font-semibold">0</span>
+                <span id="badge-tracked-count" class="px-2 py-0.5 text-xs rounded-full bg-indigo-500/20 text-indigo-300 font-semibold">0</span>
             </button>
             <button onclick="switchTab('verify')" data-tab="verify" class="nav-btn w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800/70 transition-all">
                 <span class="flex items-center gap-3">
@@ -126,6 +137,7 @@
                 <button onclick="openKitchenModal()" class="flex items-center gap-1.5 text-[11px] text-emerald-400 font-mono">
                     <span id="mobile-sync-dot" class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
                     <span id="mobile-kitchen-code">KUCHNIA-2026</span>
+                    <span class="text-slate-400 underline ml-1">⚙️</span>
                 </button>
             </div>
         </div>
@@ -145,10 +157,10 @@
                     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                         <div>
                             <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-400 text-xs font-bold mb-2">
-                                <span>🔥 RADAR PROMOCJI & SCRAPER AKTYWNY</span>
+                                <span>🔥 RADAR PROMOCJI & CENNIK AKTYWNY</span>
                             </div>
                             <h2 class="text-lg sm:text-xl font-bold text-white">Najbardziej opłacalne dania na dziś</h2>
-                            <p id="promo-hero-desc" class="text-sm text-slate-300 mt-1">Wykryto przecenione składniki w sklepach! Sprawdź dania z odznaką HIT CENOWY.</p>
+                            <p id="promo-hero-desc" class="text-sm text-slate-300 mt-1">Wykryto przecenione składniki! Sprawdź dania z odznaką HIT CENOWY.</p>
                         </div>
                         <button onclick="setRecipeFilter('promos')" class="shrink-0 px-4 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-sm transition-all">
                             Pokaż tylko Hity Cenowe
@@ -174,7 +186,6 @@
 
             <!-- ================= ZAKŁADKA 2: SPIŻARNIA, LODÓWKA & ZAMRAŻARKA ================= -->
             <section id="tab-pantry" class="hidden space-y-6">
-                <!-- Nagłówek + Ręczne dodawanie do Lodówki / Spiżarni z autokorektą -->
                 <div class="bg-[#1e293b] p-5 sm:p-6 rounded-2xl border border-slate-800 space-y-4">
                     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                         <div>
@@ -184,7 +195,6 @@
                         <button onclick="clearPantry()" class="self-start sm:self-auto px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold border border-slate-700 transition-all">Wyczyść zapasy</button>
                     </div>
 
-                    <!-- Formularz ręcznego dodawania do Lodówki / Spiżarni -->
                     <form onsubmit="addManualPantryItem(event)" class="grid grid-cols-1 sm:grid-cols-12 gap-2.5 pt-3 border-t border-slate-800">
                         <input type="text" id="pantry-add-name" required placeholder="Produkt (np. piers z kurczaka, mleko, ryz)..." class="sm:col-span-5 px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500">
                         <input type="number" step="0.1" min="0.1" id="pantry-add-qty" value="1" required placeholder="Ilość" class="sm:col-span-2 px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-sm text-white text-center font-mono focus:outline-none focus:border-emerald-500">
@@ -207,7 +217,7 @@
                     </form>
                 </div>
 
-                <!-- NOWOŚĆ: ZAMRAŻARKA — EWIDENCJA GOTOWYCH DAŃ -->
+                <!-- ZAMRAŻARKA — EWIDENCJA GOTOWYCH DAŃ -->
                 <div class="bg-gradient-to-br from-sky-950/60 via-[#1e293b] to-[#1e293b] rounded-2xl border border-sky-500/40 p-5 sm:p-6 shadow-xl">
                     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
                         <div>
@@ -259,11 +269,56 @@
                     </div>
                 </div>
 
-                <!-- Lista składników w Lodówce i Spiżarni z edycją ilości -->
                 <div id="pantry-categories-container" class="space-y-5"></div>
             </section>
 
-            <!-- ================= ZAKŁADKA 3: RADAR & ŚLEDZONE PRODUKTY ================= -->
+            <!-- ================= ZAKŁADKA 3: OSOBNY CENNIK & PROMOCJE ================= -->
+            <section id="tab-pricebook" class="hidden space-y-6">
+                <div class="bg-gradient-to-r from-emerald-950/70 via-[#1e293b] to-[#1e293b] rounded-2xl border border-emerald-500/40 p-5 sm:p-6 space-y-4">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div>
+                            <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-xs font-bold mb-1">
+                                <span>💰 EDYCJA CEN SKŁADNIKÓW & PROMOCJI</span>
+                            </div>
+                            <h2 class="text-xl font-bold text-white">Cennik Bazowy & Promocje Sklepowe</h2>
+                            <p class="text-xs sm:text-sm text-slate-300 mt-0.5">Zmieniaj ceny bazowe lub promocyjne dowolnego składnika — aplikacja od razu przeliczy koszt wszystkich przepisów na głównej liście.</p>
+                        </div>
+                        <button onclick="resetAllPromos()" class="self-start sm:self-auto px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-red-950/50 text-xs text-slate-300 hover:text-red-300 font-semibold border border-slate-700 transition-colors">
+                            Resetuj wszystkie promocje
+                        </button>
+                    </div>
+
+                    <!-- Dodawanie nowego produktu do cennika -->
+                    <form onsubmit="addNewPricebookItem(event)" class="grid grid-cols-1 sm:grid-cols-12 gap-2.5 pt-3 border-t border-slate-800/80">
+                        <input type="text" id="pb-new-name" required placeholder="Nowy składnik do cennika (np. Oliwa z oliwek 500ml)..." class="sm:col-span-5 px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500">
+                        <select id="pb-new-cat" class="sm:col-span-3 px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-sm text-slate-200 focus:outline-none focus:border-emerald-500">
+                            <option value="Mięso i świeże">Mięso i świeże</option>
+                            <option value="Konserwy i słoiki">Konserwy i słoiki</option>
+                            <option value="Suche i makarony">Suche i makarony</option>
+                            <option value="Lodówka i mrożonki">Lodówka i mrożonki</option>
+                            <option value="Przyprawy i dodatki">Przyprawy i dodatki</option>
+                        </select>
+                        <input type="number" step="0.01" min="0.1" id="pb-new-price" required placeholder="Cena (zł)" class="sm:col-span-2 px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-sm text-white text-right font-mono focus:outline-none focus:border-emerald-500">
+                        <button type="submit" class="sm:col-span-2 py-2.5 px-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs sm:text-sm transition-all">
+                            + Dodaj do cennika
+                        </button>
+                    </form>
+                </div>
+
+                <div class="bg-[#1e293b] rounded-2xl border border-slate-800 p-5 space-y-4">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <input type="text" id="pricebook-search" oninput="renderPricebook()" placeholder="Szukaj składnika w cenniku..." class="flex-1 px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500">
+                        <label class="inline-flex items-center gap-2 text-xs text-slate-300 cursor-pointer select-none px-3 py-2 rounded-xl bg-slate-900 border border-slate-800">
+                            <input type="checkbox" id="pricebook-only-promos" onchange="renderPricebook()" class="rounded text-emerald-500 focus:ring-0">
+                            <span>Pokaż tylko aktywne promocje (%)</span>
+                        </label>
+                    </div>
+
+                    <div id="pricebook-list" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
+                </div>
+            </section>
+
+            <!-- ================= ZAKŁADKA 4: RADAR & ŚLEDZONE PRODUKTY ================= -->
             <section id="tab-promos" class="hidden space-y-6">
                 <div class="bg-gradient-to-br from-[#1e293b] via-slate-900 to-[#1e293b] rounded-2xl border border-indigo-500/40 p-5 sm:p-6 shadow-xl">
                     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
@@ -272,10 +327,10 @@
                                 <span>🎯 RADAR + AI AUTOKOREKTA LITERÓWEK</span>
                             </div>
                             <h2 class="text-lg sm:text-xl font-bold text-white">Twoja Lista Śledzonych Produktów</h2>
-                            <p class="text-xs sm:text-sm text-slate-400 mt-0.5">Dopisz tutaj produkty (możesz pisać bez polskich znaków lub z literówką np. <em>"tundzyk w puszcze"</em>, <em>"mieso mielone"</em>) — AI poprawi nazwę, a robot codziennie sprawdzi promocje.</p>
+                            <p class="text-xs sm:text-sm text-slate-400 mt-0.5">Dopisz tutaj produkty (możesz pisać bez polskich znaków lub z literówką np. <em>"tundzyk w puszcze"</em>, <em>"mieso mielone"</em>) — apka poprawi nazwę, a robot codziennie sprawdzi promocje.</p>
                         </div>
                         <span class="px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 text-xs font-mono text-emerald-400 shrink-0 self-start">
-                            + Skaner ogólny półproduktów: WŁĄCZONY
+                            Ostatni zrzut: <strong id="scraper-status-panel">Oczekuje</strong>
                         </span>
                     </div>
 
@@ -289,26 +344,9 @@
 
                     <div id="tracked-products-list" class="mt-4 flex flex-wrap gap-2"></div>
                 </div>
-
-                <div class="bg-[#1e293b] rounded-2xl border border-slate-800 p-5">
-                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
-                        <div>
-                            <h3 class="text-lg font-bold text-white">Cennik Bazowy & Zatwierdzone Promocje</h3>
-                            <p class="text-xs text-slate-400">Ostatnia synchronizacja robota: <strong id="scraper-status-panel" class="text-emerald-400">Oczekuje na uruchomienie</strong></p>
-                        </div>
-                        <div class="flex gap-2">
-                            <button onclick="resetAllPromos()" class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-red-950/50 text-xs text-slate-400 hover:text-red-300 font-medium border border-slate-700 transition-colors">
-                                Resetuj promocje
-                            </button>
-                            <input type="text" id="pricebook-search" oninput="renderPricebook()" placeholder="Filtruj składnik..." class="px-3.5 py-2 rounded-xl bg-slate-900 border border-slate-700 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500">
-                        </div>
-                    </div>
-
-                    <div id="pricebook-list" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
-                </div>
             </section>
 
-            <!-- ================= ZAKŁADKA 3B: WERYFIKACJA ZAWARTOŚCI SCRAPERA ================= -->
+            <!-- ================= ZAKŁADKA 5: WERYFIKACJA ZAWARTOŚCI SCRAPERA ================= -->
             <section id="tab-verify" class="hidden space-y-6">
                 <div class="bg-gradient-to-r from-indigo-950/80 via-[#1e293b] to-[#1e293b] rounded-2xl border border-indigo-500/40 p-5 sm:p-6 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                     <div>
@@ -316,7 +354,7 @@
                             <span>🛡️ KONTROLA JAKOŚCI DANYCH Z BOTA</span>
                         </div>
                         <h2 class="text-xl font-bold text-white">Poczekalnia Cen & Okazji ze Scrapera</h2>
-                        <p class="text-sm text-slate-300 mt-1">Tutaj trafiają dopasowania z Twojej listy śledzonych produktów oraz ogólne okazje na półprodukty z gazetek (Lidl, Biedronka, Netto). Zatwierdź poprawne, odrzuć błędne.</p>
+                        <p class="text-sm text-slate-300 mt-1">Tutaj trafiają dopasowania z Twojej listy śledzonych produktów oraz okazje z gazetek (Lidl, Biedronka, Netto). Zatwierdź poprawne do Cennika lub odrzuć błędne.</p>
                     </div>
                     <div class="flex flex-wrap gap-2 shrink-0">
                         <button onclick="approveAllPendingScraper()" class="px-4 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs sm:text-sm shadow-lg shadow-emerald-500/20 transition-all">
@@ -346,7 +384,7 @@
                 <div id="verify-scraper-list" class="space-y-3"></div>
             </section>
 
-            <!-- ================= ZAKŁADKA 4: LISTA ZAKUPÓW ================= -->
+            <!-- ================= ZAKŁADKA 6: LISTA ZAKUPÓW ================= -->
             <section id="tab-shopping" class="hidden space-y-6">
                 <div class="bg-[#1e293b] rounded-2xl border border-slate-800 p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
@@ -382,7 +420,7 @@
                 <div id="shopping-list-container" class="space-y-4"></div>
             </section>
 
-            <!-- ================= ZAKŁADKA 5: HISTORIA & KOSZT PORCJI ================= -->
+            <!-- ================= ZAKŁADKA 7: HISTORIA & KOSZT PORCJI ================= -->
             <section id="tab-reviews" class="hidden space-y-6">
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div class="bg-[#1e293b] p-5 rounded-2xl border border-slate-800">
@@ -413,32 +451,36 @@
 
     <!-- Dolna Nawigacja (Mobile) -->
     <nav class="md:hidden fixed bottom-0 inset-x-0 bg-[#1e293b]/95 backdrop-blur-md border-t border-slate-800 z-30 flex justify-around py-2 px-1">
-        <button onclick="switchTab('recipes')" data-tab="recipes" class="mobile-nav-btn flex flex-col items-center p-2 rounded-xl text-emerald-400">
+        <button onclick="switchTab('recipes')" data-tab="recipes" class="mobile-nav-btn flex flex-col items-center p-1.5 rounded-xl text-emerald-400">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
-            <span class="text-[10px] font-semibold mt-1">Przepisy</span>
+            <span class="text-[10px] font-semibold mt-0.5">Przepisy</span>
         </button>
-        <button onclick="switchTab('pantry')" data-tab="pantry" class="mobile-nav-btn relative flex flex-col items-center p-2 rounded-xl text-slate-400">
+        <button onclick="switchTab('pantry')" data-tab="pantry" class="mobile-nav-btn relative flex flex-col items-center p-1.5 rounded-xl text-slate-400">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
-            <span class="text-[10px] font-semibold mt-1">Zapasy</span>
-            <span id="mobile-badge-pantry" class="hidden absolute top-1 right-1 w-4 h-4 rounded-full bg-emerald-500 text-slate-950 text-[9px] font-bold flex items-center justify-center">0</span>
+            <span class="text-[10px] font-semibold mt-0.5">Zapasy</span>
+            <span id="mobile-badge-pantry" class="hidden absolute top-0.5 right-0.5 w-4 h-4 rounded-full bg-emerald-500 text-slate-950 text-[9px] font-bold flex items-center justify-center">0</span>
         </button>
-        <button onclick="switchTab('promos')" data-tab="promos" class="mobile-nav-btn relative flex flex-col items-center p-2 rounded-xl text-slate-400">
+        <button onclick="switchTab('pricebook')" data-tab="pricebook" class="mobile-nav-btn relative flex flex-col items-center p-1.5 rounded-xl text-slate-400">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            <span class="text-[10px] font-semibold mt-0.5">Cennik</span>
+        </button>
+        <button onclick="switchTab('promos')" data-tab="promos" class="mobile-nav-btn relative flex flex-col items-center p-1.5 rounded-xl text-slate-400">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path></svg>
-            <span class="text-[10px] font-semibold mt-1">Radar</span>
+            <span class="text-[10px] font-semibold mt-0.5">Radar</span>
         </button>
-        <button onclick="switchTab('verify')" data-tab="verify" class="mobile-nav-btn relative flex flex-col items-center p-2 rounded-xl text-slate-400">
+        <button onclick="switchTab('verify')" data-tab="verify" class="mobile-nav-btn relative flex flex-col items-center p-1.5 rounded-xl text-slate-400">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-            <span class="text-[10px] font-semibold mt-1">Weryfikuj</span>
-            <span id="mobile-badge-verify" class="hidden absolute top-1 right-1 w-4 h-4 rounded-full bg-indigo-500 text-white text-[9px] font-bold flex items-center justify-center">0</span>
+            <span class="text-[10px] font-semibold mt-0.5">Weryfikuj</span>
+            <span id="mobile-badge-verify" class="hidden absolute top-0.5 right-0.5 w-4 h-4 rounded-full bg-indigo-500 text-white text-[9px] font-bold flex items-center justify-center">0</span>
         </button>
-        <button onclick="switchTab('shopping')" data-tab="shopping" class="mobile-nav-btn relative flex flex-col items-center p-2 rounded-xl text-slate-400">
+        <button onclick="switchTab('shopping')" data-tab="shopping" class="mobile-nav-btn relative flex flex-col items-center p-1.5 rounded-xl text-slate-400">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
-            <span class="text-[10px] font-semibold mt-1">Zakupy</span>
-            <span id="mobile-badge-shopping" class="hidden absolute top-1 right-1 w-4 h-4 rounded-full bg-amber-500 text-slate-950 text-[9px] font-bold flex items-center justify-center">0</span>
+            <span class="text-[10px] font-semibold mt-0.5">Zakupy</span>
+            <span id="mobile-badge-shopping" class="hidden absolute top-0.5 right-0.5 w-4 h-4 rounded-full bg-amber-500 text-slate-950 text-[9px] font-bold flex items-center justify-center">0</span>
         </button>
-        <button onclick="switchTab('reviews')" data-tab="reviews" class="mobile-nav-btn flex flex-col items-center p-2 rounded-xl text-slate-400">
+        <button onclick="switchTab('reviews')" data-tab="reviews" class="mobile-nav-btn flex flex-col items-center p-1.5 rounded-xl text-slate-400">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
-            <span class="text-[10px] font-semibold mt-1">Koszty</span>
+            <span class="text-[10px] font-semibold mt-0.5">Koszty</span>
         </button>
     </nav>
 
@@ -471,7 +513,10 @@
 
             <div id="add-recipe-ai-panel" class="space-y-4">
                 <div class="p-3.5 rounded-xl bg-slate-900/90 border border-slate-800 space-y-2">
-                    <label class="block text-xs font-bold uppercase tracking-wider text-emerald-400">Opcja A: Wklej link do przepisu (URL)</label>
+                    <div class="flex items-center justify-between">
+                        <label class="block text-xs font-bold uppercase tracking-wider text-emerald-400">Opcja A: Wklej link do przepisu (URL)</label>
+                        <span class="text-[11px] text-slate-400">Działa z Gemini AI oraz z lokalnym parserem</span>
+                    </div>
                     <div class="flex flex-col sm:flex-row gap-2">
                         <input type="url" id="ai-recipe-url" placeholder="https://www.kwestiasmaku.com/przepis/..." class="flex-1 px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500">
                         <button type="button" id="btn-fetch-url" onclick="importRecipeFromUrl()" class="px-4 py-2.5 rounded-xl bg-indigo-500 hover:bg-indigo-400 text-white font-bold text-xs sm:text-sm shrink-0 transition-all">
@@ -486,7 +531,7 @@
                 </div>
 
                 <button id="btn-generate-recipe-ai" onclick="generateRecipeWithAI()" class="w-full py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-sm shadow-lg shadow-emerald-500/20 transition-all flex items-center justify-center gap-2">
-                    <span>Wygeneruj i zapisz przepis przez AI</span>
+                    <span>Przetwórz i zapisz przepis</span>
                 </button>
             </div>
 
@@ -519,11 +564,11 @@
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-slate-400 mb-1">Składniki (jeden na linię: nazwa | gramatura | cena w zł)</label>
-                    <textarea id="man-ingredients" rows="4" required placeholder="Pierś z kurczaka | 500 g | 12.00&#10;Ryż biały | 300 g | 2.00&#10;Mleczko kokosowe | 1 puszka | 5.50" class="w-full p-3 rounded-xl bg-slate-900 border border-slate-700 text-sm text-white font-mono"></textarea>
+                    <textarea id="man-ingredients" rows="5" required placeholder="Pierś z kurczaka | 500 g | 12.00&#10;Ryż biały | 300 g | 2.00&#10;Mleczko kokosowe | 1 puszka | 5.50" class="w-full p-3 rounded-xl bg-slate-900 border border-slate-700 text-sm text-white font-mono"></textarea>
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-slate-400 mb-1">Instrukcja przygotowania (krok po kroku)</label>
-                    <textarea id="man-steps" rows="3" required placeholder="1. Pokrój kurczaka i podsmaż.&#10;2. Dodaj mleczko kokosowe i przyprawy..." class="w-full p-3 rounded-xl bg-slate-900 border border-slate-700 text-sm text-white"></textarea>
+                    <textarea id="man-steps" rows="4" required placeholder="1. Pokrój kurczaka i podsmaż.&#10;2. Dodaj mleczko kokosowe i przyprawy..." class="w-full p-3 rounded-xl bg-slate-900 border border-slate-700 text-sm text-white"></textarea>
                 </div>
                 <button type="submit" class="w-full py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-sm">Zapisz Przepis</button>
             </form>
@@ -577,19 +622,24 @@
         </div>
     </div>
 
-    <!-- MODAL 4: Kod Domu -->
+    <!-- MODAL 4: Kod Domu & Klucz Gemini AI -->
     <div id="modal-kitchen-code" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
         <div class="bg-[#1e293b] border border-slate-700 rounded-2xl max-w-md w-full p-6 shadow-2xl">
-            <h3 class="text-lg font-bold text-white mb-2">Wspólna Kuchnia (Mąż & Żona)</h3>
-            <p class="text-sm text-slate-400 mb-4">Wpiszcie ten sam <strong>Kod Domu</strong> (identyczny jak w regułach Firestore i pliku <code>daily-prices.yml</code>), aby synchronizować dane oraz odbierać codzienne promocje ze scrapera.</p>
-            <form onsubmit="changeKitchenCode(event)" class="space-y-4">
+            <h3 class="text-lg font-bold text-white mb-1">Ustawienia Kuchni & Klucz AI</h3>
+            <p class="text-xs text-slate-400 mb-4">Klucz Gemini API zapisuje się w Waszym prywatnym dokumencie w Firebase (pod tajnym Kodem Domu), więc nigdy nie trafia do publicznego kodu na GitHubie.</p>
+            <form onsubmit="changeKitchenSettings(event)" class="space-y-4">
                 <div>
-                    <label class="block text-xs font-semibold text-slate-400 mb-1">Kod Waszego Domu</label>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1">Kod Waszego Domu (Live Sync)</label>
                     <input type="text" id="input-kitchen-code" required placeholder="np. KUCHNIA-2026" class="w-full px-4 py-3 rounded-xl bg-slate-900 border border-slate-700 text-base font-mono font-bold text-emerald-400 tracking-wider">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1">Klucz Google Gemini API (opcjonalny)</label>
+                    <input type="password" id="input-gemini-key" placeholder="AIzaSy... (wklej swój klucz z AI Studio)" class="w-full px-4 py-3 rounded-xl bg-slate-900 border border-slate-700 text-sm font-mono text-white placeholder-slate-600 focus:outline-none focus:border-indigo-500">
+                    <p class="text-[11px] text-slate-500 mt-1">Po zapisaniu synchronizuje się na obu telefonach. Bez klucza działa wbudowany parser lokalny.</p>
                 </div>
                 <div class="flex gap-2">
                     <button type="button" onclick="closeModal('modal-kitchen-code')" class="flex-1 py-2.5 rounded-xl bg-slate-800 text-slate-300 font-semibold text-sm">Anuluj</button>
-                    <button type="submit" class="flex-1 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-sm">Połącz Kuchnię</button>
+                    <button type="submit" class="flex-1 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-sm">Zapisz ustawienia</button>
                 </div>
             </form>
         </div>
@@ -609,13 +659,12 @@
             appId: "1:206500984496:web:744f93e9c5f473fb182d75"
         };
 
-        const apiKey = ""; // Opcjonalny klucz Gemini AI po stronie przeglądarki
-
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
         window.appState = {
             kitchenCode: localStorage.getItem('kuchnia_code') || 'KUCHNIA-2026',
+            geminiApiKey: localStorage.getItem('kuchnia_gemini_key') || '',
             recipes: [],
             pricebook: {},
             trackedProducts: [],
@@ -948,7 +997,6 @@
             .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
             .replace(/ł/g, "l");
 
-        // Helper do sprawdzania czy produkt jest w spiżarni (obsługuje zarówno stary format boolean jak i nowy obiekt z ilością)
         window.getPantryEntry = (key) => {
             const raw = window.appState.pantry[key];
             if (!raw) return null;
@@ -965,7 +1013,6 @@
             return null;
         };
 
-        // Autokorekta literówek spożywczych + Gemini AI
         function localSpellFixAndKeywords(rawInput) {
             const clean = rawInput.trim();
             const lowerAscii = window.stripDiacritics(clean);
@@ -1035,6 +1082,18 @@
             }, 3800);
         };
 
+        function updateAiKeyBadge() {
+            const badge = document.getElementById('ai-key-badge');
+            if (!badge) return;
+            if (window.appState.geminiApiKey) {
+                badge.textContent = "Aktywny (Cloud)";
+                badge.className = "font-semibold text-emerald-400";
+            } else {
+                badge.textContent = "Parser lokalny";
+                badge.className = "font-semibold text-amber-400";
+            }
+        }
+
         function subscribeToHousehold() {
             if (window.appState.unsubHousehold) {
                 window.appState.unsubHousehold();
@@ -1044,6 +1103,8 @@
             document.getElementById('desktop-kitchen-code').textContent = code;
             document.getElementById('mobile-kitchen-code').textContent = code;
             document.getElementById('input-kitchen-code').value = code;
+            document.getElementById('input-gemini-key').value = window.appState.geminiApiKey;
+            updateAiKeyBadge();
 
             const householdRef = doc(db, "households", code);
 
@@ -1067,6 +1128,12 @@
                 window.appState.pendingScraper = data.pendingScraper || {};
                 window.appState.scraperUpdatedAt = data.lastScraped || null;
 
+                if (data.geminiApiKey && data.geminiApiKey !== window.appState.geminiApiKey) {
+                    window.appState.geminiApiKey = data.geminiApiKey;
+                    localStorage.setItem('kuchnia_gemini_key', data.geminiApiKey);
+                    document.getElementById('input-gemini-key').value = data.geminiApiKey;
+                }
+                updateAiKeyBadge();
                 updateScraperTimestampsUI();
                 renderAll();
             }, (error) => {
@@ -1101,7 +1168,8 @@
             const ts = window.appState.scraperUpdatedAt;
             const label = ts ? ts : "oczekuje na uruchomienie robota";
             document.getElementById('scraper-timestamp-desktop').textContent = label;
-            document.getElementById('scraper-status-panel').textContent = label;
+            const statusPanel = document.getElementById('scraper-status-panel');
+            if (statusPanel) statusPanel.textContent = label;
             const verifyTimeEl = document.getElementById('verify-stat-time');
             if (verifyTimeEl) verifyTimeEl.textContent = label;
         }
@@ -1122,7 +1190,8 @@
                     freezer: [],
                     shopping: [],
                     reviews: [],
-                    pendingScraper: {}
+                    pendingScraper: {},
+                    geminiApiKey: window.appState.geminiApiKey || ""
                 }, { merge: true });
                 showToast("Utworzono nową wspólną kuchnię z 15 przepisami, spiżarnią i zamrażarką!");
             } catch (e) {
@@ -1143,7 +1212,8 @@
                     freezer: window.appState.freezer,
                     shopping: window.appState.shopping,
                     reviews: window.appState.reviews,
-                    pendingScraper: window.appState.pendingScraper
+                    pendingScraper: window.appState.pendingScraper,
+                    geminiApiKey: window.appState.geminiApiKey || ""
                 }, { merge: true });
             } catch (e) {
                 console.error("Błąd synchronizacji z Firebase:", e);
@@ -1166,11 +1236,11 @@
 
             if (!rawName) return;
 
-            // Automatyczna korekta literówek i polskich znaków
             let fixed = localSpellFixAndKeywords(rawName);
-            if (apiKey) {
+            const activeGeminiKey = window.appState.geminiApiKey;
+            if (activeGeminiKey) {
                 try {
-                    const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`, {
+                    const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${activeGeminiKey}`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
@@ -1186,7 +1256,6 @@
 
             const key = window.normalizeKey(fixed.fixedName);
 
-            // Upewnij się, że produkt widnieje również w cenniku/katalogu spiżarni
             if (!window.appState.pricebook[key]) {
                 window.appState.pricebook[key] = {
                     name: fixed.fixedName,
@@ -1369,16 +1438,17 @@
             const btn = document.getElementById('btn-add-tracked');
             const origHtml = btn.innerHTML;
             btn.disabled = true;
-            btn.innerHTML = `<span class="animate-spin inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full"></span> <span>AI sprawdza...</span>`;
+            btn.innerHTML = `<span class="animate-spin inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full"></span> <span>Sprawdzam...</span>`;
 
             let resolved = localSpellFixAndKeywords(rawName);
+            const activeGeminiKey = window.appState.geminiApiKey;
 
-            if (apiKey) {
+            if (activeGeminiKey) {
                 try {
                     const prompt = `Użytkownik wpisał produkt spożywczy do śledzenia cen: "${rawName}".
 Popraw ewentualne literówki i brak polskich znaków (np. "tundzyk w puszcze" -> "Tuńczyk w puszce", "mieso" -> "Mięso").
 Zwróć JSON: {"fixedName": "Poprawna polska nazwa", "query": "fraza do wyszukiwarki sklepu", "keywords": ["słowo1 bez polskich znaków", "słowo2"]}`;
-                    const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`, {
+                    const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${activeGeminiKey}`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
@@ -1419,7 +1489,7 @@ Zwróć JSON: {"fixedName": "Poprawna polska nazwa", "query": "fraza do wyszukiw
                 const wasCorrected = window.stripDiacritics(rawName) !== window.stripDiacritics(resolved.fixedName) || rawName !== resolved.fixedName;
                 showToast(
                     wasCorrected
-                        ? `AI poprawiło "${rawName}" → <strong>${resolved.fixedName}</strong> i dodało do radaru!`
+                        ? `Poprawiono "${rawName}" → <strong>${resolved.fixedName}</strong> i dodano do radaru!`
                         : `Dodano <strong>${resolved.fixedName}</strong> do radaru promocji!`
                 );
             }
@@ -1528,11 +1598,14 @@ Zwróć JSON: {"fixedName": "Poprawna polska nazwa", "query": "fraza do wyszukiw
         function updateBadges() {
             const readyCount = window.appState.recipes.filter(r => calculateRecipeMetrics(r).isReadyFromPantry).length;
             const promoCount = Object.values(window.appState.pricebook).filter(p => p.isPromo).length;
+            const trackedCount = (window.appState.trackedProducts || []).length;
             const shopUnchecked = window.appState.shopping.filter(s => !s.checked).length;
             const verifyCount = Object.keys(window.appState.pendingScraper || {}).length;
 
             document.getElementById('badge-pantry-ready').textContent = readyCount;
             document.getElementById('badge-promos-count').textContent = promoCount;
+            const trackedBadge = document.getElementById('badge-tracked-count');
+            if (trackedBadge) trackedBadge.textContent = trackedCount;
             document.getElementById('badge-shopping-count').textContent = shopUnchecked;
             document.getElementById('badge-verify-count').textContent = verifyCount;
 
@@ -1895,7 +1968,35 @@ Zwróć JSON: {"fixedName": "Poprawna polska nazwa", "query": "fraza do wyszukiw
             `).join('');
         };
 
-        // ================= CENNIK BAZOWY =================
+        // ================= OSOBNY CENNIK BAZOWY & PROMOCJE =================
+        window.addNewPricebookItem = async (e) => {
+            e.preventDefault();
+            const nameEl = document.getElementById('pb-new-name');
+            const catEl = document.getElementById('pb-new-cat');
+            const priceEl = document.getElementById('pb-new-price');
+
+            const rawName = nameEl.value.trim();
+            const price = parseFloat(priceEl.value);
+            if (!rawName || isNaN(price) || price <= 0) return;
+
+            const fixed = localSpellFixAndKeywords(rawName);
+            const key = window.normalizeKey(fixed.fixedName);
+
+            window.appState.pricebook[key] = {
+                name: fixed.fixedName,
+                category: catEl.value,
+                basePrice: Number(price.toFixed(2)),
+                promoPrice: Number(price.toFixed(2)),
+                isPromo: false,
+                store: "Baza"
+            };
+
+            await saveHouseholdChanges();
+            nameEl.value = '';
+            priceEl.value = '';
+            showToast(`Dodano do cennika: <strong>${fixed.fixedName}</strong> (${price.toFixed(2)} zł)`);
+        };
+
         window.resetAllPromos = async () => {
             Object.values(window.appState.pricebook).forEach(item => {
                 item.isPromo = false;
@@ -1908,11 +2009,21 @@ Zwróć JSON: {"fixedName": "Poprawna polska nazwa", "query": "fraza do wyszukiw
 
         window.renderPricebook = () => {
             const list = document.getElementById('pricebook-list');
-            const query = document.getElementById('pricebook-search').value.toLowerCase().trim();
+            const searchEl = document.getElementById('pricebook-search');
+            const onlyPromosEl = document.getElementById('pricebook-only-promos');
+            if (!list || !searchEl) return;
+
+            const query = searchEl.value.toLowerCase().trim();
+            const onlyPromos = onlyPromosEl ? onlyPromosEl.checked : false;
 
             const entries = Object.entries(window.appState.pricebook)
-                .filter(([_, item]) => item.name.toLowerCase().includes(query))
+                .filter(([_, item]) => item.name.toLowerCase().includes(query) && (!onlyPromos || item.isPromo))
                 .sort((a, b) => (b[1].isPromo ? 1 : 0) - (a[1].isPromo ? 1 : 0) || a[1].name.localeCompare(b[1].name));
+
+            if (entries.length === 0) {
+                list.innerHTML = `<p class="col-span-full text-sm text-slate-400 italic py-4 text-center">Brak składników pasujących do filtra.</p>`;
+                return;
+            }
 
             list.innerHTML = entries.map(([key, item]) => `
                 <div class="p-3.5 rounded-xl border transition-all flex items-center justify-between gap-3 ${item.isPromo ? 'bg-emerald-950/25 border-emerald-500/40' : 'bg-slate-900/80 border-slate-800'}">
@@ -1922,12 +2033,12 @@ Zwróć JSON: {"fixedName": "Poprawna polska nazwa", "query": "fraza do wyszukiw
                             ${item.store ? `<span class="px-2 py-0.5 rounded text-[10px] font-bold ${item.isPromo ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-800 text-slate-400'}">${item.store}</span>` : ''}
                         </div>
                         <p class="text-xs text-slate-400 mt-0.5">
-                            Baza: ${Number(item.basePrice).toFixed(2)} zł
+                            Baza: <strong class="text-slate-300">${Number(item.basePrice).toFixed(2)} zł</strong>
                             ${item.isPromo ? `→ <strong class="text-emerald-400">Promo: ${Number(item.promoPrice).toFixed(2)} zł</strong>` : ''}
                         </p>
                     </div>
                     <div class="flex items-center gap-2 shrink-0">
-                        <input type="number" step="0.10" value="${item.isPromo ? item.promoPrice : item.basePrice}" onchange="updateIngredientPrice('${key}', this.value)" class="w-20 px-2.5 py-1.5 rounded-lg bg-slate-950 border border-slate-700 text-xs text-white text-right font-mono">
+                        <input type="number" step="0.10" value="${Number(item.isPromo ? item.promoPrice : item.basePrice).toFixed(2)}" onchange="updateIngredientPrice('${key}', this.value)" class="w-24 px-2.5 py-1.5 rounded-lg bg-slate-950 border border-slate-700 text-xs text-white text-right font-mono">
                         <button onclick="toggleIngredientPromo('${key}')" title="Włącz/wyłącz promocję" class="px-2.5 py-1.5 rounded-lg text-xs font-bold transition-colors ${item.isPromo ? 'bg-emerald-500 text-slate-950' : 'bg-slate-800 text-slate-400 hover:text-white'}">
                             %
                         </button>
@@ -1954,13 +2065,13 @@ Zwróć JSON: {"fixedName": "Poprawna polska nazwa", "query": "fraza do wyszukiw
             const num = parseFloat(newVal);
             if (!item || isNaN(num) || num < 0) return;
             if (item.isPromo) {
-                item.promoPrice = num;
+                item.promoPrice = Number(num.toFixed(2));
             } else {
-                item.basePrice = num;
-                item.promoPrice = num;
+                item.basePrice = Number(num.toFixed(2));
+                item.promoPrice = Number(num.toFixed(2));
             }
             await saveHouseholdChanges();
-            showToast(`Zaktualizowano cenę: ${item.name}`);
+            showToast(`Zaktualizowano cenę: ${item.name} (${num.toFixed(2)} zł)`);
         };
 
         // ================= WERYFIKACJA ZAWARTOŚCI SCRAPERA =================
@@ -2029,7 +2140,7 @@ Zwróć JSON: {"fixedName": "Poprawna polska nazwa", "query": "fraza do wyszukiw
                         <button onclick="approveScraperItem('${prodKey.replace(/'/g, "\\'")}', true)" title="Zatwierdź cenę i dorzuć od razu na Listę Zakupów" class="px-3.5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs transition-all">
                             + Zakupy
                         </button>
-                        <button onclick="rejectScraperItem('${prodKey.replace(/'/g, "\\'")}')" class="px-3 py-2.5 rounded-xl bg-slate-800 hover:bg-red-950/60 text-slate-300 hover:text-red-300 border border-slate-700 font-semibold text-xs transition-all">
+                        <button onclick="rejectScraperItem('${prodKey.replace(/'/g, "\\'")}')" class="px-3.5 py-2.5 rounded-xl bg-slate-800 hover:bg-red-950/60 text-slate-300 hover:text-red-300 border border-slate-700 font-semibold text-xs transition-all">
                             ✕
                         </button>
                     </div>
@@ -2143,7 +2254,7 @@ Zwróć JSON: {"fixedName": "Poprawna polska nazwa", "query": "fraza do wyszukiw
             window.appState.pendingScraper = {};
             await saveHouseholdChanges();
             showToast(`Zatwierdzono wszystkie (${keys.length}) ceny do cennika!`);
-            switchTab('recipes');
+            switchTab('pricebook');
         };
 
         window.clearPendingScraper = async () => {
@@ -2152,7 +2263,7 @@ Zwróć JSON: {"fixedName": "Poprawna polska nazwa", "query": "fraza do wyszukiw
             showToast("Wyczyszczono poczekalnię scrapera.");
         };
 
-        // ================= DODAWANIE PRZEPISÓW (W TYM Z LINKU URL) =================
+        // ================= DODAWANIE PRZEPISÓW (LINK URL + GEMINI AI + LOKALNY PARSER) =================
         window.setAddRecipeMode = (mode) => {
             const aiPanel = document.getElementById('add-recipe-ai-panel');
             const manPanel = document.getElementById('add-recipe-manual-panel');
@@ -2173,14 +2284,14 @@ Zwróć JSON: {"fixedName": "Poprawna polska nazwa", "query": "fraza do wyszukiw
         };
 
         async function fetchWebpageReadableText(targetUrl) {
-            // Próba 1: Jina Reader (zwraca czysty tekst markdown dowolnego bloga kulinarnego bez blokad CORS)
+            // Próba 1: Jina Reader (zwraca czysty markdown ze strony bez blokad CORS)
             try {
                 const jinaResp = await fetch(`https://r.jina.ai/${targetUrl}`, {
                     headers: { 'Accept': 'text/plain' }
                 });
                 if (jinaResp.ok) {
                     const txt = await jinaResp.text();
-                    if (txt && txt.length > 150) return txt.slice(0, 14000);
+                    if (txt && txt.length > 150) return txt.slice(0, 15000);
                 }
             } catch (_) {}
 
@@ -2190,9 +2301,77 @@ Zwróć JSON: {"fixedName": "Poprawna polska nazwa", "query": "fraza do wyszukiw
             const data = await proxyResp.json();
             const docParser = new DOMParser().parseFromString(data.contents || "", "text/html");
             docParser.querySelectorAll("script, style, nav, footer, header, aside").forEach(el => el.remove());
-            const cleanText = (docParser.body?.innerText || "").replace(/\s+/g, " ").trim();
+            const cleanText = (docParser.body?.innerText || "").replace(/\n{3,}/g, "\n\n").trim();
             if (cleanText.length < 100) throw new Error("Strona jest pusta lub zablokowana.");
-            return cleanText.slice(0, 14000);
+            return cleanText.slice(0, 15000);
+        }
+
+        // Lokalny parser przepisów z pobranego tekstu / markdownu strony WWW (działa bez klucza API)
+        function parseRecipeLocallyFromText(rawText) {
+            const lines = rawText
+                .split('\n')
+                .map(l => l.replace(/^#+\s*/, '').replace(/^\*+\s*/, '').replace(/^-\s*/, '').trim())
+                .filter(l => l && !l.startsWith('Title:') && !l.startsWith('URL Source:') && !l.startsWith('Markdown Content:') && !l.startsWith('Źródło:') && !l.startsWith('!['));
+
+            const title = (lines[0] || "Nowy przepis z linku").slice(0, 80);
+
+            let mode = 'none';
+            const ingLines = [];
+            const stepLines = [];
+
+            for (let i = 1; i < lines.length; i++) {
+                const line = lines[i];
+                const low = line.toLowerCase();
+
+                if (/^(składniki|skladniki|czego potrzebujesz)/i.test(low)) {
+                    mode = 'ing';
+                    continue;
+                }
+                if (/^(przygotowanie|sposób przygotowania|wykonanie|instrukcja|krok po kroku)/i.test(low)) {
+                    mode = 'steps';
+                    continue;
+                }
+                if (/^(komentarze|powiązane|zobacz także|udostępnij|tagi|kategorie)/i.test(low) && (ingLines.length > 0 || stepLines.length > 0)) {
+                    break;
+                }
+
+                if (mode === 'ing' && line.length < 90) {
+                    ingLines.push(line);
+                } else if (mode === 'steps' && line.length > 15) {
+                    stepLines.push(line.replace(/^\d+[\.\)]\s*/, ''));
+                }
+            }
+
+            // Jeśli strona nie miała wyraźnego nagłówka "Składniki", wyłap linie wyglądające jak miary kulinarne
+            if (ingLines.length === 0) {
+                for (const line of lines.slice(1, 35)) {
+                    if (line.length < 75 && /\b(\d+\s*(g|kg|ml|l|szt|łyżk|łyżeczk|szklank|puszk|ząbk|opak))\b/i.test(line)) {
+                        ingLines.push(line);
+                    }
+                }
+            }
+
+            const formattedIngredients = (ingLines.length > 0 ? ingLines : ["Składnik główny | 1 porcja | 5.00"])
+                .slice(0, 20)
+                .map(item => {
+                    const amountMatch = item.match(/(\d+(?:[.,]\d+)?\s*(?:g|kg|ml|l|szt\.?|łyżk[ia]?|łyżeczk[ia]?|szklank[ia]?|puszk[ia]?|ząbk[iów]?|opak\.?))/i);
+                    if (amountMatch) {
+                        const amount = amountMatch[1].trim();
+                        const name = item.replace(amountMatch[0], '').replace(/^[-–•:,\s]+|[-–•:,\s]+$/g, '').trim() || item;
+                        return `${name} | ${amount} | 3.50`;
+                    }
+                    return `${item} | 1 porcja | 3.50`;
+                });
+
+            const formattedSteps = stepLines.length > 0
+                ? stepLines.slice(0, 12)
+                : lines.slice(1, 8).filter(l => l.length > 25);
+
+            return {
+                title,
+                ingredientsText: formattedIngredients.join('\n'),
+                stepsText: (formattedSteps.length > 0 ? formattedSteps : ["Przygotuj składniki według opisu ze strony."]).join('\n')
+            };
         }
 
         window.importRecipeFromUrl = async () => {
@@ -2216,7 +2395,7 @@ Zwróć JSON: {"fixedName": "Poprawna polska nazwa", "query": "fraza do wyszukiw
                 urlInput.value = '';
             } catch (err) {
                 console.error("Błąd pobierania linku:", err);
-                showToast("Nie udało się automatycznie pobrać strony — wklej tekst przepisu w pole poniżej lub użyj Formularza Ręcznego.", "warning");
+                showToast("Nie udało się automatycznie pobrać strony — wklej tekst przepisu poniżej lub użyj Formularza Ręcznego.", "warning");
             } finally {
                 btn.disabled = false;
                 btn.innerHTML = origText;
@@ -2230,7 +2409,6 @@ Zwróć JSON: {"fixedName": "Poprawna polska nazwa", "query": "fraza do wyszukiw
                 return;
             }
 
-            // Jeśli użytkownik wkleił sam link w pole tekstowe zamiast w pole URL wyżej
             if (/^https?:\/\/\S+$/i.test(promptText)) {
                 document.getElementById('ai-recipe-url').value = promptText;
                 document.getElementById('ai-recipe-prompt').value = '';
@@ -2240,46 +2418,57 @@ Zwróć JSON: {"fixedName": "Poprawna polska nazwa", "query": "fraza do wyszukiw
             const btn = document.getElementById('btn-generate-recipe-ai');
             const origText = btn.innerHTML;
             btn.disabled = true;
-            btn.innerHTML = `<span class="animate-spin inline-block w-4 h-4 border-2 border-slate-950 border-t-transparent rounded-full"></span> <span>AI tworzy przepis...</span>`;
+            btn.innerHTML = `<span class="animate-spin inline-block w-4 h-4 border-2 border-slate-950 border-t-transparent rounded-full"></span> <span>Przetwarzam przepis...</span>`;
 
-            const systemPrompt = `Jesteś polskim szefem kuchni. Wyciągnij lub stwórz ustrukturyzowany przepis po polsku na podstawie podanego tekstu/strony z realistycznymi cenami składników w zł.`;
-
-            const payload = {
-                contents: [{ parts: [{ text: promptText }] }],
-                systemInstruction: { parts: [{ text: systemPrompt }] },
-                generationConfig: {
-                    responseMimeType: "application/json",
-                    responseSchema: {
-                        type: "OBJECT",
-                        properties: {
-                            title: { type: "STRING" },
-                            category: { type: "STRING" },
-                            time: { type: "NUMBER" },
-                            portions: { type: "NUMBER" },
-                            ingredients: {
-                                type: "ARRAY",
-                                items: {
-                                    type: "OBJECT",
-                                    properties: {
-                                        name: { type: "STRING" },
-                                        amount: { type: "STRING" },
-                                        price: { type: "NUMBER" },
-                                        cat: { type: "STRING" }
-                                    },
-                                    required: ["name", "amount", "price", "cat"]
-                                }
-                            },
-                            steps: { type: "ARRAY", items: { type: "STRING" } }
-                        },
-                        required: ["title", "category", "time", "portions", "ingredients", "steps"]
-                    }
-                }
-            };
+            const activeGeminiKey = window.appState.geminiApiKey;
 
             try {
-                if (!apiKey) throw new Error("Brak klucza Gemini API w index.html");
+                if (!activeGeminiKey) {
+                    // Brak klucza Gemini -> użyj inteligentnego parsera lokalnego i wypełnij formularz
+                    const parsedLocal = parseRecipeLocallyFromText(promptText);
+                    document.getElementById('man-title').value = parsedLocal.title;
+                    document.getElementById('man-ingredients').value = parsedLocal.ingredientsText;
+                    document.getElementById('man-steps').value = parsedLocal.stepsText;
+                    setAddRecipeMode('manual');
+                    showToast("Lokalny parser wyodrębnił tytuł, składniki i kroki! Sprawdź je i kliknij Zapisz Przepis.");
+                    return;
+                }
 
-                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`, {
+                const systemPrompt = `Jesteś polskim szefem kuchni. Wyciągnij lub stwórz ustrukturyzowany przepis po polsku na podstawie podanego tekstu/strony z realistycznymi cenami składników w zł.`;
+
+                const payload = {
+                    contents: [{ parts: [{ text: promptText }] }],
+                    systemInstruction: { parts: [{ text: systemPrompt }] },
+                    generationConfig: {
+                        responseMimeType: "application/json",
+                        responseSchema: {
+                            type: "OBJECT",
+                            properties: {
+                                title: { type: "STRING" },
+                                category: { type: "STRING" },
+                                time: { type: "NUMBER" },
+                                portions: { type: "NUMBER" },
+                                ingredients: {
+                                    type: "ARRAY",
+                                    items: {
+                                        type: "OBJECT",
+                                        properties: {
+                                            name: { type: "STRING" },
+                                            amount: { type: "STRING" },
+                                            price: { type: "NUMBER" },
+                                            cat: { type: "STRING" }
+                                        },
+                                        required: ["name", "amount", "price", "cat"]
+                                    }
+                                },
+                                steps: { type: "ARRAY", items: { type: "STRING" } }
+                            },
+                            required: ["title", "category", "time", "portions", "ingredients", "steps"]
+                        }
+                    }
+                };
+
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${activeGeminiKey}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
@@ -2293,17 +2482,15 @@ Zwróć JSON: {"fixedName": "Poprawna polska nazwa", "query": "fraza do wyszukiw
                 await persistNewRecipe(newRecipe);
                 document.getElementById('ai-recipe-prompt').value = '';
                 closeModal('modal-add-recipe');
-                showToast(`Dodano przepis: ${newRecipe.title}!`);
+                showToast(`Dodano przepis przez AI: <strong>${newRecipe.title}</strong>!`);
             } catch (err) {
-                console.error("Błąd AI:", err);
-                // Jeśli mamy pobrany tekst ze strony, przenosimy go od razu do formularza ręcznego
-                const firstLine = promptText.split('\n').find(l => l.trim() && !l.startsWith('Źródło:')) || '';
-                if (firstLine) {
-                    document.getElementById('man-title').value = firstLine.replace(/^#+\s*/, '').slice(0, 70);
-                    document.getElementById('man-steps').value = promptText.slice(0, 1500);
-                }
-                showToast("Przełączono na Formularz Ręczny (uzupełnij klucz Gemini API w index.html, aby parsować linki jednym kliknięciem).", "warning");
+                console.error("Błąd parsowania AI, używam parsera lokalnego:", err);
+                const parsedLocal = parseRecipeLocallyFromText(promptText);
+                document.getElementById('man-title').value = parsedLocal.title;
+                document.getElementById('man-ingredients').value = parsedLocal.ingredientsText;
+                document.getElementById('man-steps').value = parsedLocal.stepsText;
                 setAddRecipeMode('manual');
+                showToast("Wypełniono formularz lokalnym parserem — kliknij Zapisz Przepis.", "warning");
             } finally {
                 btn.disabled = false;
                 btn.innerHTML = origText;
@@ -2332,7 +2519,7 @@ Zwróć JSON: {"fixedName": "Poprawna polska nazwa", "query": "fraza do wyszukiw
             await persistNewRecipe({ id: 'rec_' + Date.now(), title, category, time, portions, ingredients, steps });
             e.target.reset();
             closeModal('modal-add-recipe');
-            showToast(`Zapisano przepis: ${title}`);
+            showToast(`Zapisano przepis: <strong>${title}</strong>`);
         };
 
         async function persistNewRecipe(recipeObj) {
@@ -2575,8 +2762,9 @@ Zwróć JSON: {"fixedName": "Poprawna polska nazwa", "query": "fraza do wyszukiw
 
         // ================= NAWIGACJA I MODALE =================
         window.switchTab = (tabName) => {
-            ['recipes', 'pantry', 'promos', 'verify', 'shopping', 'reviews'].forEach(t => {
-                document.getElementById(`tab-${t}`).classList.toggle('hidden', t !== tabName);
+            ['recipes', 'pantry', 'pricebook', 'promos', 'verify', 'shopping', 'reviews'].forEach(t => {
+                const el = document.getElementById(`tab-${t}`);
+                if (el) el.classList.toggle('hidden', t !== tabName);
             });
 
             document.querySelectorAll('.nav-btn').forEach(btn => {
@@ -2597,15 +2785,27 @@ Zwróć JSON: {"fixedName": "Poprawna polska nazwa", "query": "fraza do wyszukiw
         window.openKitchenModal = () => document.getElementById('modal-kitchen-code').classList.remove('hidden');
         window.closeModal = (id) => document.getElementById(id).classList.add('hidden');
 
-        window.changeKitchenCode = (e) => {
+        window.changeKitchenSettings = async (e) => {
             e.preventDefault();
             const newCode = document.getElementById('input-kitchen-code').value.trim();
+            const newKey = document.getElementById('input-gemini-key').value.trim();
             if (!newCode) return;
+
+            const codeChanged = newCode !== window.appState.kitchenCode;
             window.appState.kitchenCode = newCode;
+            window.appState.geminiApiKey = newKey;
             localStorage.setItem('kuchnia_code', newCode);
+            localStorage.setItem('kuchnia_gemini_key', newKey);
+            updateAiKeyBadge();
             closeModal('modal-kitchen-code');
-            subscribeToHousehold();
-            showToast(`Połączono z kuchnią: ${newCode}`);
+
+            if (codeChanged) {
+                subscribeToHousehold();
+                showToast(`Połączono z kuchnią: ${newCode}`);
+            } else {
+                await saveHouseholdChanges();
+                showToast(newKey ? "Zapisano klucz Gemini AI i zsynchronizowano w chmurze!" : "Zapisano ustawienia (tryb lokalnego parsera).");
+            }
         };
 
         window.addEventListener('DOMContentLoaded', subscribeToHousehold);
