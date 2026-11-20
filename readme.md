@@ -1,93 +1,92 @@
-# 🍳 KuchniaBudżet PRO — Wspólna Spiżarnia, Planer Obiadów & Cennik AI
+# 🍳 KuchniaBudżet PRO
 
-**KuchniaBudżet PRO** to aplikacja webowa (SPA) typu *multi-tenant* stworzona do wspólnego zarządzania domową kuchnią, budżetem spożywczym oraz zapasami w czasie rzeczywistym (synchronizacja Live Sync pomiędzy wieloma urządzeniami domowników).
-
-Aplikacja działa w architekturze bezserwerowej (*Serverless*) w oparciu o **Firebase Firestore**, **Firebase Authentication** oraz **Google Gemini AI (Vision & Text)**.
+**KuchniaBudżet PRO** to domowy asystent gotowania, spiżarni i zakupów, który działa na żywo między wszystkimi domownikami (bez zakładania kont i haseł). Pomaga gotować z tego, co już masz w domu, planować obiady na cały tydzień, skanować paragony ze zdjęć i automatycznie wyłapywać promocje na jedzenie z **Lidla, Biedronki i Netto**.
 
 ---
 
-## 📱 Instrukcja obsługi dla Domowników (Jak korzystać na co dzień?)
+## 🚀 Jak zacząć korzystać? (Podstawowa instrukcja)
 
-Aplikacja działa na telefonie i komputerze — wszystko, co kliknie jedna osoba, w ułamku sekundy pojawia się u drugiej.
+### Krok 1: Utwórz kuchnię lub dołącz do domowników
+1. Otwórz aplikację w przeglądarce (na komputerze lub telefonie).
+2. Kliknij **„✨ Utwórz kuchnię”** — aplikacja wygeneruje unikalny **6-znakowy kod kuchni** (np. `8CXHKH`) i wgra 15 sprawdzonych, tanich przepisów na start.
+3. Wyślij ten 6-znakowy kod domownikom — gdy wpiszą go w polu **„Dołącz do istniejącej kuchni”**, będziecie widzieć tę samą spiżarnię, plan posiłków i listę zakupów w czasie rzeczywistym.
 
-### 1. Pierwsze uruchomienie i połączenie telefonów
-1. Otwórz link do aplikacji w przeglądarce (na telefonie warto kliknąć *„Dodaj do ekranu głównego”*, żeby działała jak zwykła apka).
-2. Wybierz opcję **Dołącz do istniejącej kuchni**, wpisz nasz **6-znakowy Kod Kuchni** i kliknij **Wejdź do kuchni**.
-3. Gotowe! Urządzenia są połączone na stałe. (Swój kod możesz w każdej chwili skopiować przyciskiem **📋 Kopiuj** w menu).
+### Krok 2: Uzupełnij to, co masz w domu (Spiżarnia, Lodówka, Zamrażarka)
+1. Wejdź w zakładkę **Spiżarnia & Zamrażarka**.
+2. Dodaj produkty, które masz już w szafkach i lodówce (apka sama poprawia literówki i polskie znaki).
+3. W sekcji **Zamrażarka** wpisz ugotowane porcje obiadów schowane „na czarną godzinę”.
 
-### 2. Dodawanie przepisów z linku (AI) lub z głowy
-Nie trzeba przepisywać przepisów ręcznie!
-1. Kliknij zielony przycisk **+ Przepis** (w prawym górnym rogu na telefonie lub na dole lewego menu na komputerze).
-2. **Import z linku (URL):** Wklej adres strony z przepisem (np. z Kwestii Smaku, AniGotuje, Jadłonomii) w pole **Opcja A: Wklej link do przepisu** i kliknij **Pobierz z linku**. Sztuczna inteligencja sama wejdzie na stronę, wyciągnie tytuł, składniki z gramaturami, kroki przygotowania oraz oszacuje ceny!
-3. **Pomysł lub wklejony tekst:** Możesz też w **Opcji B** po prostu napisać np. *"Zapiekanka makaronowa z tuńczykiem i kukurydzą"* albo wkleić skopiowany tekst — AI ułoży z tego gotowy przepis.
+### Krok 3: Wybierz obiad i gotuj bez marnowania jedzenia
+1. W zakładce **Przepisy & Społeczność** włącz filtr **„🥫 Z tego co mam”** — zobaczysz dania, do których masz 100% składników w domu (lub brakuje Ci tylko 1–2 rzeczy).
+2. Brakujące składniki wrzucisz jednym kliknięciem na **Listę Zakupów**.
+3. Po ugotowaniu kliknij **„🍳 Ugotowane!”**, wpisz kwotę z paragonu i liczbę porcji — aplikacja sama **odejmie zużyte składniki ze spiżarni** i policzy realny koszt 1 porcji na osobę.
 
-### 3. Skanowanie paragonów telefonem (Aktualizacja Cennika & Spiżarni)
-Po powrocie ze sklepu (Lidl, Biedronka, Netto, Frisco) nie musisz wpisywać cen ani zakupów ręcznie:
-1. Wejdź w zakładkę **Cennik & Paragon AI**.
-2. Kliknij **📸 Wgraj zdjęcie paragonu** i zrób zdjęcie paragonu aparatem (lub wybierz je z galerii).
-3. AI samo odczyta produkty spożywcze (pomijając chemię i reklamówki), przeliczy wielosztuki i wagę na **cenę za 1 sztukę / 1 kg** i pokaże podsumowanie.
-4. Upewnij się, że zaznaczony jest checkbox **„Dodaj też kupione ilości do Spiżarni / Lodówki”** i kliknij **✓ Zapisz zaznaczone w Cenniku**. Ceny przepisów od razu się zaktualizują, a kupione produkty trafią do naszych zapasów!
-
-### 4. Spiżarnia, Lodówka & Zamrażarka („Co mam w domu?”)
-W zakładce **Spiżarnia & Zamrażarka** kontrolujemy, co mamy na stanie:
-* **Dodawanie produktów:** Wpisz nazwę na górze (nie musisz martwić się o literówki czy polskie znaki — np. *"piers z kurczaka"* apka sama poprawi na *"Pierś z kurczaka"*), wybierz ilość, jednostkę (`szt.`, `g`, `kg`, `l`) oraz miejsce (**🧊 Lodówka** lub **🥫 Spiżarnia**).
-* **Zmiana ilości:** Przy każdym posiadanym produkcie możesz klikać **`−`** i **`+`** lub wpisać dokładną ilość po zużyciu części opakowania.
-* **❄️ Zamrażarka (Gotowe dania):** W niebieskiej sekcji na górze wpisujemy ugotowane obiady schowane na później (np. *„Chili con carne — 4 porcje”*). Gdy wyjmiemy pudełko na obiad, klikamy **`−`**, żeby odjąć porcję. (Możesz też wrzucić nadwyżkę do zamrażarki jednym kliknięciem z okna przepisu przyciskiem **❄️ Zamroź porcje**).
-* **Podpowiedzi obiadów:** Poniżej aplikacja sama segreguje przepisy na **Gotowe do zrobienia (100% w domu)** oraz **Prawie gotowe (brakuje 1–2 rzeczy)**.
-
-### 5. Wspólna Lista Zakupów
-* Przy dowolnym przepisie kliknij **+ Zakupy**, a brakujące składniki (których nie ma w Spiżarni) same wpadną na **Listę Zakupów** wraz z szacunkowym kosztem koszyka.
-* W sklepie odhaczasz włożone do koszyka rzeczy, a po powrocie do domu klikasz jeden przycisk: **✓ Przenieś kupione do Spiżarni** — zakupy znikają z listy i lądują w domowych zapasach.
-
-### 6. Ocenianie obiadów i liczenie kosztu 1 porcji
-* Po zjedzeniu obiadu wejdź w przepis i kliknij **⭐ Oceń** (*Ugotowane! Oceń i rozlicz*).
-* Wpisz kwotę z paragonu, na ile obiadów dla dwojga wystarczyło jedzenie oraz ocenę (1–5 gwiazdek). W zakładce **Historia & Koszt Porcji** apka wyliczy, ile realnie kosztuje nas 1 porcja obiadu na osobę.
+### Krok 4: Zbieraj promocje i skanuj paragony
+1. W zakładce **Weryfikacja Scrapera** codziennie rano czekają świeże promocje z Lidla, Biedronki i Netto (filtrowane po sklepie, dziale jedzenia i dacie ważności).
+2. Kliknij **„🛒 + Zakupy”**, aby wrzucić okazję na Listę Zakupów razem z informacją, do kiedy trwa promocja, albo **„✓ Zatwierdź do Cennika”**.
+3. Po zakupach zrób zdjęcie paragonu w zakładce **Cennik & Paragon AI** (wymaga darmowego klucza Google Gemini API wpisanego w *Nazwa & Klucz AI*) — AI odczyta ceny żywności i automatycznie uzupełni Twoją spiżarnię.
 
 ---
 
-## ✅ Co już działa (Podsumowanie techniczne)
+## ✨ Wszystkie funkcje aplikacji
 
-### 1. Architektura Multi-Tenant & Panel Administratora (`#admin`)
-* **Izolacja danych po Kodzie Kuchni:** Każde gospodarstwo domowe posiada własny, odizolowany dokument w bazie (`kuchnie/{kodKuchni}`) zabezpieczony regułami Firestore Security Rules.
-* **Ekran powitalny:** Możliwość utworzenia nowej kuchni (automatyczne generowanie 6-znakowego kodu dostępu i pakietu startowego 15 przepisów) lub dołączenia do istniejącej kuchni za pomocą kodu.
-* **Panel Administratora (`#admin`):** Chroniony logowaniem e-mail/hasło (Firebase Auth) widok pozwalający na podgląd wszystkich utworzonych kuchni, blokowanie/odblokowywanie dostępu (`active: true/false`), podgląd zawartości danej kuchni oraz jej trwałe usunięcie.
+### 1. Wspólna Kuchnia w czasie rzeczywistym (Multi-Tenant)
+* **Logowanie samym 6-znakowym kodem:** Zero rejestracji e-mailem czy haseł dla domowników.
+* **Synchronizacja na żywo (Firebase Firestore):** Zmiany na liście zakupów czy w spiżarni pojawiają się u wszystkich domowników w ułamku sekundy.
+* **Własna nazwa kuchni:** Możesz ustawić nazwę swojego domu (np. *Kuchnia Kowalskich*), widoczną w nagłówku i przy udostępnianych przepisach.
+* **Wygodny tryb mobilny (iPhone / Android):** Dolny pasek nawigacji z 5 głównymi sekcjami, wysuwana szuflada *„Więcej”* oraz blokada przypadkowego zoomowania ekranu przy wpisywaniu danych.
 
-### 2. Domowa Spiżarnia, Lodówka & Zamrażarka
-* Zarządzanie ilościami (`−` / `+`), jednostkami (`szt.`, `g`, `kg`, `ml`, `l`, `opak.`, `puszka`) oraz lokalizacją (**Lodówka** / **Spiżarnia**) z autokorektą nazw.
-* Ewidencja zamrożonych porcji gotowych dań oraz automatyczne dopasowanie przepisów do posiadanych zapasów.
+### 2. Książka Kucharska, Import z Linków, AI i Społeczność
+* **15 gotowych przepisów na start:** Tanie, sycące obiady, zupy i śniadania z gotowymi składnikami i krokami.
+* **Import przepisów z linku (URL):** Wklejasz link do przepisu z internetu (np. Kwestia Smaku), a aplikacja sama pobiera tytuł, składniki i instrukcję (działa zarówno z AI, jak i wbudowanym parserem lokalnym).
+* **Generator przepisów AI i edycja:** Możesz wygenerować przepis z krótkiego pomysłu, wpisać go ręcznie lub edytować istniejący przepis (np. zamieniając drogi składnik na tańszy).
+* **Społeczność kuchni:** Jednym kliknięciem udostępniasz swoje przepisy innym użytkownikom aplikacji i zapisujesz u siebie przepisy innych kuchni.
+* **Kopia zapasowa (JSON i TXT):** Eksport wszystkich przepisów do pliku zapasowego JSON (do przywrócenia 1:1) lub czytelnego pliku tekstowego TXT.
 
-### 3. Przepisy, Import z Linku & Rozliczanie Kosztów
-* Wycena dań na żywo na podstawie Cennika, import przepisów z adresów URL (przez Gemini AI oraz lokalny parser fallbackowy) oraz dziennik kosztów porcji.
+### 3. Inteligentny Przelicznik Kosztów i Jednostek Kulinarnych
+* **Przeliczanie ułamków opakowań:** Aplikacja wie, że **4 kromki chleba** to 1/4 bochenka, **2 ząbki czosnku** to 1/5 główki, a **1 cebula** to ok. 130 g z kilograma — dzięki czemu wylicza realny koszt dania, a nie cenę całych opakowań.
+* **Zero zawyżania przez przyprawy:** Sól, pieprz, zioła, przyprawy sypkie, woda i olej do smażenia są automatycznie wyceniane na `0.00 zł` i nie blokują możliwości ugotowania obiadu.
 
-### 4. Cennik Bazowy & Skaner Paragonów AI (OCR)
-* Cennik z jednostkami opakowań (`1 puszka`, `1 kg`, `1 szt.`, `1 opak.`, `1 l`, `500 g`) oraz skanowanie paragonów ze zdjęć przez **Gemini Vision**.
+### 4. Spiżarnia, Lodówka i Zamrażarka
+* **Podział na Lodówkę i Spiżarnię:** Kontrola dokładnych ilości (`g`, `kg`, `ml`, `l`, `szt.`, `puszka`, `opak.`) z automatyczną poprawą literówek.
+* **Automatyczne odejmowanie po gotowaniu:** Zatwierdzenie ugotowania dania automatycznie zmniejsza stan składników w domu.
+* **Ewidencja Zamrażarki:** Osobna lista gotowych, zamrożonych porcji dań (np. *Chili con carne – 4 porc.*, *Pierogi – 6 porc.*) z szybkim odejmowaniem po wyjęciu pudełka.
 
-### 5. Wspólna Lista Zakupów
-* Automatyczne dodawanie brakujących składników z przepisów, podliczanie kosztu koszyka oraz przenoszenie kupionych produktów do Spiżarni.
+### 5. Tygodniowy Planer Posiłków i Budżet Tygodnia
+* **Plan na 7 dni (Poniedziałek – Niedziela):** Przypisujesz **Śniadanie**, **Obiad** i **Kolację** do każdego dnia tygodnia.
+* **Koszt tygodnia z góry:** Podsumowanie łącznego kosztu wyżywienia na cały tydzień oraz na każdy pojedynczy dzień.
+* **Zakupy na cały tydzień jednym kliknięciem:** Aplikacja sumuje składniki z całego planu, odejmuje to, co już masz w spiżarni, i wrzuca wyłącznie brakujące opakowania na Listę Zakupów.
+
+### 6. Cennik Bazowy & Skaner Paragonów AI
+* **Odczyt paragonu ze zdjęcia:** AI ignoruje chemię, kosmetyki, reklamówki i rabaty, wyłapując **wyłącznie artykuły spożywcze**.
+* **Czyszczenie nazw marek:** Zamienia długie nazwy paragonowe (np. *„MASŁO EKSTRA MLEKOVITA 200G”*) na czyste nazwy ogólne (***„Masło”***), wyciągając cenę za 1 jednostkę (`1 kg`, `1 szt.`, `10 szt.` dla jajek).
+* **Automatyczne zatowarowanie domu:** Jednym zaznaczeniem dodajesz wszystkie kupione produkty z paragonu prosto do Spiżarni i Lodówki.
+
+### 7. Automatyczny Scraper Promocji (Lidl, Biedronka, Netto) + Poczekalnia
+* **Codzienna aktualizacja w tle:** Skrypt `scraper.py` uruchamia się automatycznie raz dziennie przez GitHub Actions, skanuje aktualne gazetki (z pominięciem blogów, kosmetyków i słodyczy) i wysyła czyste okazje żywnościowe do wszystkich aktywnych kuchni.
+* **Zaawansowane filtrowanie w Poczekalni (`Weryfikacja Scrapera`):**
+  * po sklepie (`Lidl`, `Biedronka`, `Netto`),
+  * po dziale jedzenia (`Mięso i wędliny`, `Nabiał i jaja`, `Warzywa i owoce`, `Pieczywo`, `Suche i konserwy`, `Ryby`, `Tłuszcze`),
+  * po zakresie dat (`Ważne dzisiaj`, `Kończą się do 3 dni`, `Ten tydzień` lub własny zakres z kalendarza),
+  * po nazwie produktu.
+* **Wysyłka prosto na Listę Zakupów z datą ważności:** Przycisk **„🛒 + Zakupy”** przenosi okazję na Listę Zakupów z widoczną plakietką sklepu i terminem obowiązywania promocji (w tym ostrzeżeniem, gdy dziś jest ostatni dzień promki).
+
+### 8. Wspólna Lista Zakupów i Historia Wydatków
+* **Grupowanie działami sklepowymi:** Produkty układają się kategoriami z podsumowaniem szacunkowej wartości koszyka.
+* **Przenoszenie zakupów do Spiżarni:** Odhaczone produkty jednym przyciskiem trafiają do domowych zapasów.
+* **Historia wydatków:** Statystyki wydatków z ostatnich 7 dni, bieżącego miesiąca i łącznie, wraz z podglądem pojedynczych paragonów i zakupów.
+
+### 9. Dziennik Ugotowanych Dań, Oceny i Koszt Porcji
+* **Rzeczywisty koszt porcji:** Historia wszystkich ugotowanych obiadów z wyliczeniem średniego kosztu 1 porcji na osobę, oceną smaku (1–5 gwiazdek) i notatkami na przyszłość.
+
+### 10. Zgłaszanie Pomysłów & Panel Administratora
+* **Zakładka „Zgłoś Pomysł / Błąd”:** Użytkownicy mogą zgłaszać propozycje nowych funkcji i śledzić status ich wdrożenia.
+* **Panel Administratora (`#admin`):** Zabezpieczony logowaniem Firebase Auth panel do podglądu zarejestrowanych kuchni, zarządzania dostępem oraz przeglądania zgłoszeń od użytkowników.
 
 ---
 
-## 🚧 W budowie / Planowane usprawnienia (Roadmap)
+## 🛠️ Konfiguracja techniczna (dla właściciela projektu)
 
-Poniższe moduły są obecnie na etapie testów lub wdrożenia i wymagają dalszych prac:
-
-1. **Automatyczne odejmowanie składników ze spiżarni po ugotowaniu (`deductRecipeFromPantry`):**
-   * *Status:* Zaprojektowano logikę przeliczania gramatur (`g` ↔ `kg`, `ml` ↔ `l`) oraz blokadę przycisku *„Ugotowane!”* w przypadku braku składników w spiżarni — **wymaga wpięcia do głównego pliku `index.html`**.
-2. **Automatyczny Scraper Gazetek Promocyjnych (`scraper.py` + GitHub Actions):**
-   * *Status:* Wstrzymany / w przebudowie. Polskie agregatory gazetek (Blix, Ding) serwują oferty wyłącznie jako obrazy stron (JPG/WEBP), a nie czysty JSON. Docelowo robot w GitHub Actions będzie pobierał obrazy stron aktualnych gazetek (Lidl, Biedronka, Netto) i odczytywał je przez **Gemini Vision OCR** do zakładki *Weryfikacja Scrapera*.
-3. **Radar Śledzonych Produktów & Weryfikacja Scrapera:**
-   * *Status:* Interfejs w aplikacji jest gotowy i połączony z bazą, oczekuje na docelowe podpięcie stabilnego źródła danych z robota cenowego oraz migrację ścieżki zapisu robota z `households/` na nową kolekcję `kuchnie/{kodKuchni}`.
-4. **Migracja starych danych (`households` → `kuchnie`):**
-   * *Status:* Reguły Firestore zachowują tymczasowo wsteczną kompatybilność ze starą kolekcją `households`. Po przeniesieniu danych docelowo zostanie ona wyłączona.
-
----
-
-## 🛠️ Konfiguracja i Uruchomienie (Dla Administratora)
-
-### 1. Hosting (GitHub Pages)
-Aplikacja składa się z pojedynczego pliku `index.html` (HTML + Tailwind CSS CDN + Firebase SDK v11 ES Modules) i nie wymaga procesu budowania (*build step*). Wystarczy opublikować repozytorium przez **GitHub Pages**.
-
-### 2. Konfiguracja Firebase
-1. **Authentication:** Włącz dostawcę **Email/Password** i utwórz konto administratora w zakładce *Users*. W *Settings → Authorized domains* dodaj domenę swojego GitHub Pages.
-2. **Firestore Security Rules:** Wdróż reguły izolujące dokumenty w kolekcji `kuchnie/{kodKuchni}` (z blokadą zapisu, gdy `active == false`, oraz pełnymi uprawnieniami dla zalogowanego administratora).
-3. **Klucz Google Gemini API:** Klucz nie jest przechowywany w kodzie źródłowym repozytorium. Wpisuje się go jednorazowo w aplikacji (*Ustawienia → Klucz AI*), skąd synchronizuje się wyłącznie wewnątrz prywatnego dokumentu danej kuchni.
+* **Frontend:** Pojedynczy plik statyczny `index.html` (Tailwind CSS + Firebase SDK v11 — Firestore & Auth), gotowy do hostowania na GitHub Pages, Vercel lub Netlify.
+* **Scraper (`scraper.py`):** Python 3.9+, `requests`, `beautifulsoup4`, `firebase-admin`.
+* **Automatyzacja (`.github/workflows/`):** Codzienne uruchamianie przez `cron: '0 5 * * *'` z wykorzystaniem sekretu repozytorium `FIREBASE_SERVICE_ACCOUNT`.
