@@ -64,19 +64,65 @@ EXCLUDED_URL_PATTERNS = [
     "/polityka", "/o-nas", "/kariera", "/faq", "/godziny-otwarcia", "/sklepy-w-"
 ]
 
-NON_FOOD_AND_NOISE_KEYWORDS = [
-    "proszek", "plyn do", "kapsulki", "papier toaletowy", "recznik papierowy",
-    "szampon", "zel pod prysznic", "mydlo", "pasta do zebow", "dezodorant",
-    "karma", "zwirek", "pieluchy", "pampers", "patelnia", "garnek", "skarpetki",
-    "koszulka", "spodnie", "buty", "zabawka", "baterie", "zarowka", "wiertarka",
-    "szlifierka", "kosiarka", "doniczka", "ziemia ogrodowa", "piwo", "wodka",
-    "wino", "whisky", "likier", "cydr", "papierosy", "tyton", "krem do", "balsam",
-    "reklamowka", "torba na zakupy", "folia aluminiowa", "papier do pieczenia",
+# 1. BIAŁA LISTA: produkt MUSI zawierać przynajmniej jeden rdzeń prawdziwego jedzenia / składnika obiadowego
+REAL_FOOD_ROOTS = [
+    # Mięso i wędliny
+    "kurczak", "indyk", "wieprzow", "wolow", "schab", "karkowk", "lopatk", "szynk",
+    "poledwic", "mielon", "kielbas", "boczek", "boczku", "parowk", "kabanos", "kaczk",
+    "gulasz", "zeberk", "udk", "skrzydelk", "filet", "piers",
+    # Ryby i owoce morza
+    "losos", "dorsz", "tunczyk", "sledz", "pstrag", "makrel", "mintaj", "morszczuk",
+    "krewetk", "ryb",
+    # Nabiał i jaja
+    "mleko", "maslo", "ser ", "ser,", "sery", "gouda", "edam", "mozzarell", "twarog",
+    "serek", "jogurt", "smietan", "kefir", "maslank", "jaj", "feta", "camembert",
+    "parmezan", "ricotta", "mascarpone",
+    # Pieczywo, zboża, makarony, strączki
+    "chleb", "bulk", "bagietk", "tortill", "ryz", "makaron", "kasz", "platki owsiane",
+    "maka", "fasol", "ciecierzyc", "soczewic", "groszek", "kukurydz", "tofu",
+    # Warzywa i grzyby
+    "pomidor", "passat", "przecier", "koncentrat pomidor", "ogor", "papryk", "cebul",
+    "czosn", "ziemniak", "marchew", "pietruszk", "seler", "kapust", "brokul",
+    "kalafior", "cukini", "baklazan", "szpinak", "salat", "rzodkiew", "burak",
+    "por ", "pora", "pieczark", "dyni", "awokado",
+    # Owoce świeże i mrożone
+    "jablk", "banan", "cytryn", "pomarancz", "mandarynk", "grejpfrut", "borowk",
+    "malin", "truskawk", "winogron", "gruszk", "sliwk", "brzoskwini", "ananas",
+    "mango", "kiwi", "arbuz",
+    # Tłuszcze i podstawy
+    "oliw", "olej", "maslo orzechowe"
+]
+
+# 2. CZARNA LISTA: kosmetyki, chemia, słodycze, przekąski, alkohol, śmieci z UI
+EXCLUDED_NON_FOOD_AND_SWEETS = [
+    # Kosmetyki i higiena
+    "blyszczyk", "pomadk", "szmink", "tusz do rzes", "podklad", "puder", "lakier do paznokci",
+    "chusteczk", "papier toaletowy", "recznik papierowy", "szampon", "zel pod prysznic",
+    "mydlo", "pasta do zebow", "szczoteczk", "dezodorant", "perfum", "krem do", "balsam",
+    "maseczk", "peeling", "serum do", "plyn micelarny", "wacik", "patyczki", "pieluch", "pampers",
+    # Chemia i dom
+    "proszek", "plyn do", "kapsulki", "domestos", "zmywak", "gabk", "worek", "worki",
+    "folia aluminiowa", "papier do pieczenia", "baterie", "zarowka", "patelnia", "garnek",
+    "skarpetki", "koszulka", "spodnie", "buty", "zabawka", "wiertarka", "szlifierka",
+    "kosiarka", "doniczka", "ziemia ogrodowa", "karma", "zwirek", "dla kota", "dla psa",
+    "parkside", "esmara", "lupilu", "crivit", "silvercrest", "livarno", "reklamowka", "torba",
+    # Słodycze, desery i słone przekąski
+    "czekolad", "baton", "wafel", "wafelk", "ciastk", "herbatnik", "biszkopt", "markiz",
+    "piernik", "cukierk", "zelk", "lizak", "guma do zucia", "lody", "lodow", "sorbet",
+    "ptasie mleczko", "pralin", "bombonierk", "nutella", "krem czekoladowy", "krem orzechowy",
+    "paczek", "paczki", "donut", "drozdzowk", "rogali", "croissant", "babeczk", "muffin",
+    "sernik", "szarlotk", "tiramisu", "budyn", "kisiel", "galaretk", "deser ", "monte",
+    "danio", "fantasia", "muller", "belriso", "kinder", "milka", "wedel", "wawel", "ferrer",
+    "raffaello", "merci", "toblerone", "snickers", "mars", "twix", "bounty", "kitkat",
+    "oreo", "delicje", "jezyki", "ptasie", "chalw", "sezamk", "krowk", "mieszanka krakowska",
+    "chipsy", "chrupki", "paluszki", "krakers", "popcorn", "zelki", "pianki",
+    # Napoje słodzone i alkohol
+    "cola", "pepsi", "fanta", "sprite", "energetyk", "energy drink", "red bull", "tiger",
+    "piwo", "wodka", "wino", "whisky", "likier", "cydr", "prosecco", "szampan", "papierosy",
+    # Przyprawy w proszku / fixy / nawigacja portalu
     "przyprawa do", "przyprawy", "fix ", "pomysl na", "marynata", "zupa blyskawiczna",
-    "goracy kubek", "kostka rosolowa", "bulionetka", "karma dla", "parkside", "esmara",
-    "lupilu", "crivit", "silvercrest", "livarno", "zobacz aktualna", "gazetka ",
-    "strona ", "oferta wazna", "wszystkie promocje", "wybrane sklepy", "sprawdz oferte",
-    "kup teraz", "dodaj do koszyka", "cena regularna", "najtaniej w"
+    "goracy kubek", "kostka rosolowa", "bulionetka", "zobacz aktualna", "gazetka ",
+    "strona ", "oferta wazna", "wszystkie promocje", "wybrane sklepy", "sprawdz oferte"
 ]
 
 PRODUCT_GUARDRAILS = {
@@ -92,12 +138,12 @@ PRODUCT_GUARDRAILS = {
     },
     "maslo": {
         "must_have_any": ["maslo"],
-        "exclude": ["orzech", "roslinn", "margaryn", "mix", "oselk", "krem", "balsam", "do ciala", "shea"],
+        "exclude": ["orzech", "roslinn", "margaryn", "mix", "oselk", "krem", "balsam", "do ciala", "shea", "czekolad"],
         "min_price": 3.50,
     },
     "mleko": {
         "must_have_any": ["mleko"],
-        "exclude": ["kokos", "sojow", "owsian", "migdal", "zageszczon", "skondensowan", "w proszku", "czekolad", "do demakijazu", "balsam", "modifikowan", "bebiko", "nan"],
+        "exclude": ["kokos", "sojow", "owsian", "migdal", "zageszczon", "skondensowan", "w proszku", "czekolad", "do demakijazu", "balsam", "modifikowan", "bebiko", "nan", "ptasie"],
         "min_price": 1.80,
     },
     "jajka": {
@@ -120,7 +166,7 @@ PRODUCT_GUARDRAILS = {
 BRAND_WORDS = [
     "mlekovita", "piatnica", "laciate", "mlekpol", "lubelska", "krasnystaw",
     "wloszczowa", "sierpc", "hochland", "president", "almette", "danone",
-    "bakoma", "zott", "muller", "pudliszki", "dawtona", "lowicz", "kotlin",
+    "bakoma", "zott", "pudliszki", "dawtona", "lowicz", "kotlin",
     "roleski", "winiary", "knorr", "prymat", "kamis", "bonduelle", "lisner",
     "graal", "marinero", "sokolow", "morliny", "berlinki", "tarczynski",
     "krakus", "pikok", "dulano", "milbona", "pilos", "lidl", "biedronka", "netto",
@@ -152,23 +198,6 @@ def canonical_product_key(name: str) -> str:
     if "passat" in a or "przecier pomidor" in a:
         return "passata_pomidorowa"
     return re.sub(r"[^a-z0-9_]", "_", a).strip("_")
-
-def expand_keywords(t_name: str, raw_kws: list[str]) -> list[str]:
-    canon = canonical_product_key(t_name)
-    kws = set(normalize_ascii(k) for k in raw_kws if k)
-    kws.add(normalize_ascii(t_name))
-
-    if canon == "piers_z_kurczaka":
-        kws.discard("kurczak")
-        kws.update(["piers z kurczaka", "filet z kurczaka", "filet z piersi", "piers kurczaka", "filet kurczaka"])
-    elif canon == "jajka":
-        kws.update(["jajka", "jaja", "jaj"])
-    elif canon == "passata_pomidorowa":
-        kws.update(["passata", "przecier pomidorowy"])
-    elif canon == "mieso_mielone":
-        kws.update(["mieso mielone", "mielone"])
-
-    return [k for k in kws if len(k) >= 3]
 
 def is_valid_leaflet_url(url: str, store_slug: str, link_text: str = "") -> bool:
     low_url = normalize_ascii(url)
@@ -265,10 +294,16 @@ def is_food_offer(title: str) -> bool:
     norm = normalize_ascii(title)
     if len(norm) < 4 or len(norm) > 85:
         return False
-    # Musi zawierać przynajmniej 3 litery (odrzuca same liczby/kody)
     if len(re.findall(r"[a-z]", norm)) < 3:
         return False
-    return not any(bad in norm for bad in NON_FOOD_AND_NOISE_KEYWORDS)
+
+    # 1. Twarde odrzucenie kosmetyków, chemii, słodyczy i przekąsek
+    if any(bad in norm for bad in EXCLUDED_NON_FOOD_AND_SWEETS):
+        return False
+
+    # 2. Musi zawierać przynajmniej jeden rdzeń prawdziwego jedzenia / składnika spożywczego
+    padded = f" {norm} "
+    return any(root in padded for root in REAL_FOOD_ROOTS)
 
 def parse_offers(html: str, store_name: str, source_url: str) -> list[dict]:
     soup = BeautifulSoup(html, "html.parser")
@@ -466,7 +501,7 @@ def fetch_all_store_offers() -> list[dict]:
                 dedup[k] = o
 
         final_list = list(dedup.values())
-        print(f"==> {store}: zebrano {len(final_list)} unikalnych, aktualnych ofert spożywczych.", flush=True)
+        print(f"==> {store}: zebrano {len(final_list)} unikalnych, czystych ofert żywnościowych.", flush=True)
         all_offers.extend(final_list)
 
     return all_offers
@@ -492,7 +527,7 @@ def passes_guardrails(canon_key: str, offer: dict) -> tuple[bool, str]:
     return True, "OK"
 
 def build_all_food_pending(offers: list[dict], max_items: int = 250) -> dict:
-    """Gdy lista śledzonych jest pusta — zwraca wszystkie unikalne promocje spożywcze (najtańsza dla każdego produktu w danym sklepie)."""
+    """Buduje kompletny słownik aktualnych promocji na prawdziwą żywność (bez kosmetyków i słodyczy)."""
     best_per_store_prod = {}
     for off in offers:
         generic = off["generic_name"]
@@ -517,55 +552,8 @@ def build_all_food_pending(offers: list[dict], max_items: int = 250) -> dict:
                 "sourceUrl": off["source_url"],
             }
 
-    # Sortujemy po nazwie produktu, limitujemy do max_items żeby nie przeciążyć dokumentu Firestore (1 MB)
     sorted_items = sorted(best_per_store_prod.items(), key=lambda x: (x[1]["name"], x[1]["detectedPrice"]))[:max_items]
     return dict(sorted_items)
-
-def match_offers(offers: list[dict], tracked_products: list[dict], debug: bool = True) -> dict:
-    # TRYB WSZYSTKICH PROMOCJI: jeśli lista śledzonych jest pusta -> wyślij wszystkie czyste promocje na żywność!
-    if not tracked_products:
-        all_food = build_all_food_pending(offers)
-        if debug:
-            print(f"[TRYB WSZYSTKIE PROMOCJE] Brak filtrów śledzonych -> przygotowano {len(all_food)} promocji spożywczych.", flush=True)
-        return all_food
-
-    pending = {}
-    for tracked in tracked_products:
-        t_name = tracked.get("name", "")
-        canon_key = canonical_product_key(t_name)
-        keywords = expand_keywords(t_name, tracked.get("keywords", []))
-        max_price = tracked.get("maxPrice")
-
-        candidates = []
-        for off in offers:
-            haystack = f"{normalize_ascii(off['raw_name'])} {normalize_ascii(off['generic_name'])}"
-            if any(kw in haystack for kw in keywords):
-                ok, _ = passes_guardrails(canon_key, off)
-                if not ok:
-                    continue
-                candidates.append(off)
-
-        if not candidates:
-            continue
-
-        candidates.sort(key=lambda x: x["price"])
-        best = candidates[0]
-        price_note = ""
-        if max_price is not None and best["price"] > float(max_price):
-            price_note = f" [powyżej progu {float(max_price):.2f} zł]"
-
-        safe_key = re.sub(r"[^a-z0-9_]", "_", normalize_ascii(t_name))
-        pending[safe_key] = {
-            "name": t_name,
-            "detectedPrice": best["price"],
-            "store": best["store"],
-            "validFrom": best.get("valid_from"),
-            "validTo": best.get("valid_to"),
-            "source": best["store"],
-            "rawText": f"{best['raw_text']}{price_note}",
-            "sourceUrl": best["source_url"],
-        }
-    return pending
 
 def export_csv(offers: list[dict], filename="promocje_spozywcze.csv"):
     with open(filename, "w", encoding="utf-8-sig", newline="") as f:
@@ -606,17 +594,18 @@ def main():
     offers = fetch_all_store_offers()
     export_csv(offers)
 
+    all_food_promos = build_all_food_pending(offers)
+    print(f"Przygotowano {len(all_food_promos)} czystych promocji żywnościowych dla wszystkich aktywnych kuchni.", flush=True)
+
     if dry_run:
-        # Test trybu pustej listy (wszystkie promocje na żywność)
-        matched = match_offers(offers, [], debug=True)
         with open("wynik_testu.json", "w", encoding="utf-8") as f:
-            json.dump({"total_offers": len(offers), "all_food_pending_count": len(matched), "sample_pending": dict(list(matched.items())[:25])}, f, ensure_ascii=False, indent=2)
-        print(f"\n[DRY-RUN] Wygenerowano {len(matched)} promocji spożywczych do poczekalni! Szczegóły w wynik_testu.json.", flush=True)
-        for v in list(matched.values())[:15]:
+            json.dump({"total_offers": len(offers), "all_food_pending_count": len(all_food_promos), "sample_pending": dict(list(all_food_promos.items())[:30])}, f, ensure_ascii=False, indent=2)
+        print("\n[DRY-RUN] Zapisano wynik_testu.json. Przykładowe pozycje:", flush=True)
+        for v in list(all_food_promos.values())[:25]:
             print(f"  ✓ [{v['store']}] {v['name']} -> {v['detectedPrice']:.2f} zł ({v['validFrom']} - {v['validTo']})", flush=True)
         return
 
-    if not offers:
+    if not all_food_promos:
         print("Brak pobranych ofert — przerywam zapis do Firebase.", flush=True)
         return
 
@@ -626,18 +615,15 @@ def main():
         data = doc_snap.to_dict() or {}
         if data.get("active") is False:
             continue
-        tracked = data.get("trackedProducts") or []
-        print(f"\n--- Dopasowuję dla kuchni {doc_snap.id} (śledzone: {len(tracked)} -> {'WSZYSTKIE ŻYWNOŚCIOWE' if not tracked else 'FILTR RADARU'}) ---", flush=True)
-        matched = match_offers(offers, tracked, debug=True)
-        if matched:
-            existing = data.get("pendingScraper") or {}
-            existing.update(matched)
-            db.collection("kuchnie").document(doc_snap.id).set({
-                "pendingScraper": existing,
-                "lastScraped": datetime.now().isoformat(),
-            }, merge=True)
-            updated += 1
-            print(f"[Kuchnia {doc_snap.id}] Wysłano {len(matched)} okazji do Weryfikacji Scrapera.", flush=True)
+
+        existing = data.get("pendingScraper") or {}
+        existing.update(all_food_promos)
+        db.collection("kuchnie").document(doc_snap.id).set({
+            "pendingScraper": existing,
+            "lastScraped": datetime.now().isoformat(),
+        }, merge=True)
+        updated += 1
+        print(f"[Kuchnia {doc_snap.id}] Wysłano {len(all_food_promos)} promocji do Weryfikacji Scrapera.", flush=True)
 
     print(f"=== ZAKOŃCZONO. Zaktualizowano {updated} kuchni w Firebase. ===", flush=True)
 
