@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KuchniaBudżet PRO — Multi-Tenant, Walidacja Spiżarni & Panel Admina</title>
+    <title>KuchniaBudżet PRO — Multi-Tenant, Społeczność & Panel Admina</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script>
@@ -150,6 +150,25 @@
                     </div>
                 </div>
 
+                <!-- Sugestie zmian od użytkowników -->
+                <div class="bg-[#1e293b] rounded-2xl border border-indigo-500/40 p-5 space-y-4">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div>
+                            <h3 class="text-base font-bold text-white flex items-center gap-2">
+                                <span>💡 Sugestie zmian od użytkowników</span>
+                                <span id="admin-feedback-badge" class="px-2.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 text-xs font-bold">0</span>
+                            </h3>
+                            <p class="text-xs text-slate-400">Zgłoszenia wysłane z zakładki „Zgłoś Pomysł / Błąd” we wszystkich kuchniach.</p>
+                        </div>
+                        <select id="admin-feedback-filter" onchange="renderAdminFeedbackList()" class="px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-xs text-slate-200">
+                            <option value="all">Wszystkie zgłoszenia</option>
+                            <option value="nowe">🆕 Tylko nowe</option>
+                            <option value="wdrozone">✅ Wdrożone</option>
+                        </select>
+                    </div>
+                    <div id="admin-feedback-list" class="space-y-3"></div>
+                </div>
+
                 <div class="bg-[#1e293b] rounded-2xl border border-slate-800 p-5 space-y-4">
                     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                         <h3 class="text-base font-bold text-white">Zarejestrowane Kuchnie (kolekcja <code>kuchnie</code>)</h3>
@@ -171,23 +190,26 @@
         <aside class="hidden md:flex md:w-72 md:flex-col md:fixed md:inset-y-0 bg-[#1e293b] border-r border-slate-800 z-30">
             <div class="p-6 border-b border-slate-800">
                 <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg shadow-emerald-500/20">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg shadow-emerald-500/20 shrink-0">
                         <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
                     </div>
-                    <div class="min-w-0">
+                    <div class="min-w-0 flex-1">
                         <h1 class="font-bold text-lg tracking-tight text-white truncate">KuchniaBudżet</h1>
-                        <p id="desktop-kitchen-label" class="text-xs text-emerald-400 font-medium truncate">Wspólna Kuchnia</p>
+                        <button onclick="openKitchenModal()" title="Kliknij, aby zmienić widoczną nazwę kuchni" class="group flex items-center gap-1 text-xs text-emerald-400 hover:text-emerald-300 font-medium truncate max-w-full">
+                            <span id="desktop-kitchen-label" class="truncate">Wspólna Kuchnia</span>
+                            <span class="opacity-70 group-hover:opacity-100 text-[10px]">✏️</span>
+                        </button>
                     </div>
                 </div>
 
-                <!-- Karta aktualnego Kodu Kuchni (Kopiuj + Wyloguj/Zmień) -->
+                <!-- Karta aktualnego Kodu Kuchni (Kopiuj + Edycja Nazwy/AI + Wyloguj) -->
                 <div class="mt-5 p-3 rounded-xl bg-slate-900/90 border border-slate-700/80 space-y-2">
                     <div class="flex items-center justify-between text-xs text-slate-400">
                         <span class="flex items-center gap-1.5">
                             <span id="sync-dot" class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
                             Kod Kuchni
                         </span>
-                        <button onclick="openKitchenModal()" class="text-slate-300 hover:text-white font-medium underline">Klucz AI</button>
+                        <button onclick="openKitchenModal()" class="text-emerald-400 hover:text-emerald-300 font-semibold underline">Nazwa & Klucz AI</button>
                     </div>
 
                     <div class="flex items-center justify-between gap-2 bg-slate-950 px-2.5 py-1.5 rounded-lg border border-slate-800">
@@ -216,7 +238,7 @@
             <nav class="flex-1 p-4 space-y-1.5 overflow-y-auto">
                 <button onclick="switchTab('recipes')" data-tab="recipes" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
-                    Przepisy & Koszt Dania
+                    Przepisy & Społeczność
                 </button>
                 <button onclick="switchTab('pantry')" data-tab="pantry" class="nav-btn w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800/70 transition-all">
                     <span class="flex items-center gap-3">
@@ -257,6 +279,10 @@
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
                     Historia & Koszt Porcji
                 </button>
+                <button onclick="switchTab('feedback')" data-tab="feedback" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800/70 transition-all">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"></path></svg>
+                    Zgłoś Pomysł / Błąd
+                </button>
             </nav>
 
             <div class="p-4 border-t border-slate-800">
@@ -276,9 +302,10 @@
                 <div class="min-w-0">
                     <div class="flex items-center gap-1.5">
                         <span id="mobile-sync-dot" class="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0"></span>
-                        <span id="mobile-kitchen-code" class="text-xs text-emerald-400 font-mono font-extrabold tracking-wider">------</span>
+                        <span id="mobile-kitchen-label" onclick="openKitchenModal()" class="text-xs font-bold text-white truncate max-w-[110px] cursor-pointer">Kuchnia</span>
+                        <span id="mobile-kitchen-code" class="text-[11px] text-emerald-400 font-mono font-extrabold">------</span>
                         <button onclick="copyKitchenCode()" class="text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-200">📋</button>
-                        <button onclick="openKitchenModal()" class="text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-300">⚙️</button>
+                        <button onclick="openKitchenModal()" title="Edytuj nazwę kuchni i klucz AI" class="text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-300">✏️</button>
                     </div>
                     <button onclick="logoutFromKitchen()" class="text-[10px] text-red-400 underline block">Zmień kuchnię / Wyloguj</button>
                 </div>
@@ -293,16 +320,17 @@
         <main class="flex-1 md:pl-72 pb-24 md:pb-10 w-full">
             <div class="max-w-6xl mx-auto p-4 sm:p-6 lg:p-8">
 
-                <!-- ================= ZAKŁADKA 1: PRZEPISY ================= -->
+                <!-- ================= ZAKŁADKA 1: PRZEPISY & SPOŁECZNOŚĆ ================= -->
                 <section id="tab-recipes" class="space-y-6">
                     <div class="flex flex-col lg:flex-row gap-3 justify-between">
                         <div class="relative flex-1">
                             <svg class="w-5 h-5 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-                            <input type="text" id="recipe-search" oninput="renderRecipes()" placeholder="Szukaj dania lub składnika (np. fasola, kurczak, ryż)..." class="w-full pl-11 pr-4 py-3 rounded-xl bg-[#1e293b] border border-slate-700/80 text-sm text-white placeholder-slate-400 focus:outline-none focus:border-emerald-500 transition-colors">
+                            <input type="text" id="recipe-search" oninput="renderRecipes()" placeholder="Szukaj dania, składnika lub autora (np. fasola, kurczak, Kowalscy)..." class="w-full pl-11 pr-4 py-3 rounded-xl bg-[#1e293b] border border-slate-700/80 text-sm text-white placeholder-slate-400 focus:outline-none focus:border-emerald-500 transition-colors">
                         </div>
                         <div class="flex gap-2 overflow-x-auto pb-1">
                             <button onclick="setRecipeFilter('all')" data-filter="all" class="filter-chip px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap bg-emerald-500 text-slate-950 transition-all">Wszystkie</button>
                             <button onclick="setRecipeFilter('pantry')" data-filter="pantry" class="filter-chip px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap bg-[#1e293b] text-slate-300 border border-slate-700 hover:border-emerald-500/50 transition-all">🥫 Z tego co mam</button>
+                            <button onclick="setRecipeFilter('community')" data-filter="community" class="filter-chip px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap bg-[#1e293b] text-slate-300 border border-slate-700 hover:border-indigo-500/50 transition-all">🌍 Od innych kuchni (<span id="chip-community-count">0</span>)</button>
                             <button onclick="setRecipeFilter('cheap')" data-filter="cheap" class="filter-chip px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap bg-[#1e293b] text-slate-300 border border-slate-700 hover:border-emerald-500/50 transition-all">💸 Najtańsze obiady</button>
                             <button onclick="setRecipeFilter('rated')" data-filter="rated" class="filter-chip px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap bg-[#1e293b] text-slate-300 border border-slate-700 hover:border-amber-500/50 transition-all">⭐ Najwyżej oceniane</button>
                         </div>
@@ -317,14 +345,14 @@
                         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                             <div>
                                 <h2 class="text-xl font-bold text-white">Domowa Spiżarnia, Lodówka & Zamrażarka</h2>
-                                <p class="text-sm text-slate-400 mt-0.5">Dodawaj produkty ręcznie (apka sama poprawi literówki i polskie znaki), zmieniaj ich ilości oraz prowadź ewidencję gotowych dań w zamrażarce.</p>
+                                <p class="text-sm text-slate-400 mt-0.5">Dodawaj produkty ręcznie (apka sama poprawi literówki i polskie znaki), zmieniaj ich ilości (możesz ustawić 0) oraz prowadź ewidencję gotowych dań w zamrażarce.</p>
                             </div>
                             <button onclick="clearPantry()" class="self-start sm:self-auto px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold border border-slate-700 transition-all">Wyczyść zapasy</button>
                         </div>
 
                         <form onsubmit="addManualPantryItem(event)" class="grid grid-cols-1 sm:grid-cols-12 gap-2.5 pt-3 border-t border-slate-800">
                             <input type="text" id="pantry-add-name" required placeholder="Produkt (np. piers z kurczaka, mleko, ryz)..." class="sm:col-span-5 px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500">
-                            <input type="number" step="0.1" min="0.1" id="pantry-add-qty" value="1" required placeholder="Ilość" class="sm:col-span-2 px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-sm text-white text-center font-mono focus:outline-none focus:border-emerald-500">
+                            <input type="number" step="0.1" min="0" id="pantry-add-qty" value="1" required placeholder="Ilość" class="sm:col-span-2 px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-sm text-white text-center font-mono focus:outline-none focus:border-emerald-500">
                             <select id="pantry-add-unit" class="sm:col-span-2 px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-sm text-slate-200 focus:outline-none focus:border-emerald-500">
                                 <option value="szt.">szt.</option>
                                 <option value="g">g</option>
@@ -405,10 +433,10 @@
                         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                             <div>
                                 <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-xs font-bold mb-1">
-                                    <span>📸 SKANER PARAGONU (LIDL, BIEDRONKA, NETTO, FRISCO)</span>
+                                    <span>📸 SKANER PARAGONU — TYLKO ARTYKUŁY SPOŻYWCZE</span>
                                 </div>
                                 <h2 class="text-xl font-bold text-white">Zaktualizuj Cennik ze zdjęcia paragonu</h2>
-                                <p class="text-xs sm:text-sm text-slate-300 mt-0.5">Wrzuć zdjęcie paragonu — AI odczyta produkty spożywcze i wyciągnie <strong>cenę za 1 sztukę / 1 kg</strong> (nawet gdy kupiłeś np. 3 szt. naraz), zaktualizuje Cennik i opcjonalnie doda zakupy do Spiżarni.</p>
+                                <p class="text-xs sm:text-sm text-slate-300 mt-0.5">Wrzuć zdjęcie paragonu — AI odczyta <strong>wyłącznie produkty spożywcze</strong> (ignorując chemię, kosmetyki, worki itp.), wyciągnie <strong>cenę za 1 sztukę / 1 kg / 10 szt.</strong> i opcjonalnie doda zakupy do Spiżarni.</p>
                             </div>
                             <label class="cursor-pointer shrink-0 px-5 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-sm shadow-lg shadow-emerald-500/20 transition-all flex items-center justify-center gap-2">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
@@ -421,8 +449,8 @@
                         <div id="receipt-review-panel" class="hidden pt-4 border-t border-emerald-500/30 space-y-4">
                             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                                 <div>
-                                    <h3 class="text-base font-bold text-emerald-300">Odczytane pozycje z paragonu (<span id="receipt-items-count">0</span>)</h3>
-                                    <p class="text-xs text-slate-400">Sprawdź jednostki (np. 1 szt., 1 puszka, 1 kg) i ceny jednostkowe przed zapisem.</p>
+                                    <h3 class="text-base font-bold text-emerald-300">Odczytane produkty spożywcze z paragonu (<span id="receipt-items-count">0</span>)</h3>
+                                    <p class="text-xs text-slate-400">Produkty niespożywcze zostały automatycznie odfiltrowane. Sprawdź jednostki i ceny przed zapisem.</p>
                                 </div>
                                 <label class="inline-flex items-center gap-2 text-xs sm:text-sm font-semibold text-white bg-slate-950/90 px-3.5 py-2 rounded-xl border border-emerald-500/40 cursor-pointer">
                                     <input type="checkbox" id="receipt-also-pantry" checked class="rounded text-emerald-500 focus:ring-0">
@@ -448,15 +476,16 @@
                         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                             <div>
                                 <h3 class="text-lg font-bold text-white">Cennik Bazowy Składników (Cena za opakowanie / jednostkę)</h3>
-                                <p class="text-xs text-slate-400">Każda pozycja ma przypisaną jednostkę (np. 1 puszka, 1 kg, 1 szt.) oraz cenę, którą możesz edytować w dowolnej chwili.</p>
+                                <p class="text-xs text-slate-400">Każda pozycja ma przypisaną jednostkę (np. 1 puszka, 1 kg, 10 szt. dla jajek) oraz cenę, którą możesz edytować w dowolnej chwili.</p>
                             </div>
-                            <input type="text" id="pricebook-search" oninput="renderPricebook()" placeholder="Szukaj w cenniku (np. ananas, ryż)..." class="w-full sm:w-64 px-3.5 py-2 rounded-xl bg-slate-900 border border-slate-700 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500">
+                            <input type="text" id="pricebook-search" oninput="renderPricebook()" placeholder="Szukaj w cenniku (np. jajka, ananas, ryż)..." class="w-full sm:w-64 px-3.5 py-2 rounded-xl bg-slate-900 border border-slate-700 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500">
                         </div>
 
                         <form onsubmit="addNewPricebookItem(event)" class="grid grid-cols-1 sm:grid-cols-12 gap-2.5 p-3.5 rounded-xl bg-slate-900/80 border border-slate-800">
                             <input type="text" id="pb-new-name" required placeholder="Nazwa produktu (np. Ananas w puszce)..." class="sm:col-span-4 px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500">
                             <select id="pb-new-unit" class="sm:col-span-2 px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-sm text-slate-200 focus:outline-none focus:border-emerald-500">
                                 <option value="1 szt.">za 1 szt.</option>
+                                <option value="10 szt.">za 10 szt.</option>
                                 <option value="1 puszka">za 1 puszkę</option>
                                 <option value="1 kg">za 1 kg</option>
                                 <option value="1 opak.">za 1 opak.</option>
@@ -564,6 +593,47 @@
                     <div id="shopping-list-container" class="space-y-4"></div>
                 </section>
 
+                <!-- ================= ZAKŁADKA 8: SUGESTIE ZMIAN I POMYSŁY ================= -->
+                <section id="tab-feedback" class="hidden space-y-6">
+                    <div class="bg-gradient-to-br from-indigo-950/80 via-[#1e293b] to-[#1e293b] rounded-2xl border border-indigo-500/40 p-5 sm:p-6 shadow-xl">
+                        <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-indigo-500/20 text-indigo-300 text-xs font-bold mb-2">
+                            <span>💡 ROZWÓJ APLIKACJI — TWÓJ GŁOS</span>
+                        </div>
+                        <h2 class="text-xl font-bold text-white">Zgłoś sugestię zmiany lub pomysł na nową funkcję</h2>
+                        <p class="text-xs sm:text-sm text-slate-300 mt-1">Brakuje jakiejś opcji, przelicznika albo zauważyłeś błąd? Wpisz swoją propozycję poniżej — trafi bezpośrednio do Panelu Administratora.</p>
+
+                        <form onsubmit="submitAppFeedback(event)" class="mt-5 space-y-4">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-400 mb-1">Kategoria zgłoszenia</label>
+                                    <select id="fb-category" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-sm text-white focus:outline-none focus:border-indigo-500">
+                                        <option value="Nowa funkcja">✨ Nowa funkcja / pomysł</option>
+                                        <option value="Ulepszenie wyglądu">🎨 Ulepszenie wyglądu / wygody</option>
+                                        <option value="Błąd do poprawy">🐛 Błąd do poprawy</option>
+                                        <option value="Cennik / Skaner paragonów">📸 Cennik / Skaner paragonów</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-400 mb-1">Krótki tytuł *</label>
+                                    <input type="text" id="fb-title" required placeholder="np. Planer obiadów na cały tydzień" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500">
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-400 mb-1">Opis propozycji *</label>
+                                <textarea id="fb-description" rows="4" required placeholder="Opisz dokładnie, jak ta funkcja powinna działać i w czym Ci pomoże..." class="w-full p-3.5 rounded-xl bg-slate-950 border border-slate-700 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500"></textarea>
+                            </div>
+                            <button type="submit" id="btn-submit-feedback" class="px-6 py-3 rounded-xl bg-indigo-500 hover:bg-indigo-400 text-white font-bold text-sm shadow-lg shadow-indigo-500/20 transition-all">
+                                🚀 Wyślij sugestię do Administratora
+                            </button>
+                        </form>
+                    </div>
+
+                    <div class="bg-[#1e293b] rounded-2xl border border-slate-800 p-5 space-y-3">
+                        <h3 class="text-base font-bold text-white">Twoje wysłane sugestie z tej kuchni</h3>
+                        <div id="user-feedback-history" class="space-y-2.5"></div>
+                    </div>
+                </section>
+
                 <!-- ================= ZAKŁADKA 7: HISTORIA & KOSZT PORCJI ================= -->
                 <section id="tab-reviews" class="hidden space-y-6">
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -626,6 +696,10 @@
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
                 <span class="text-[10px] font-semibold mt-0.5">Koszty</span>
             </button>
+            <button onclick="switchTab('feedback')" data-tab="feedback" class="mobile-nav-btn flex flex-col items-center p-1.5 rounded-xl text-slate-400">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"></path></svg>
+                <span class="text-[10px] font-semibold mt-0.5">Pomysły</span>
+            </button>
         </nav>
     </div>
 
@@ -675,6 +749,11 @@
                     <textarea id="ai-recipe-prompt" rows="5" placeholder="Wpisz pomysł na danie (np. 'Zapiekanka makaronowa z tuńczykiem') lub wklej skopiowany tekst przepisu..." class="w-full p-4 rounded-xl bg-slate-950 border border-slate-700 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500"></textarea>
                 </div>
 
+                <label class="flex items-center gap-2.5 p-3 rounded-xl bg-indigo-950/35 border border-indigo-500/40 cursor-pointer select-none">
+                    <input type="checkbox" id="ai-recipe-share-public" class="rounded text-indigo-500 focus:ring-0">
+                    <span class="text-xs sm:text-sm font-semibold text-indigo-200">🌍 Udostępnij ten przepis również innym kuchniom (jako <strong class="share-author-preview text-white"></strong>)</span>
+                </label>
+
                 <button id="btn-generate-recipe-ai" onclick="generateRecipeWithAI()" class="w-full py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-sm shadow-lg shadow-emerald-500/20 transition-all flex items-center justify-center gap-2">
                     <span>Przetwórz i zapisz przepis</span>
                 </button>
@@ -715,6 +794,10 @@
                     <label class="block text-xs font-semibold text-slate-400 mb-1">Instrukcja przygotowania (krok po kroku)</label>
                     <textarea id="man-steps" rows="4" required placeholder="1. Pokrój kurczaka i podsmaż.&#10;2. Dodaj mleczko kokosowe i przyprawy..." class="w-full p-3 rounded-xl bg-slate-900 border border-slate-700 text-sm text-white"></textarea>
                 </div>
+                <label class="flex items-center gap-2.5 p-3 rounded-xl bg-indigo-950/35 border border-indigo-500/40 cursor-pointer select-none">
+                    <input type="checkbox" id="man-recipe-share-public" class="rounded text-indigo-500 focus:ring-0">
+                    <span class="text-xs sm:text-sm font-semibold text-indigo-200">🌍 Udostępnij ten przepis również innym kuchniom (jako <strong class="share-author-preview text-white"></strong>)</span>
+                </label>
                 <button type="submit" class="w-full py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-sm">Zapisz Przepis</button>
             </form>
         </div>
@@ -772,15 +855,16 @@
         </div>
     </div>
 
-    <!-- MODAL 4: Ustawienia Kuchni & Klucz Gemini AI -->
+    <!-- MODAL 4: Edycja Widocznej Nazwy Kuchni & Klucz Gemini AI -->
     <div id="modal-kitchen-code" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
         <div class="bg-[#1e293b] border border-slate-700 rounded-2xl max-w-md w-full p-6 shadow-2xl">
-            <h3 class="text-lg font-bold text-white mb-1">Ustawienia Kuchni & Klucz AI</h3>
-            <p class="text-xs text-slate-400 mb-4">Klucz Gemini API zapisuje się wyłącznie w dokumencie Waszej kuchni (<code>kuchnie/<span id="modal-code-preview"></span></code>), dzięki czemu działa na wszystkich telefonach domowników.</p>
+            <h3 class="text-lg font-bold text-white mb-1">Nazwa Kuchni & Klucz AI</h3>
+            <p class="text-xs text-slate-400 mb-4">Twoja <strong>widoczna nazwa kuchni</strong> wyświetla się domownikom oraz jako podpis autora przy przepisach, które udostępnisz innym kuchniom (<code>kuchnie/<span id="modal-code-preview"></span></code>).</p>
             <form onsubmit="saveKitchenAiSettings(event)" class="space-y-4">
                 <div>
-                    <label class="block text-xs font-semibold text-slate-400 mb-1">Nazwa Waszej Kuchni</label>
-                    <input type="text" id="input-kitchen-label" placeholder="np. Dom Kowalskich" class="w-full px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-sm text-white">
+                    <label class="block text-xs font-semibold text-slate-400 mb-1">Widoczna nazwa Twojej kuchni *</label>
+                    <input type="text" id="input-kitchen-label" required placeholder="np. Kuchnia Kowalskich / Dom Przemka" class="w-full px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-sm font-semibold text-white focus:outline-none focus:border-emerald-500">
+                    <p class="text-[11px] text-slate-500 mt-1">Zmiana nazwy od razu zaktualizuje podpis przy Twoich udostępnionych przepisach.</p>
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-slate-400 mb-1">Klucz Google Gemini API (do Skanera Paragonów i AI)</label>
@@ -788,13 +872,13 @@
                 </div>
                 <div class="flex gap-2">
                     <button type="button" onclick="closeModal('modal-kitchen-code')" class="flex-1 py-2.5 rounded-xl bg-slate-800 text-slate-300 font-semibold text-sm">Anuluj</button>
-                    <button type="submit" class="flex-1 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-sm">Zapisz ustawienia</button>
+                    <button type="submit" class="flex-1 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-sm">Zapisz zmiany</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- ================= LOGIKA APLIKACJI (MULTI-TENANT + ADMIN + WALIDACJA SPIŻARNI) ================= -->
+    <!-- ================= LOGIKA APLIKACJI (MULTI-TENANT + SPOŁECZNOŚĆ + ADMIN) ================= -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getFirestore, doc, getDoc, setDoc, deleteDoc, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
@@ -818,6 +902,7 @@
             kitchenLabel: 'Wspólna Kuchnia',
             geminiApiKey: localStorage.getItem('kuchnia_gemini_key') || '',
             recipes: [],
+            publicRecipes: [],
             pricebook: {},
             trackedProducts: [],
             pendingScraper: {},
@@ -829,8 +914,13 @@
             reviews: [],
             currentFilter: 'all',
             unsubKitchen: null,
+            unsubPublicRecipes: null,
             unsubAdminList: null,
-            adminKitchens: []
+            unsubAdminFeedback: null,
+            unsubMyFeedback: null,
+            adminKitchens: [],
+            adminFeedbacks: [],
+            myFeedbacks: []
         };
 
         const DEFAULT_PRICEBOOK_UNITS = {
@@ -1192,6 +1282,19 @@
             return out;
         }
 
+        function syncKitchenLabelsUI() {
+            const label = window.appState.kitchenLabel || "Wspólna Kuchnia";
+            const dEl = document.getElementById('desktop-kitchen-label');
+            const mEl = document.getElementById('mobile-kitchen-label');
+            const iEl = document.getElementById('input-kitchen-label');
+            if (dEl) dEl.textContent = label;
+            if (mEl) mEl.textContent = label;
+            if (iEl && document.activeElement !== iEl) iEl.value = label;
+            document.querySelectorAll('.share-author-preview').forEach(el => {
+                el.textContent = label;
+            });
+        }
+
         window.showToast = (message, type = 'success') => {
             const container = document.getElementById('toast-container');
             const toast = document.createElement('div');
@@ -1307,6 +1410,10 @@
                 window.appState.unsubKitchen();
                 window.appState.unsubKitchen = null;
             }
+            if (window.appState.unsubPublicRecipes) {
+                window.appState.unsubPublicRecipes();
+                window.appState.unsubPublicRecipes = null;
+            }
             localStorage.removeItem('kodKuchni');
             window.appState.kitchenCode = '';
             document.getElementById('welcome-join-code').value = '';
@@ -1325,6 +1432,89 @@
             }
         };
 
+        // ================= GLOBALNA KOLEKCJA PUBLICZNYCH PRZEPISÓW =================
+        function subscribePublicRecipes() {
+            if (window.appState.unsubPublicRecipes) {
+                window.appState.unsubPublicRecipes();
+            }
+            window.appState.unsubPublicRecipes = onSnapshot(collection(db, "publiczne_przepisy"), (snapshot) => {
+                window.appState.publicRecipes = snapshot.docs.map(d => ({
+                    publicId: d.id,
+                    ...d.data(),
+                    isPublicCommunity: true
+                }));
+                renderAll();
+            }, (err) => {
+                console.warn("Błąd subskrypcji publiczne_przepisy (sprawdź reguły Firestore):", err);
+            });
+        }
+
+        window.shareRecipeToCommunity = async (recipeId) => {
+            const recipe = window.appState.recipes.find(r => r.id === recipeId);
+            if (!recipe) return;
+
+            const publicDocId = `${window.appState.kitchenCode}_${recipe.id}`;
+            const authorLabel = window.appState.kitchenLabel || "Wspólna Kuchnia";
+
+            try {
+                await setDoc(doc(db, "publiczne_przepisy", publicDocId), {
+                    ...recipe,
+                    publicId: publicDocId,
+                    sourceKitchen: window.appState.kitchenCode,
+                    sharedBy: authorLabel,
+                    sharedAt: new Date().toISOString()
+                });
+                showToast(`🌍 Udostępniono przepis <strong>${recipe.title}</strong> jako <strong>${authorLabel}</strong>!`);
+                if (!document.getElementById('modal-recipe-detail').classList.contains('hidden')) {
+                    openRecipeDetail(recipe.id, false);
+                }
+            } catch (e) {
+                console.error("Błąd udostępniania przepisu:", e);
+                showToast("Nie udało się udostępnić przepisu. Sprawdź reguły Firestore dla publiczne_przepisy.", "error");
+            }
+        };
+
+        window.unshareRecipeFromCommunity = async (publicDocId, localRecipeId = null) => {
+            try {
+                await deleteDoc(doc(db, "publiczne_przepisy", publicDocId));
+                showToast("Wycofano przepis z bazy publicznej.");
+                if (!document.getElementById('modal-recipe-detail').classList.contains('hidden')) {
+                    if (localRecipeId) openRecipeDetail(localRecipeId, false);
+                    else closeModal('modal-recipe-detail');
+                }
+            } catch (e) {
+                console.error("Błąd wycofywania przepisu:", e);
+                showToast("Nie udało się wycofać przepisu.", "error");
+            }
+        };
+
+        // Zapisuje przepis z publicznej bazy społeczności do własnej kuchni użytkownika
+        window.saveCommunityRecipeToMyKitchen = async (publicDocId) => {
+            const pub = (window.appState.publicRecipes || []).find(p => p.publicId === publicDocId);
+            if (!pub) return;
+
+            const alreadySaved = window.appState.recipes.some(r => r.copiedFromPublicId === publicDocId);
+            if (alreadySaved) {
+                showToast("Ten przepis jest już zapisany w Twojej kuchni!", "warning");
+                return;
+            }
+
+            const copyObj = {
+                id: 'rec_' + Date.now(),
+                title: pub.title,
+                category: pub.category || 'Obiad',
+                time: pub.time || 25,
+                portions: pub.portions || 4,
+                ingredients: JSON.parse(JSON.stringify(pub.ingredients || [])),
+                steps: [...(pub.steps || [])],
+                copiedFromPublicId: publicDocId,
+                originalAuthor: pub.sharedBy || "Społeczność"
+            };
+
+            await persistNewRecipe(copyObj, false);
+            showToast(`Zapisano przepis <strong>${copyObj.title}</strong> (od: ${copyObj.originalAuthor}) w Twojej kuchni!`);
+        };
+
         function connectToActiveKitchen(code) {
             if (window.appState.unsubKitchen) {
                 window.appState.unsubKitchen();
@@ -1337,6 +1527,9 @@
             document.getElementById('desktop-kitchen-code').textContent = cleanCode;
             document.getElementById('mobile-kitchen-code').textContent = cleanCode;
             document.getElementById('modal-code-preview').textContent = cleanCode;
+
+            subscribePublicRecipes();
+            subscribeMyFeedbacks(cleanCode);
 
             const kitchenRef = doc(db, "kuchnie", cleanCode);
 
@@ -1358,8 +1551,7 @@
                 document.getElementById('mobile-sync-dot').className = 'w-1.5 h-1.5 rounded-full bg-emerald-400';
 
                 window.appState.kitchenLabel = data.label || "Wspólna Kuchnia";
-                document.getElementById('desktop-kitchen-label').textContent = window.appState.kitchenLabel;
-                document.getElementById('input-kitchen-label').value = window.appState.kitchenLabel;
+                syncKitchenLabelsUI();
 
                 window.appState.recipes = data.recipes && data.recipes.length > 0 ? data.recipes : STARTER_RECIPES;
                 window.appState.pricebook = normalizePricebookData(data.pricebook);
@@ -1466,6 +1658,7 @@
                 logoutBtn.classList.remove('hidden');
                 statusText.textContent = `Zalogowano jako: ${user.email}`;
                 subscribeAdminKitchens();
+                subscribeAdminFeedbacks();
             } else {
                 loginBox.classList.remove('hidden');
                 dashBox.classList.add('hidden');
@@ -1490,6 +1683,163 @@
                 console.error("Błąd odczytu listy kuchni przez admina:", err);
                 showToast("Brak uprawnień administratora w Firestore Rules.", "error");
             });
+        }
+
+        function subscribeAdminFeedbacks() {
+            if (window.appState.unsubAdminFeedback) window.appState.unsubAdminFeedback();
+            window.appState.unsubAdminFeedback = onSnapshot(collection(db, "sugestie_zmian"), (snapshot) => {
+                window.appState.adminFeedbacks = snapshot.docs
+                    .map(d => ({ id: d.id, ...d.data() }))
+                    .sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
+                renderAdminFeedbackList();
+            }, (err) => {
+                console.warn("Błąd odczytu sugestii przez admina:", err);
+            });
+        }
+
+        window.renderAdminFeedbackList = () => {
+            const listEl = document.getElementById('admin-feedback-list');
+            const badgeEl = document.getElementById('admin-feedback-badge');
+            const filter = document.getElementById('admin-feedback-filter')?.value || 'all';
+            if (!listEl) return;
+
+            const all = window.appState.adminFeedbacks || [];
+            const newCount = all.filter(f => f.status !== 'wdrozone').length;
+            if (badgeEl) badgeEl.textContent = `${newCount} nowych / ${all.length} łącznie`;
+
+            const filtered = all.filter(f => {
+                if (filter === 'nowe') return f.status !== 'wdrozone';
+                if (filter === 'wdrozone') return f.status === 'wdrozone';
+                return true;
+            });
+
+            if (filtered.length === 0) {
+                listEl.innerHTML = `<p class="text-xs text-slate-400 italic py-4 text-center">Brak zgłoszeń w wybranej kategorii.</p>`;
+                return;
+            }
+
+            listEl.innerHTML = filtered.map(f => {
+                const isDone = f.status === 'wdrozone';
+                const dateStr = f.createdAt ? new Date(f.createdAt).toLocaleString('pl-PL', { dateStyle: 'short', timeStyle: 'short' }) : '';
+                return `
+                <div class="p-4 rounded-xl bg-slate-950/90 border ${isDone ? 'border-emerald-500/30 opacity-75' : 'border-indigo-500/40'} flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                    <div class="space-y-1">
+                        <div class="flex flex-wrap items-center gap-2">
+                            <span class="px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 text-[11px] font-bold">${f.category || 'Pomysł'}</span>
+                            <span class="px-2 py-0.5 rounded text-[11px] font-bold ${isDone ? 'bg-emerald-500/20 text-emerald-300' : 'bg-amber-500/20 text-amber-300'}">
+                                ${isDone ? '✅ Wdrożone' : '🆕 Nowe'}
+                            </span>
+                            <span class="text-xs text-slate-400">Od: <strong class="text-white">${f.kitchenLabel || 'Kuchnia'}</strong> (<span class="font-mono text-emerald-400">${f.kitchenCode || '?'}</span>) • ${dateStr}</span>
+                        </div>
+                        <h4 class="text-sm sm:text-base font-bold text-white">${f.title}</h4>
+                        <p class="text-xs text-slate-300 whitespace-pre-line leading-relaxed">${f.description}</p>
+                    </div>
+                    <div class="flex sm:flex-col gap-2 shrink-0">
+                        <button onclick="adminToggleFeedbackStatus('${f.id}', '${isDone ? 'nowe' : 'wdrozone'}')" class="px-3 py-1.5 rounded-lg ${isDone ? 'bg-slate-800 text-slate-300' : 'bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/30'} text-xs font-bold">
+                            ${isDone ? '↩️ Cofnij' : '✅ Oznacz wdrożone'}
+                        </button>
+                        <button onclick="adminDeleteFeedback('${f.id}')" class="px-3 py-1.5 rounded-lg bg-red-950/60 hover:bg-red-900/80 text-red-300 border border-red-500/30 text-xs font-bold">
+                            🗑️ Usuń
+                        </button>
+                    </div>
+                </div>
+                `;
+            }).join('');
+        };
+
+        window.adminToggleFeedbackStatus = async (id, nextStatus) => {
+            try {
+                await setDoc(doc(db, "sugestie_zmian", id), { status: nextStatus }, { merge: true });
+                showToast(nextStatus === 'wdrozone' ? "Oznaczono sugestię jako wdrożoną!" : "Przywrócono status zgłoszenia.");
+            } catch (e) {
+                showToast("Błąd aktualizacji zgłoszenia.", "error");
+            }
+        };
+
+        window.adminDeleteFeedback = async (id) => {
+            if (!confirm("Usunąć to zgłoszenie?")) return;
+            try {
+                await deleteDoc(doc(db, "sugestie_zmian", id));
+                showToast("Usunięto zgłoszenie.");
+            } catch (e) {
+                showToast("Błąd usuwania zgłoszenia.", "error");
+            }
+        };
+
+        window.submitAppFeedback = async (e) => {
+            e.preventDefault();
+            const cat = document.getElementById('fb-category').value;
+            const title = document.getElementById('fb-title').value.trim();
+            const description = document.getElementById('fb-description').value.trim();
+            if (!title || !description) return;
+
+            const btn = document.getElementById('btn-submit-feedback');
+            const origText = btn.textContent;
+            btn.disabled = true;
+            btn.textContent = "Wysyłam...";
+
+            try {
+                const fbId = 'fb_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4);
+                await setDoc(doc(db, "sugestie_zmian", fbId), {
+                    id: fbId,
+                    kitchenCode: window.appState.kitchenCode,
+                    kitchenLabel: window.appState.kitchenLabel || "Wspólna Kuchnia",
+                    category: cat,
+                    title,
+                    description,
+                    status: 'nowe',
+                    createdAt: new Date().toISOString()
+                });
+                document.getElementById('fb-title').value = '';
+                document.getElementById('fb-description').value = '';
+                showToast("🚀 Wysłano sugestię do Administratora! Dzięki za pomoc w rozwoju apki.");
+            } catch (err) {
+                console.error("Błąd wysyłania sugestii:", err);
+                showToast("Nie udało się wysłać sugestii. Sprawdź reguły Firestore dla kolekcji sugestie_zmian.", "error");
+            } finally {
+                btn.disabled = false;
+                btn.textContent = origText;
+            }
+        };
+
+        function subscribeMyFeedbacks(kitchenCode) {
+            if (window.appState.unsubMyFeedback) window.appState.unsubMyFeedback();
+            window.appState.unsubMyFeedback = onSnapshot(collection(db, "sugestie_zmian"), (snapshot) => {
+                window.appState.myFeedbacks = snapshot.docs
+                    .map(d => ({ id: d.id, ...d.data() }))
+                    .filter(f => f.kitchenCode === kitchenCode)
+                    .sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
+                renderMyFeedbackHistory();
+            }, () => {});
+        }
+
+        function renderMyFeedbackHistory() {
+            const container = document.getElementById('user-feedback-history');
+            if (!container) return;
+            const list = window.appState.myFeedbacks || [];
+            if (list.length === 0) {
+                container.innerHTML = `<p class="text-xs text-slate-400 italic">Nie wysłałeś jeszcze żadnych sugestii z tej kuchni.</p>`;
+                return;
+            }
+            container.innerHTML = list.map(f => {
+                const isDone = f.status === 'wdrozone';
+                const dateStr = f.createdAt ? new Date(f.createdAt).toLocaleDateString('pl-PL') : '';
+                return `
+                <div class="p-3 rounded-xl bg-slate-950/80 border border-slate-800 flex items-start justify-between gap-3">
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-[11px] font-bold text-indigo-300">${f.category}</span>
+                            <span class="text-[11px] text-slate-500">• ${dateStr}</span>
+                        </div>
+                        <p class="text-sm font-bold text-white mt-0.5">${f.title}</p>
+                        <p class="text-xs text-slate-400 mt-0.5">${f.description}</p>
+                    </div>
+                    <span class="shrink-0 px-2.5 py-1 rounded-lg text-[11px] font-bold ${isDone ? 'bg-emerald-500/20 text-emerald-300' : 'bg-amber-500/20 text-amber-300'}">
+                        ${isDone ? '✅ Wdrożone' : '⏳ W kolejce'}
+                    </span>
+                </div>
+                `;
+            }).join('');
         }
 
         window.renderAdminKitchensList = () => {
@@ -1581,22 +1931,51 @@
             }
         };
 
-        // ================= POMOCNICZE FUNKCJE DANYCH =================
-        window.normalizeKey = (str) => str.toLowerCase().trim()
-            .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-            .replace(/ł/g, "l")
-            .replace(/\s+/g, '_');
-
-        window.stripDiacritics = (str) => str.toLowerCase().trim()
-            .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+        // ================= NORMALIZACJA NAZW I INTELIGENTNE DOPASOWANIE SKŁADNIKÓW =================
+        window.stripDiacritics = (str) => String(str || '').toLowerCase().trim()
+            .normalize("NFD").replace(/[̀-ͯ]/g, "")
             .replace(/ł/g, "l");
 
-        window.getPantryEntry = (key) => {
+        window.normalizeKey = (str) => {
+            const ascii = window.stripDiacritics(str)
+                .replace(/\(.*?\)/g, '')
+                .replace(/[^a-z0-9\s]/g, ' ')
+                .replace(/\s+/g, ' ')
+                .trim();
+
+            if (!ascii) return '';
+
+            if (/^(jajko|jajka|jaja|jajek|jaj)$/.test(ascii)) return 'jajka';
+            if (/^(cebula|cebule|cebuli|cebul|cebula biala|cebula czerwona)$/.test(ascii)) return 'cebula';
+            if (/^(czosnek|czosnku|zabek czosnku|zabki czosnku)$/.test(ascii)) return 'czosnek';
+            if (/^(ziemniak|ziemniaki|ziemniakow)$/.test(ascii)) return 'ziemniaki';
+            if (/^(pomidor|pomidory|pomidorow)$/.test(ascii) && !ascii.includes('krojon') && !ascii.includes('puszk')) return 'pomidory';
+            if (ascii.includes('tunczyk')) return 'tunczyk';
+            if (ascii.includes('piers z kurczaka') || ascii.includes('filet z kurczaka') || ascii.includes('piersi z kurczaka')) return 'piers_z_kurczaka';
+            if (ascii.includes('mieso mielone') || ascii.includes('miesa mielonego')) return 'mieso_mielone';
+            if (ascii.includes('czerwona fasola') || ascii.includes('fasola czerwona')) return 'czerwona_fasola';
+            if (ascii.includes('biala fasola') || ascii.includes('fasola biala')) return 'biala_fasola';
+            if (ascii.includes('passata')) return 'passata_pomidorowa';
+            if (ascii.includes('kukurydz')) return 'kukurydza_konserwowa';
+            if (ascii.includes('ananas')) return 'ananas_w_puszce';
+            if (ascii === 'ryz' || ascii === 'ryzu') return 'ryz';
+            if (ascii === 'makaron' || ascii === 'makaronu') return 'makaron';
+            if (ascii === 'maslo' || ascii === 'masla') return 'maslo';
+            if (ascii === 'sol' || ascii === 'soli') return 'sol';
+            if (ascii === 'pieprz' || ascii === 'pieprzu') return 'pieprz';
+
+            return ascii.replace(/\s+/g, '_');
+        };
+
+        window.getPantryEntry = (key, allowZero = false) => {
             const raw = window.appState.pantry[key];
-            if (!raw) return null;
+            if (raw === undefined || raw === null || raw === false) return null;
             if (raw === true) return { qty: 1, unit: 'szt.', location: 'Spiżarnia' };
-            if (typeof raw === 'object' && Number(raw.qty) > 0) {
-                return { qty: Number(raw.qty), unit: raw.unit || 'szt.', location: raw.location || 'Spiżarnia' };
+            if (typeof raw === 'object') {
+                const q = Number(raw.qty);
+                if (isNaN(q)) return null;
+                if (!allowZero && q <= 0) return null;
+                return { qty: q, unit: raw.unit || 'szt.', location: raw.location || 'Spiżarnia' };
             }
             return null;
         };
@@ -1615,7 +1994,7 @@
                 { patterns: ["fasol", "fasola"], fixed: "Czerwona fasola", query: "fasola czerwona puszka", keywords: ["fasola"], cat: "Konserwy i słoiki", unit: "1 puszka" },
                 { patterns: ["losos"], fixed: "Łosoś filet", query: "łosoś świeży filet", keywords: ["losos"], cat: "Mięso i świeże", unit: "1 kg" },
                 { patterns: ["twarog", "twarug"], fixed: "Twaróg półtłusty", query: "twaróg półtłusty", keywords: ["twarog"], cat: "Lodówka i mrożonki", unit: "1 opak." },
-                { patterns: ["jajk", "jaja"], fixed: "Jajka", query: "jaja ściółkowe 10 szt", keywords: ["jajka", "jaja"], cat: "Lodówka i mrożonki", unit: "10 szt." },
+                { patterns: ["jajk", "jaja", "jajko"], fixed: "Jajka", query: "jaja ściółkowe 10 szt", keywords: ["jajka", "jaja"], cat: "Lodówka i mrożonki", unit: "10 szt." },
                 { patterns: ["makaron"], fixed: "Makaron", query: "makaron penne 500g", keywords: ["makaron"], cat: "Suche i makarony", unit: "500 g" },
                 { patterns: ["ryz"], fixed: "Ryż", query: "ryż biały 4x100g", keywords: ["ryz"], cat: "Suche i makarony", unit: "1 kg" },
                 { patterns: ["ser zolty", "gouda", "ser"], fixed: "Ser żółty", query: "ser gouda", keywords: ["ser zolty", "gouda"], cat: "Lodówka i mrożonki", unit: "1 kg" },
@@ -1684,16 +2063,23 @@
             if (!rawPb || typeof rawPb !== 'object') return base;
 
             const merged = { ...base };
-            Object.entries(rawPb).forEach(([key, item]) => {
+            Object.entries(rawPb).forEach(([rawKey, item]) => {
                 if (!item || typeof item !== 'object') return;
+                const canonicalKey = window.normalizeKey(item.name || rawKey);
+                if (canonicalKey !== rawKey && merged[canonicalKey] && rawKey === 'jajko') return;
+
                 const activePrice = item.price !== undefined
                     ? Number(item.price)
                     : (item.isPromo && item.promoPrice !== undefined ? Number(item.promoPrice) : Number(item.basePrice || 5.00));
 
-                merged[key] = {
-                    name: item.name || (base[key] ? base[key].name : key),
-                    unit: item.unit || (base[key] ? base[key].unit : "1 szt."),
-                    category: item.category || (base[key] ? base[key].category : "Inne"),
+                const enforcedUnit = canonicalKey === 'jajka'
+                    ? '10 szt.'
+                    : (item.unit || (base[canonicalKey] ? base[canonicalKey].unit : "1 szt."));
+
+                merged[canonicalKey] = {
+                    name: canonicalKey === 'jajka' ? 'Jajka' : (item.name || (base[canonicalKey] ? base[canonicalKey].name : rawKey)),
+                    unit: enforcedUnit,
+                    category: item.category || (base[canonicalKey] ? base[canonicalKey].category : "Inne"),
                     price: Number(activePrice.toFixed(2)),
                     basePrice: Number(activePrice.toFixed(2)),
                     promoPrice: Number(activePrice.toFixed(2)),
@@ -1704,7 +2090,7 @@
             return merged;
         }
 
-        // ================= PARSER ILOŚCI I ODEJMOWANIE ZE SPIŻARNI =================
+        // ================= PARSER ILOŚCI, OBLICZANIE KOSZTU I ODEJMOWANIE ZE SPIŻARNI =================
         function parseQuantityString(str) {
             if (!str) return { val: 1, baseUnit: 'szt.' };
             const clean = String(str).toLowerCase().trim().replace(',', '.');
@@ -1723,38 +2109,43 @@
             return { val: val, baseUnit: 'szt.' };
         }
 
+        function calculateIngredientCostFromPricebook(ing, pbItem) {
+            if (!pbItem) return Number(ing.price || 0);
+            const unitPrice = Number(pbItem.price ?? pbItem.basePrice ?? ing.price ?? 0);
+            const req = parseQuantityString(ing.amount);
+            const pack = parseQuantityString(pbItem.unit || '1 szt.');
+
+            if (req.baseUnit === pack.baseUnit && pack.val > 0) {
+                return Number(((req.val / pack.val) * unitPrice).toFixed(2));
+            }
+            return unitPrice;
+        }
+
         window.deductRecipeFromPantry = (recipe) => {
             if (!recipe || !Array.isArray(recipe.ingredients)) return 0;
             let deductedCount = 0;
 
             recipe.ingredients.forEach(ing => {
                 const key = window.normalizeKey(ing.name);
-                const current = window.getPantryEntry(key);
+                const current = window.getPantryEntry(key, false);
                 if (!current) return;
 
                 const req = parseQuantityString(ing.amount);
                 const have = parseQuantityString(`${current.qty} ${current.unit}`);
 
                 if (req.baseUnit === have.baseUnit) {
-                    let remaining = have.val - req.val;
-                    if (remaining <= 0) {
-                        delete window.appState.pantry[key];
+                    let remaining = Math.max(0, have.val - req.val);
+                    if (current.unit === 'kg' && have.baseUnit === 'g') {
+                        window.appState.pantry[key].qty = Number((remaining / 1000).toFixed(2));
+                    } else if (current.unit === 'l' && have.baseUnit === 'ml') {
+                        window.appState.pantry[key].qty = Number((remaining / 1000).toFixed(2));
                     } else {
-                        if (current.unit === 'kg' && have.baseUnit === 'g') {
-                            window.appState.pantry[key].qty = Number((remaining / 1000).toFixed(2));
-                        } else if (current.unit === 'l' && have.baseUnit === 'ml') {
-                            window.appState.pantry[key].qty = Number((remaining / 1000).toFixed(2));
-                        } else {
-                            window.appState.pantry[key].qty = Number(remaining.toFixed(2));
-                        }
+                        window.appState.pantry[key].qty = Number(remaining.toFixed(2));
                     }
                     deductedCount++;
                 } else {
-                    if (current.qty <= 1) {
-                        delete window.appState.pantry[key];
-                    } else {
-                        window.appState.pantry[key].qty = Number((current.qty - 1).toFixed(2));
-                    }
+                    const nextQty = Math.max(0, current.qty - 1);
+                    window.appState.pantry[key].qty = Number(nextQty.toFixed(2));
                     deductedCount++;
                 }
             });
@@ -1771,7 +2162,8 @@
             const locInput = document.getElementById('pantry-add-loc');
 
             const rawName = nameInput.value.trim();
-            const qty = parseFloat(qtyInput.value) || 1;
+            const parsedQty = parseFloat(qtyInput.value);
+            const qty = isNaN(parsedQty) ? 1 : Math.max(0, parsedQty);
             const unit = unitInput.value;
             const location = locInput.value;
             if (!rawName) return;
@@ -1798,7 +2190,7 @@
             if (!window.appState.pricebook[key]) {
                 window.appState.pricebook[key] = {
                     name: fixed.fixedName,
-                    unit: fixed.unit || "1 szt.",
+                    unit: key === 'jajka' ? '10 szt.' : (fixed.unit || "1 szt."),
                     category: location === 'Lodówka' ? 'Lodówka i mrożonki' : (fixed.category || 'Spiżarnia'),
                     price: 5.00,
                     basePrice: 5.00,
@@ -1808,7 +2200,7 @@
                 };
             }
 
-            const existing = window.getPantryEntry(key);
+            const existing = window.getPantryEntry(key, true);
             if (existing && existing.unit === unit) {
                 window.appState.pantry[key] = { qty: Number((existing.qty + qty).toFixed(2)), unit, location };
             } else {
@@ -1824,34 +2216,33 @@
         };
 
         window.adjustPantryQuantity = async (key, delta) => {
-            const current = window.getPantryEntry(key);
+            const current = window.getPantryEntry(key, true);
             if (!current) {
-                window.appState.pantry[key] = { qty: 1, unit: 'szt.', location: 'Spiżarnia' };
+                window.appState.pantry[key] = { qty: delta > 0 ? 1 : 0, unit: 'szt.', location: 'Spiżarnia' };
             } else {
                 const step = (current.unit === 'g' || current.unit === 'ml') ? 100 : (current.unit === 'kg' || current.unit === 'l' ? 0.5 : 1);
-                const nextQty = Number((current.qty + delta * step).toFixed(2));
-                if (nextQty <= 0) delete window.appState.pantry[key];
-                else window.appState.pantry[key] = { ...current, qty: nextQty };
+                const nextQty = Math.max(0, Number((current.qty + delta * step).toFixed(2)));
+                window.appState.pantry[key] = { ...current, qty: nextQty };
             }
             await saveKitchenChanges();
         };
 
         window.setPantryQuantityDirect = async (key, newQtyRaw) => {
             const val = parseFloat(newQtyRaw);
-            const current = window.getPantryEntry(key) || { qty: 1, unit: 'szt.', location: 'Spiżarnia' };
-            if (isNaN(val) || val <= 0) delete window.appState.pantry[key];
-            else window.appState.pantry[key] = { ...current, qty: Number(val.toFixed(2)) };
+            const current = window.getPantryEntry(key, true) || { qty: 0, unit: 'szt.', location: 'Spiżarnia' };
+            const safeVal = isNaN(val) ? 0 : Math.max(0, Number(val.toFixed(2)));
+            window.appState.pantry[key] = { ...current, qty: safeVal };
             await saveKitchenChanges();
         };
 
         window.changePantryUnitOrLocation = async (key, field, value) => {
-            const current = window.getPantryEntry(key) || { qty: 1, unit: 'szt.', location: 'Spiżarnia' };
+            const current = window.getPantryEntry(key, true) || { qty: 0, unit: 'szt.', location: 'Spiżarnia' };
             window.appState.pantry[key] = { ...current, [field]: value };
             await saveKitchenChanges();
         };
 
         window.togglePantryItem = async (key) => {
-            const current = window.getPantryEntry(key);
+            const current = window.getPantryEntry(key, true);
             if (current) {
                 delete window.appState.pantry[key];
             } else {
@@ -1864,7 +2255,7 @@
                 const titleEl = document.querySelector('#recipe-detail-content h2');
                 if (titleEl) {
                     const rec = window.appState.recipes.find(r => r.title === titleEl.textContent);
-                    if (rec) openRecipeDetail(rec.id);
+                    if (rec) openRecipeDetail(rec.id, false);
                 }
             }
         };
@@ -1909,9 +2300,12 @@
             showToast(`❄️ Zapisano w zamrażarce: <strong>${capitalized}</strong> (${portions} porc.)`);
         };
 
-        window.freezeFromRecipe = async (recipeId) => {
-            const recipe = window.appState.recipes.find(r => r.id === recipeId);
+        window.freezeFromRecipe = async (recipeId, isPublic = false) => {
+            const recipe = isPublic
+                ? window.appState.publicRecipes.find(r => r.publicId === recipeId)
+                : window.appState.recipes.find(r => r.id === recipeId);
             if (!recipe) return;
+
             const defaultPortions = Math.max(1, Math.round((recipe.portions || 4) / 2));
             const existing = window.appState.freezer.find(m => window.stripDiacritics(m.name) === window.stripDiacritics(recipe.title));
 
@@ -1993,7 +2387,7 @@
             fullList.innerHTML = fullRecipes.length === 0
                 ? `<p class="text-sm text-slate-400 italic">Brak dań, do których macie 100% składników. Dodaj produkty powyżej lub kliknij pozycje poniżej.</p>`
                 : fullRecipes.map(({ recipe, metrics }) => `
-                    <div onclick="openRecipeDetail('${recipe.id}')" class="p-3 rounded-xl bg-emerald-950/30 border border-emerald-500/30 flex items-center justify-between cursor-pointer hover:bg-emerald-950/50 transition-colors">
+                    <div onclick="openRecipeDetail('${recipe.id}', false)" class="p-3 rounded-xl bg-emerald-950/30 border border-emerald-500/30 flex items-center justify-between cursor-pointer hover:bg-emerald-950/50 transition-colors">
                         <div>
                             <p class="text-sm font-bold text-white">${recipe.title}</p>
                             <p class="text-xs text-emerald-400">Wszystkie ${metrics.totalIngredients} składników w domu!</p>
@@ -2007,10 +2401,10 @@
                 : almostRecipes.map(({ recipe, metrics }) => `
                     <div class="p-3 rounded-xl bg-slate-900/90 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                         <div>
-                            <p onclick="openRecipeDetail('${recipe.id}')" class="text-sm font-bold text-white hover:text-amber-400 cursor-pointer">${recipe.title}</p>
+                            <p onclick="openRecipeDetail('${recipe.id}', false)" class="text-sm font-bold text-white hover:text-amber-400 cursor-pointer">${recipe.title}</p>
                             <p class="text-xs text-amber-400 mt-0.5">Brakuje: <strong>${metrics.missingIngredients.map(m => m.name).join(', ')}</strong></p>
                         </div>
-                        <button onclick="addMissingToShopping('${recipe.id}')" class="shrink-0 px-3 py-1.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 text-xs font-bold border border-amber-500/30">
+                        <button onclick="addMissingToShopping('${recipe.id}', false)" class="shrink-0 px-3 py-1.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 text-xs font-bold border border-amber-500/30">
                             + Do zakupów
                         </button>
                     </div>
@@ -2028,7 +2422,7 @@
                     <h4 class="text-sm font-bold uppercase tracking-wider text-slate-300 mb-3">${cat}</h4>
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
                         ${items.sort((a, b) => a.name.localeCompare(b.name)).map(item => {
-                            const entry = window.getPantryEntry(item.key);
+                            const entry = window.getPantryEntry(item.key, true);
                             if (!entry) {
                                 return `
                                 <button onclick="togglePantryItem('${item.key}')" class="px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-medium border bg-slate-900/90 text-slate-300 border-slate-700/80 hover:border-slate-500 transition-all flex items-center justify-between gap-2 text-left">
@@ -2037,12 +2431,13 @@
                                 </button>
                                 `;
                             }
+                            const isZero = entry.qty <= 0;
                             return `
-                            <div class="p-2.5 rounded-xl border bg-emerald-950/35 border-emerald-500/50 flex flex-col gap-2 shadow-sm">
+                            <div class="p-2.5 rounded-xl border ${isZero ? 'bg-slate-900/70 border-slate-700 opacity-80' : 'bg-emerald-950/35 border-emerald-500/50'} flex flex-col gap-2 shadow-sm">
                                 <div class="flex items-center justify-between gap-2">
-                                    <button onclick="togglePantryItem('${item.key}')" title="Usuń ze stanu" class="flex items-center gap-1.5 text-left min-w-0">
-                                        <span class="w-4 h-4 rounded bg-emerald-500 text-slate-950 font-bold text-[11px] flex items-center justify-center shrink-0">✓</span>
-                                        <span class="text-xs sm:text-sm font-bold text-emerald-200 truncate">${item.name}</span>
+                                    <button onclick="togglePantryItem('${item.key}')" title="Schowaj kafelek ze spiżarni" class="flex items-center gap-1.5 text-left min-w-0">
+                                        <span class="w-4 h-4 rounded ${isZero ? 'bg-slate-700 text-slate-400' : 'bg-emerald-500 text-slate-950'} font-bold text-[11px] flex items-center justify-center shrink-0">${isZero ? '0' : '✓'}</span>
+                                        <span class="text-xs sm:text-sm font-bold ${isZero ? 'text-slate-400' : 'text-emerald-200'} truncate">${item.name}</span>
                                     </button>
                                     <select onchange="changePantryUnitOrLocation('${item.key}', 'location', this.value)" class="px-1.5 py-0.5 rounded bg-slate-900 border border-slate-700 text-[10px] text-slate-300">
                                         <option value="Lodówka" ${entry.location === 'Lodówka' ? 'selected' : ''}>🧊 Lodówka</option>
@@ -2052,8 +2447,8 @@
                                 <div class="flex items-center justify-between gap-1.5 bg-slate-950/80 p-1 rounded-lg border border-slate-800">
                                     <button onclick="adjustPantryQuantity('${item.key}', -1)" class="w-7 h-7 rounded bg-slate-800 hover:bg-red-950/70 text-slate-200 hover:text-red-300 font-bold text-sm flex items-center justify-center">−</button>
                                     <div class="flex items-center gap-1">
-                                        <input type="number" step="0.1" value="${entry.qty}" onchange="setPantryQuantityDirect('${item.key}', this.value)" class="w-14 bg-transparent text-center text-xs font-mono font-bold text-white focus:outline-none">
-                                        <select onchange="changePantryUnitOrLocation('${item.key}', 'unit', this.value)" class="bg-slate-900 text-[11px] text-emerald-400 font-semibold rounded px-1 py-0.5 border border-slate-800">
+                                        <input type="number" step="0.1" min="0" value="${entry.qty}" onchange="setPantryQuantityDirect('${item.key}', this.value)" class="w-14 bg-transparent text-center text-xs font-mono font-bold ${isZero ? 'text-red-400' : 'text-white'} focus:outline-none">
+                                        <select onchange="changePantryUnitOrLocation('${item.key}', 'unit', this.value)" class="bg-slate-900 text-[11px] ${isZero ? 'text-slate-400' : 'text-emerald-400'} font-semibold rounded px-1 py-0.5 border border-slate-800">
                                             ${['szt.', 'g', 'kg', 'ml', 'l', 'opak.', 'puszka'].map(u => `<option value="${u}" ${entry.unit === u ? 'selected' : ''}>${u}</option>`).join('')}
                                         </select>
                                     </div>
@@ -2067,7 +2462,23 @@
             `).join('');
         };
 
-        // ================= CENNIK & SKANER PARAGONÓW =================
+        // ================= CENNIK & SKANER PARAGONÓW (Z FILTREM NIESPOŻYWCZYM) =================
+        const NON_FOOD_BLACKLIST = [
+            "reklamowka", "torba", "siatka", "worek", "worki", "papier toaletowy", "recznik papierowy",
+            "chusteczki", "mydlo", "szampon", "zel pod prysznic", "pasta do zebow", "szczoteczka",
+            "plyn do naczyn", "proszek do prania", "kapsulki do prania", "plyn do plukania", "domestos",
+            "gabka", "zmywak", "folia aluminiowa", "papier do pieczenia", "baterie", "zarowka",
+            "karma dla", "zwirek", "pieluchy", "pampers", "dezodorant", "krem do", "balsam",
+            "rabat", "opust", "kaucja", "butelka zwrotna", "opakowanie kaucja"
+        ];
+
+        function isFoodReceiptItem(item) {
+            if (!item || item.isFood === false) return false;
+            const normName = window.stripDiacritics(item.name || '');
+            if (!normName || normName.length < 2) return false;
+            return !NON_FOOD_BLACKLIST.some(bad => normName.includes(bad));
+        }
+
         function compressImageToBase64(file, maxDim = 1400, quality = 0.85) {
             return new Promise((resolve, reject) => {
                 const reader = new FileReader();
@@ -2098,7 +2509,7 @@
 
             const activeGeminiKey = window.appState.geminiApiKey;
             if (!activeGeminiKey) {
-                showToast("Wpisz swój klucz Gemini API w ustawieniach kuchni (Klucz AI), aby odczytywać paragony!", "warning");
+                showToast("Wpisz swój klucz Gemini API w ustawieniach kuchni (Nazwa & Klucz AI), aby odczytywać paragony!", "warning");
                 openKitchenModal();
                 event.target.value = '';
                 return;
@@ -2112,13 +2523,13 @@
                 const b64Image = await compressImageToBase64(file);
                 const existingNames = Object.values(window.appState.pricebook).map(i => `${i.name} (${i.unit})`).join(', ');
 
-                const prompt = `Przeanalizuj zdjęcie paragonu ze sklepu spożywczego (Lidl, Biedronka, Netto, Frisco).
-Wyciągnij WSZYSTKIE produkty spożywcze (pomiń reklamówki, chemię gospodarczą i rabaty jako osobne wiersze — jeśli pod produktem jest rabat/opust, odejmij go od ceny produktu).
+                const prompt = `Przeanalizuj zdjęcie paragonu ze sklepu (Lidl, Biedronka, Netto, Frisco itp.).
 BARDZO WAŻNE ZASADY:
-1. Jeśli kupiono wielosztuki (np. "3 x 5,50 = 16,50") lub wagę (np. "0,650 kg x 24,99 = 16,24"), pole "unitPrice" MUSI zawierać CENĘ ZA 1 JEDNOSTKĘ (czyli 5.50 za 1 puszkę/szt. lub 24.99 za 1 kg), a pole "purchasedQty" kupioną ilość (np. 3 lub 0.65)!
-2. Rozwiń skróty z paragonu na ładną polską nazwę i dopasuj do istniejącego cennika jeśli to ten sam produkt: [${existingNames}].
-3. Zwróć WYŁĄCZNIE poprawny JSON:
-[{"name": "Ananas w puszce", "unit": "1 puszka", "unitPrice": 5.50, "purchasedQty": 3, "pantryUnit": "puszka", "category": "Konserwy i słoiki", "store": "Lidl"}]`;
+1. IGNORUJ CAŁKOWICIE WSZYSTKIE PRODUKTY NIESPOŻYWCZE! Nie zwracaj reklamówek, toreb na zakupy, chemii gospodarczej, kosmetyków, środków czystości, papieru toaletowego, ręczników papierowych, karmy dla zwierząt, kaucji za butelki ani rabatów jako osobnych pozycji (jeśli pod produktem spożywczym jest rabat/opust, odejmij go od ceny tego produktu). Zwracaj WYŁĄCZNIE jedzenie, napoje i przyprawy kuchenne ("isFood": true).
+2. Jeśli kupiono wielosztuki (np. "3 x 5,50 = 16,50") lub wagę (np. "0,650 kg x 24,99 = 16,24"), pole "unitPrice" MUSI zawierać CENĘ ZA 1 JEDNOSTKĘ (czyli 5.50 za 1 puszkę/szt. lub 24.99 za 1 kg), a pole "purchasedQty" kupioną ilość (np. 3 lub 0.65)! Dla jajek (10 szt.) użyj "unit": "10 szt.".
+3. Rozwiń skróty z paragonu na ładną polską nazwę i dopasuj do istniejącego cennika jeśli to ten sam produkt: [${existingNames}].
+4. Zwróć WYŁĄCZNIE poprawny JSON:
+[{"name": "Ananas w puszce", "isFood": true, "unit": "1 puszka", "unitPrice": 5.50, "purchasedQty": 3, "pantryUnit": "puszka", "category": "Konserwy i słoiki", "store": "Lidl"}]`;
 
                 const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${activeGeminiKey}`, {
                     method: 'POST',
@@ -2139,20 +2550,31 @@ BARDZO WAŻNE ZASADY:
                     return;
                 }
 
-                window.appState.scannedReceiptItems = parsed.map((item, idx) => ({
-                    id: 'rcp_' + idx,
-                    selected: true,
-                    name: String(item.name || "Produkt").trim(),
-                    unit: item.unit || "1 szt.",
-                    unitPrice: Number(parseFloat(item.unitPrice || 0).toFixed(2)),
-                    purchasedQty: Number(parseFloat(item.purchasedQty || 1).toFixed(2)),
-                    pantryUnit: item.pantryUnit || "szt.",
-                    category: item.category || "Inne",
-                    store: item.store || "Paragon"
-                })).filter(i => i.unitPrice > 0);
+                const onlyFood = parsed.filter(isFoodReceiptItem);
+
+                window.appState.scannedReceiptItems = onlyFood.map((item, idx) => {
+                    const canonKey = window.normalizeKey(item.name || "Produkt");
+                    const isEggs = canonKey === 'jajka';
+                    return {
+                        id: 'rcp_' + idx,
+                        selected: true,
+                        name: isEggs ? 'Jajka' : String(item.name || "Produkt").trim(),
+                        unit: isEggs ? '10 szt.' : (item.unit || "1 szt."),
+                        unitPrice: Number(parseFloat(item.unitPrice || 0).toFixed(2)),
+                        purchasedQty: Number(parseFloat(item.purchasedQty || 1).toFixed(2)),
+                        pantryUnit: item.pantryUnit || "szt.",
+                        category: item.category || "Inne",
+                        store: item.store || "Paragon"
+                    };
+                }).filter(i => i.unitPrice > 0);
 
                 renderScannedReceiptReview();
-                showToast(`Odczytano ${window.appState.scannedReceiptItems.length} pozycji z paragonu!`);
+                const skippedCount = parsed.length - window.appState.scannedReceiptItems.length;
+                showToast(
+                    skippedCount > 0
+                        ? `Odczytano ${window.appState.scannedReceiptItems.length} produktów spożywczych (pominięto ${skippedCount} niespożywczych)!`
+                        : `Odczytano ${window.appState.scannedReceiptItems.length} produktów spożywczych z paragonu!`
+                );
             } catch (err) {
                 console.error("Błąd skanera paragonu:", err);
                 showToast("Nie udało się odczytać paragonu. Sprawdź czy zdjęcie jest wyraźne i czy klucz Gemini API jest poprawny.", "error");
@@ -2197,7 +2619,7 @@ BARDZO WAŻNE ZASADY:
                     </div>
                     <div class="flex items-center gap-2 shrink-0">
                         <select onchange="updateScannedReceiptField(${idx}, 'unit', this.value)" class="px-2 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-xs text-slate-200">
-                            ${['1 szt.', '1 puszka', '1 kg', '1 opak.', '1 l', '500 g'].map(u => `<option value="${u}" ${item.unit === u ? 'selected' : ''}>${u}</option>`).join('')}
+                            ${['1 szt.', '10 szt.', '1 puszka', '1 kg', '1 opak.', '1 l', '500 g'].map(u => `<option value="${u}" ${item.unit === u ? 'selected' : ''}>${u}</option>`).join('')}
                         </select>
                         <input type="number" step="0.01" value="${item.unitPrice.toFixed(2)}" onchange="updateScannedReceiptField(${idx}, 'unitPrice', parseFloat(this.value))" class="w-24 px-2.5 py-1.5 rounded-lg bg-slate-900 border border-emerald-500/50 text-xs font-mono font-bold text-emerald-400 text-right">
                         <span class="text-xs text-slate-400">zł</span>
@@ -2228,10 +2650,11 @@ BARDZO WAŻNE ZASADY:
             selected.forEach(item => {
                 const key = window.normalizeKey(item.name);
                 const existing = window.appState.pricebook[key];
+                const finalUnit = key === 'jajka' ? '10 szt.' : item.unit;
 
                 window.appState.pricebook[key] = {
-                    name: item.name,
-                    unit: item.unit,
+                    name: key === 'jajka' ? 'Jajka' : item.name,
+                    unit: finalUnit,
                     category: existing ? existing.category : item.category,
                     price: Number(item.unitPrice.toFixed(2)),
                     basePrice: Number(item.unitPrice.toFixed(2)),
@@ -2241,7 +2664,7 @@ BARDZO WAŻNE ZASADY:
                 };
 
                 if (alsoAddToPantry) {
-                    const prevPantry = window.getPantryEntry(key);
+                    const prevPantry = window.getPantryEntry(key, true);
                     const isFridge = item.category === 'Lodówka i mrożonki' || item.category === 'Mięso i świeże';
                     if (prevPantry && prevPantry.unit === item.pantryUnit) {
                         window.appState.pantry[key] = {
@@ -2281,10 +2704,11 @@ BARDZO WAŻNE ZASADY:
 
             const fixed = localSpellFixAndKeywords(rawName);
             const key = window.normalizeKey(fixed.fixedName);
+            const chosenUnit = key === 'jajka' ? '10 szt.' : unitEl.value;
 
             window.appState.pricebook[key] = {
-                name: fixed.fixedName,
-                unit: unitEl.value,
+                name: key === 'jajka' ? 'Jajka' : fixed.fixedName,
+                unit: chosenUnit,
                 category: catEl.value,
                 price: Number(price.toFixed(2)),
                 basePrice: Number(price.toFixed(2)),
@@ -2296,7 +2720,7 @@ BARDZO WAŻNE ZASADY:
             await saveKitchenChanges();
             nameEl.value = '';
             priceEl.value = '';
-            showToast(`Dodano do Cennika: <strong>${fixed.fixedName}</strong> (${price.toFixed(2)} zł / ${unitEl.value})`);
+            showToast(`Dodano do Cennika: <strong>${fixed.fixedName}</strong> (${price.toFixed(2)} zł / ${chosenUnit})`);
         };
 
         window.updateIngredientPrice = async (key, newVal) => {
@@ -2315,7 +2739,7 @@ BARDZO WAŻNE ZASADY:
         window.updateIngredientUnit = async (key, newUnit) => {
             const item = window.appState.pricebook[key];
             if (!item) return;
-            item.unit = newUnit;
+            item.unit = key === 'jajka' ? '10 szt.' : newUnit;
             await saveKitchenChanges();
         };
 
@@ -2340,7 +2764,10 @@ BARDZO WAŻNE ZASADY:
                 return;
             }
 
-            list.innerHTML = entries.map(([key, item]) => `
+            list.innerHTML = entries.map(([key, item]) => {
+                const isEggs = key === 'jajka';
+                const unitDisplay = isEggs ? '10 szt.' : (item.unit || '1 szt.');
+                return `
                 <div class="p-3.5 rounded-xl border bg-slate-900/90 border-slate-800 hover:border-slate-700 transition-all flex items-center justify-between gap-3">
                     <div class="min-w-0">
                         <div class="flex items-center gap-2">
@@ -2350,15 +2777,19 @@ BARDZO WAŻNE ZASADY:
                         <p class="text-[11px] text-slate-400 mt-0.5">${item.category || 'Inne'}</p>
                     </div>
                     <div class="flex items-center gap-1.5 shrink-0">
-                        <select onchange="updateIngredientUnit('${key}', this.value)" class="px-2 py-1.5 rounded-lg bg-slate-950 border border-slate-700 text-xs text-slate-300">
-                            ${['1 szt.', '1 puszka', '1 kg', '1 opak.', '1 l', '500 g', '450 g', '400 g', '300 g', '10 szt.', '1 słoik', '1 but.'].map(u => `<option value="${u}" ${(item.unit || '1 szt.') === u ? 'selected' : ''}>${u}</option>`).join('')}
-                        </select>
+                        ${isEggs
+                            ? `<span class="px-2.5 py-1.5 rounded-lg bg-slate-950 border border-slate-700 text-xs font-bold text-amber-300">10 szt.</span>`
+                            : `<select onchange="updateIngredientUnit('${key}', this.value)" class="px-2 py-1.5 rounded-lg bg-slate-950 border border-slate-700 text-xs text-slate-300">
+                                ${['1 szt.', '10 szt.', '1 puszka', '1 kg', '1 opak.', '1 l', '500 g', '450 g', '400 g', '300 g', '1 słoik', '1 but.'].map(u => `<option value="${u}" ${unitDisplay === u ? 'selected' : ''}>${u}</option>`).join('')}
+                               </select>`
+                        }
                         <input type="number" step="0.01" value="${Number(item.price ?? item.basePrice ?? 0).toFixed(2)}" onchange="updateIngredientPrice('${key}', this.value)" class="w-24 px-2.5 py-1.5 rounded-lg bg-slate-950 border border-emerald-500/40 text-xs text-emerald-400 font-bold text-right font-mono">
                         <span class="text-xs text-slate-400">zł</span>
                         <button onclick="deletePricebookItem('${key}')" title="Usuń z cennika" class="p-1.5 text-slate-500 hover:text-red-400 text-xs">✕</button>
                     </div>
                 </div>
-            `).join('');
+                `;
+            }).join('');
         };
 
         // ================= RADAR & WERYFIKACJA SCRAPERA =================
@@ -2441,8 +2872,8 @@ BARDZO WAŻNE ZASADY:
                     </div>
                     <div class="flex items-center gap-2 shrink-0">
                         <input type="number" step="0.01" id="verify-price-${key}" value="${detected.toFixed(2)}" class="w-24 px-2.5 py-1.5 rounded-lg bg-slate-950 border border-emerald-500/50 text-sm font-mono font-bold text-emerald-400 text-right">
-                        <button onclick="approveScraperItem('${prodKey.replace(/'/g, "\\'")}')" class="px-3.5 py-2 rounded-xl bg-emerald-500 text-slate-950 font-bold text-xs">✓ Cennik</button>
-                        <button onclick="rejectScraperItem('${prodKey.replace(/'/g, "\\'")}')" class="px-3 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs">✕</button>
+                        <button onclick="approveScraperItem('${prodKey.replace(/'/g, "'")}')" class="px-3.5 py-2 rounded-xl bg-emerald-500 text-slate-950 font-bold text-xs">✓ Cennik</button>
+                        <button onclick="rejectScraperItem('${prodKey.replace(/'/g, "'")}')" class="px-3 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs">✕</button>
                     </div>
                 </div>
                 `;
@@ -2460,8 +2891,8 @@ BARDZO WAŻNE ZASADY:
             if (!isNaN(finalPrice) && finalPrice > 0) {
                 const existing = window.appState.pricebook[key];
                 window.appState.pricebook[key] = {
-                    name: prodName,
-                    unit: existing ? existing.unit : "1 szt.",
+                    name: key === 'jajka' ? 'Jajka' : prodName,
+                    unit: key === 'jajka' ? '10 szt.' : (existing ? existing.unit : "1 szt."),
                     category: existing ? existing.category : "Inne",
                     price: Number(finalPrice.toFixed(2)),
                     basePrice: Number(finalPrice.toFixed(2)),
@@ -2493,21 +2924,21 @@ BARDZO WAŻNE ZASADY:
             showToast("Wyczyszczono poczekalnię.");
         };
 
-        // ================= OBLICZENIA I PRZEPISY (Z WALIDACJĄ ILOŚCI W SPIŻARNI) =================
+        // ================= OBLICZENIA I PRZEPISY (LOKALNE + SPOŁECZNOŚĆ) =================
         function calculateRecipeMetrics(recipe) {
             let currentTotal = 0;
             let missingIngredients = [];
             let ownedCount = 0;
 
-            recipe.ingredients.forEach(ing => {
+            (recipe.ingredients || []).forEach(ing => {
                 const key = window.normalizeKey(ing.name);
                 const pbItem = window.appState.pricebook[key];
-                const activeP = pbItem ? Number(pbItem.price ?? pbItem.basePrice ?? ing.price) : Number(ing.price);
+                const activeP = calculateIngredientCostFromPricebook(ing, pbItem);
                 currentTotal += activeP;
 
-                const pantryEntry = window.getPantryEntry(key);
+                const pantryEntry = window.getPantryEntry(key, false);
                 if (!pantryEntry) {
-                    missingIngredients.push({ ...ing, activePrice: activeP, reason: 'brak w spiżarni' });
+                    missingIngredients.push({ ...ing, activePrice: activeP, reason: 'brak w spiżarni (stan: 0)' });
                 } else {
                     const req = parseQuantityString(ing.amount);
                     const have = parseQuantityString(`${pantryEntry.qty} ${pantryEntry.unit}`);
@@ -2531,7 +2962,7 @@ BARDZO WAŻNE ZASADY:
                 currentTotal,
                 missingIngredients,
                 ownedCount,
-                totalIngredients: recipe.ingredients.length,
+                totalIngredients: (recipe.ingredients || []).length,
                 isReadyFromPantry: missingIngredients.length === 0,
                 isAlmostReady: missingIngredients.length > 0 && missingIngredients.length <= 2,
                 avgRating,
@@ -2555,12 +2986,32 @@ BARDZO WAŻNE ZASADY:
             const query = document.getElementById('recipe-search').value.toLowerCase().trim();
             const filter = window.appState.currentFilter;
 
-            let enriched = window.appState.recipes.map(r => ({ recipe: r, metrics: calculateRecipeMetrics(r) }));
+            const localRecs = (window.appState.recipes || []).map(r => ({
+                ...r,
+                isPublicCommunity: false,
+                sharedPublicDocId: `${window.appState.kitchenCode}_${r.id}`
+            }));
+
+            // Przepisy z innych kuchni (pomijamy własne, bo już są w localRecs)
+            const otherCommunityRecs = (window.appState.publicRecipes || [])
+                .filter(p => p.sourceKitchen !== window.appState.kitchenCode)
+                .map(p => ({ ...p, id: p.publicId, isPublicCommunity: true }));
+
+            const commCountEl = document.getElementById('chip-community-count');
+            if (commCountEl) commCountEl.textContent = otherCommunityRecs.length;
+
+            let combined = filter === 'community'
+                ? otherCommunityRecs
+                : [...localRecs, ...otherCommunityRecs];
+
+            let enriched = combined.map(r => ({ recipe: r, metrics: calculateRecipeMetrics(r) }));
 
             if (query) {
                 enriched = enriched.filter(({ recipe }) =>
                     recipe.title.toLowerCase().includes(query) ||
-                    recipe.ingredients.some(i => i.name.toLowerCase().includes(query))
+                    (recipe.sharedBy || '').toLowerCase().includes(query) ||
+                    (recipe.originalAuthor || '').toLowerCase().includes(query) ||
+                    (recipe.ingredients || []).some(i => i.name.toLowerCase().includes(query))
                 );
             }
             if (filter === 'pantry') enriched = enriched.filter(({ metrics }) => metrics.isReadyFromPantry || metrics.isAlmostReady);
@@ -2579,20 +3030,32 @@ BARDZO WAŻNE ZASADY:
                 return;
             }
 
-            grid.innerHTML = enriched.map(({ recipe, metrics }) => `
-                <div class="bg-[#1e293b] rounded-2xl border ${metrics.isReadyFromPantry ? 'border-teal-500/40' : 'border-slate-800'} p-5 flex flex-col justify-between transition-all hover:border-slate-600">
+            grid.innerHTML = enriched.map(({ recipe, metrics }) => {
+                const isPublic = !!recipe.isPublicCommunity;
+                const isAlreadySharedByMe = !isPublic && (window.appState.publicRecipes || []).some(p => p.publicId === recipe.sharedPublicDocId);
+                const authorTag = isPublic
+                    ? `<span class="px-2.5 py-0.5 rounded-md bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 text-[11px] font-bold">🌍 Od: ${recipe.sharedBy || 'Inna kuchnia'}</span>`
+                    : isAlreadySharedByMe
+                    ? `<span class="px-2.5 py-0.5 rounded-md bg-sky-500/20 text-sky-300 text-[11px] font-bold">🌍 Udostępniony</span>`
+                    : recipe.originalAuthor
+                    ? `<span class="px-2.5 py-0.5 rounded-md bg-indigo-500/15 text-indigo-300 text-[11px] font-medium">📥 Od: ${recipe.originalAuthor}</span>`
+                    : '';
+
+                return `
+                <div class="bg-[#1e293b] rounded-2xl border ${isPublic ? 'border-indigo-500/40' : metrics.isReadyFromPantry ? 'border-teal-500/40' : 'border-slate-800'} p-5 flex flex-col justify-between transition-all hover:border-slate-600">
                     <div>
                         <div class="flex flex-wrap items-center gap-1.5 mb-3">
                             <span class="px-2.5 py-0.5 rounded-md bg-slate-800 text-slate-300 text-[11px] font-medium">${recipe.category || 'Obiad'}</span>
+                            ${authorTag}
                             ${metrics.isReadyFromPantry ? `<span class="px-2.5 py-0.5 rounded-md bg-teal-500/20 text-teal-300 text-[11px] font-bold">✅ Masz 100% w domu</span>` : ''}
                             ${metrics.avgRating ? `<span class="px-2.5 py-0.5 rounded-md bg-amber-500/20 text-amber-400 text-[11px] font-bold">⭐ ${metrics.avgRating}</span>` : ''}
                         </div>
 
-                        <h3 onclick="openRecipeDetail('${recipe.id}')" class="text-lg font-bold text-white hover:text-emerald-400 cursor-pointer transition-colors leading-snug">${recipe.title}</h3>
+                        <h3 onclick="openRecipeDetail('${recipe.id}', ${isPublic})" class="text-lg font-bold text-white hover:text-emerald-400 cursor-pointer transition-colors leading-snug">${recipe.title}</h3>
 
                         <div class="mt-4 pt-3 border-t border-slate-800/80 grid grid-cols-2 gap-2 text-xs">
                             <div>
-                                <span class="text-slate-400 block">Koszt wg Cennika:</span>
+                                <span class="text-slate-400 block">Koszt wg Twojego Cennika:</span>
                                 <span class="text-base font-extrabold text-white mt-0.5 block">${metrics.currentTotal.toFixed(2)} zł</span>
                             </div>
                             <div>
@@ -2605,39 +3068,56 @@ BARDZO WAŻNE ZASADY:
 
                         <div class="mt-3 text-xs">
                             <div class="flex justify-between text-slate-400 mb-1">
-                                <span>W spiżarni: ${metrics.ownedCount}/${metrics.totalIngredients}</span>
+                                <span>W Twojej spiżarni: ${metrics.ownedCount}/${metrics.totalIngredients}</span>
                                 <span>${metrics.missingIngredients.length === 0 ? 'Komplet!' : `Brakuje: ${metrics.missingIngredients.length}`}</span>
                             </div>
                             <div class="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
-                                <div class="h-full bg-emerald-500 rounded-full" style="width: ${Math.round((metrics.ownedCount / metrics.totalIngredients) * 100)}%"></div>
+                                <div class="h-full bg-emerald-500 rounded-full" style="width: ${metrics.totalIngredients > 0 ? Math.round((metrics.ownedCount / metrics.totalIngredients) * 100) : 0}%"></div>
                             </div>
                         </div>
                     </div>
 
                     <div class="mt-5 pt-3 border-t border-slate-800 flex items-center gap-2">
-                        <button onclick="openRecipeDetail('${recipe.id}')" class="flex-1 py-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold transition-colors">Przepis</button>
+                        <button onclick="openRecipeDetail('${recipe.id}', ${isPublic})" class="flex-1 py-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold transition-colors">Przepis</button>
                         ${metrics.missingIngredients.length > 0 ? `
-                            <button onclick="addMissingToShopping('${recipe.id}')" class="py-2 px-3 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-400 border border-emerald-500/30 text-xs font-semibold transition-colors">
+                            <button onclick="addMissingToShopping('${recipe.id}', ${isPublic})" class="py-2 px-3 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-400 border border-emerald-500/30 text-xs font-semibold transition-colors">
                                 + Zakupy (${metrics.missingIngredients.length})
                             </button>
                         ` : ''}
-                        <button onclick="openReviewModal('${recipe.id}')" class="py-2 px-3 rounded-xl ${metrics.isReadyFromPantry ? 'bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border-amber-500/40' : 'bg-slate-800/80 text-slate-400 border-slate-700'} border text-xs font-semibold transition-colors">
-                            ${metrics.isReadyFromPantry ? '🍳 Ugotuj' : '🔒 Brak zapasów'}
-                        </button>
+                        ${isPublic
+                            ? `<button onclick="saveCommunityRecipeToMyKitchen('${recipe.publicId}')" title="Zapisz kopię przepisu w swojej kuchni" class="py-2 px-3 rounded-xl bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 border border-indigo-500/40 text-xs font-semibold transition-colors">📥 Zapisz u siebie</button>`
+                            : `<button onclick="openReviewModal('${recipe.id}', false)" class="py-2 px-3 rounded-xl ${metrics.isReadyFromPantry ? 'bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border-amber-500/40' : 'bg-slate-800/80 text-slate-400 border-slate-700'} border text-xs font-semibold transition-colors">
+                                ${metrics.isReadyFromPantry ? '🍳 Ugotuj' : '🔒 Brak zapasów'}
+                               </button>`
+                        }
                     </div>
                 </div>
-            `).join('');
+                `;
+            }).join('');
         };
 
-        window.openRecipeDetail = (recipeId) => {
-            const recipe = window.appState.recipes.find(r => r.id === recipeId);
+        window.openRecipeDetail = (recipeId, isPublic = false) => {
+            const recipe = isPublic
+                ? (window.appState.publicRecipes || []).find(r => r.publicId === recipeId)
+                : (window.appState.recipes || []).find(r => r.id === recipeId);
             if (!recipe) return;
+
             const metrics = calculateRecipeMetrics(recipe);
             const recipeReviews = window.appState.reviews.filter(r => r.recipeId === recipe.id || r.recipeTitle === recipe.title);
+            const publicDocId = isPublic ? recipe.publicId : `${window.appState.kitchenCode}_${recipe.id}`;
+            const isSharedByMe = !isPublic && (window.appState.publicRecipes || []).some(p => p.publicId === publicDocId);
 
             document.getElementById('recipe-detail-content').innerHTML = `
                 <div class="pr-8">
-                    <span class="px-2.5 py-1 rounded-md bg-emerald-500/15 text-emerald-400 text-xs font-bold">${recipe.category || 'Obiad'}</span>
+                    <div class="flex flex-wrap items-center gap-2">
+                        <span class="px-2.5 py-1 rounded-md bg-emerald-500/15 text-emerald-400 text-xs font-bold">${recipe.category || 'Obiad'}</span>
+                        ${isPublic
+                            ? `<span class="px-2.5 py-1 rounded-md bg-indigo-500/20 text-indigo-300 text-xs font-bold">🌍 Udostępniony przez: ${recipe.sharedBy || 'Inna kuchnia'}</span>`
+                            : isSharedByMe
+                            ? `<span class="px-2.5 py-1 rounded-md bg-sky-500/20 text-sky-300 text-xs font-bold">🌍 Widoczny dla innych kuchni jako: ${window.appState.kitchenLabel}</span>`
+                            : ''
+                        }
+                    </div>
                     <h2 class="text-2xl font-extrabold text-white mt-2">${recipe.title}</h2>
                     <div class="flex flex-wrap gap-4 text-xs text-slate-400 mt-2">
                         <span>⏱️ Czas: <strong class="text-slate-200">${recipe.time || 25} min</strong></span>
@@ -2649,27 +3129,28 @@ BARDZO WAŻNE ZASADY:
                 <div class="mt-6">
                     <div class="flex items-center justify-between mb-2">
                         <h4 class="text-sm font-bold uppercase tracking-wider text-slate-300">Składniki (kliknij, aby przełączyć w spiżarni)</h4>
-                        ${metrics.missingIngredients.length > 0 ? `<button onclick="addMissingToShopping('${recipe.id}')" class="text-xs font-bold text-emerald-400 hover:underline">+ Dodaj brakujące do zakupów</button>` : ''}
+                        ${metrics.missingIngredients.length > 0 ? `<button onclick="addMissingToShopping('${recipeId}', ${isPublic})" class="text-xs font-bold text-emerald-400 hover:underline">+ Dodaj brakujące do zakupów</button>` : ''}
                     </div>
                     <div class="space-y-2">
-                        ${recipe.ingredients.map(ing => {
+                        ${(recipe.ingredients || []).map(ing => {
                             const key = window.normalizeKey(ing.name);
-                            const pantryEntry = window.getPantryEntry(key);
+                            const pantryEntry = window.getPantryEntry(key, true);
+                            const hasPositive = pantryEntry && pantryEntry.qty > 0;
                             const isMissingThis = metrics.missingIngredients.some(m => m.name === ing.name);
-                            const inPantry = !!pantryEntry && !isMissingThis;
+                            const inPantry = hasPositive && !isMissingThis;
                             const pb = window.appState.pricebook[key];
-                            const price = pb ? Number(pb.price ?? pb.basePrice ?? ing.price) : Number(ing.price);
+                            const portionPrice = calculateIngredientCostFromPricebook(ing, pb);
                             return `
-                            <div onclick="togglePantryItem('${key}')" class="flex items-center justify-between p-2.5 rounded-xl border cursor-pointer transition-all ${inPantry ? 'bg-emerald-950/30 border-emerald-500/40' : pantryEntry ? 'bg-amber-950/25 border-amber-500/40' : 'bg-slate-900/80 border-slate-800 hover:border-slate-700'}">
+                            <div onclick="togglePantryItem('${key}')" class="flex items-center justify-between p-2.5 rounded-xl border cursor-pointer transition-all ${inPantry ? 'bg-emerald-950/30 border-emerald-500/40' : hasPositive ? 'bg-amber-950/25 border-amber-500/40' : 'bg-slate-900/80 border-slate-800 hover:border-slate-700'}">
                                 <div class="flex items-center gap-2.5 flex-wrap">
-                                    <span class="w-5 h-5 rounded-md flex items-center justify-center text-xs ${inPantry ? 'bg-emerald-500 text-slate-950 font-bold' : pantryEntry ? 'bg-amber-500 text-slate-950 font-bold' : 'bg-slate-800 text-slate-500'}">${inPantry ? '✓' : pantryEntry ? '!' : ''}</span>
+                                    <span class="w-5 h-5 rounded-md flex items-center justify-center text-xs ${inPantry ? 'bg-emerald-500 text-slate-950 font-bold' : hasPositive ? 'bg-amber-500 text-slate-950 font-bold' : 'bg-slate-800 text-slate-500'}">${inPantry ? '✓' : hasPositive ? '!' : ''}</span>
                                     <span class="text-sm font-medium ${inPantry ? 'text-emerald-200' : 'text-slate-200'}">${ing.name}</span>
                                     <span class="text-xs text-slate-400">(${ing.amount})</span>
-                                    ${pantryEntry ? `<span class="text-[11px] px-2 py-0.5 rounded ${inPantry ? 'bg-emerald-500/20 text-emerald-300' : 'bg-amber-500/20 text-amber-300'} font-mono">W domu: ${pantryEntry.qty} ${pantryEntry.unit}</span>` : ''}
+                                    ${pantryEntry ? `<span class="text-[11px] px-2 py-0.5 rounded ${inPantry ? 'bg-emerald-500/20 text-emerald-300' : hasPositive ? 'bg-amber-500/20 text-amber-300' : 'bg-red-500/20 text-red-300'} font-mono">W domu: ${pantryEntry.qty} ${pantryEntry.unit}</span>` : ''}
                                 </div>
                                 <div class="text-right shrink-0">
-                                    <span class="text-xs font-bold text-slate-300">${price.toFixed(2)} zł</span>
-                                    ${pb && pb.unit ? `<span class="block text-[10px] text-slate-500">za ${pb.unit}</span>` : ''}
+                                    <span class="text-xs font-bold text-slate-300">${portionPrice.toFixed(2)} zł</span>
+                                    ${pb && pb.unit ? `<span class="block text-[10px] text-slate-500">(${Number(pb.price).toFixed(2)} zł / ${pb.unit})</span>` : ''}
                                 </div>
                             </div>
                             `;
@@ -2702,12 +3183,23 @@ BARDZO WAŻNE ZASADY:
                 ` : ''}
 
                 <div class="mt-6 pt-4 border-t border-slate-800 flex flex-wrap justify-between items-center gap-3">
-                    <button onclick="deleteRecipe('${recipe.id}')" class="px-3.5 py-2.5 rounded-xl bg-red-950/40 hover:bg-red-900/60 text-red-400 text-xs font-semibold">Usuń przepis</button>
                     <div class="flex flex-wrap gap-2">
-                        <button onclick="freezeFromRecipe('${recipe.id}')" class="px-4 py-2.5 rounded-xl bg-sky-500/20 hover:bg-sky-500/30 text-sky-300 border border-sky-500/30 font-bold text-xs sm:text-sm">❄️ Zamroź porcje</button>
+                        ${!isPublic ? `
+                            <button onclick="deleteRecipe('${recipe.id}')" class="px-3.5 py-2.5 rounded-xl bg-red-950/40 hover:bg-red-900/60 text-red-400 text-xs font-semibold">Usuń przepis</button>
+                            ${isSharedByMe
+                                ? `<button onclick="unshareRecipeFromCommunity('${publicDocId}', '${recipe.id}')" class="px-3.5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-500/30 text-xs font-semibold">🔒 Cofnij udostępnienie</button>`
+                                : `<button onclick="shareRecipeToCommunity('${recipe.id}')" class="px-3.5 py-2.5 rounded-xl bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 border border-indigo-500/40 text-xs font-bold">🌍 Udostępnij innym kuchniom</button>`
+                            }
+                        ` : `
+                            <button onclick="saveCommunityRecipeToMyKitchen('${recipe.publicId}')" class="px-4 py-2.5 rounded-xl bg-indigo-500 hover:bg-indigo-400 text-white text-xs font-bold">📥 Zapisz u siebie w kuchni</button>
+                        `}
+                    </div>
+
+                    <div class="flex flex-wrap gap-2">
+                        <button onclick="freezeFromRecipe('${recipeId}', ${isPublic})" class="px-4 py-2.5 rounded-xl bg-sky-500/20 hover:bg-sky-500/30 text-sky-300 border border-sky-500/30 font-bold text-xs sm:text-sm">❄️ Zamroź porcje</button>
                         ${metrics.isReadyFromPantry
-                            ? `<button onclick="closeModal('modal-recipe-detail'); openReviewModal('${recipe.id}')" class="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs sm:text-sm">🍳 Ugotowane! Odejmij ze spiżarni i oceń</button>`
-                            : `<button onclick="addMissingToShopping('${recipe.id}')" title="Uzupełnij brakujące składniki w spiżarni, aby ugotować" class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-500/40 font-bold text-xs sm:text-sm">🔒 Brakuje ${metrics.missingIngredients.length} składników (+ Zakupy)</button>`
+                            ? `<button onclick="closeModal('modal-recipe-detail'); openReviewModal('${recipeId}', ${isPublic})" class="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs sm:text-sm">🍳 Ugotowane! Odejmij ze spiżarni i oceń</button>`
+                            : `<button onclick="addMissingToShopping('${recipeId}', ${isPublic})" title="Uzupełnij brakujące składniki w spiżarni, aby ugotować" class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-500/40 font-bold text-xs sm:text-sm">🔒 Brakuje ${metrics.missingIngredients.length} składników (+ Zakupy)</button>`
                         }
                     </div>
                 </div>
@@ -2749,14 +3241,18 @@ BARDZO WAŻNE ZASADY:
             const data = await proxyResp.json();
             const docParser = new DOMParser().parseFromString(data.contents || "", "text/html");
             docParser.querySelectorAll("script, style, nav, footer, header, aside").forEach(el => el.remove());
-            const cleanText = (docParser.body?.innerText || "").replace(/\n{3,}/g, "\n\n").trim();
+            const cleanText = (docParser.body?.innerText || "").replace(/
+{3,}/g, "
+
+").trim();
             if (cleanText.length < 100) throw new Error("Strona jest pusta lub zablokowana.");
             return cleanText.slice(0, 15000);
         }
 
         function parseRecipeLocallyFromText(rawText) {
             const lines = rawText
-                .split('\n')
+                .split('
+')
                 .map(l => l.replace(/^#+\s*/, '').replace(/^\*+\s*/, '').replace(/^-\s*/, '').trim())
                 .filter(l => l && !l.startsWith('Title:') && !l.startsWith('URL Source:') && !l.startsWith('Markdown Content:') && !l.startsWith('Źródło:') && !l.startsWith('!['));
 
@@ -2777,7 +3273,7 @@ BARDZO WAŻNE ZASADY:
 
             if (ingLines.length === 0) {
                 for (const line of lines.slice(1, 35)) {
-                    if (line.length < 75 && /\b(\d+\s*(g|kg|ml|l|szt|łyżk|łyżeczk|szklank|puszk|ząbk|opak))\b/i.test(line)) ingLines.push(line);
+                    if (line.length < 75 && /(\d+\s*(g|kg|ml|l|szt|łyżk|łyżeczk|szklank|puszk|ząbk|opak))/i.test(line)) ingLines.push(line);
                 }
             }
 
@@ -2794,8 +3290,10 @@ BARDZO WAŻNE ZASADY:
             const formattedSteps = stepLines.length > 0 ? stepLines.slice(0, 12) : lines.slice(1, 8).filter(l => l.length > 25);
             return {
                 title,
-                ingredientsText: formattedIngredients.join('\n'),
-                stepsText: (formattedSteps.length > 0 ? formattedSteps : ["Przygotuj składniki według opisu ze strony."]).join('\n')
+                ingredientsText: formattedIngredients.join('
+'),
+                stepsText: (formattedSteps.length > 0 ? formattedSteps : ["Przygotuj składniki według opisu ze strony."]).join('
+')
             };
         }
 
@@ -2814,7 +3312,9 @@ BARDZO WAŻNE ZASADY:
 
             try {
                 const pageContent = await fetchWebpageReadableText(rawUrl);
-                document.getElementById('ai-recipe-prompt').value = `Źródło: ${rawUrl}\n\n${pageContent}`;
+                document.getElementById('ai-recipe-prompt').value = `Źródło: ${rawUrl}
+
+${pageContent}`;
                 showToast("Pobrano treść przepisu ze strony! Przetwarzam...");
                 await generateRecipeWithAI();
                 urlInput.value = '';
@@ -2828,6 +3328,7 @@ BARDZO WAŻNE ZASADY:
 
         window.generateRecipeWithAI = async () => {
             const promptText = document.getElementById('ai-recipe-prompt').value.trim();
+            const sharePublic = document.getElementById('ai-recipe-share-public').checked;
             if (!promptText) {
                 showToast("Wklej link, wpisz nazwę dania lub wklej przepis!", "warning");
                 return;
@@ -2851,6 +3352,7 @@ BARDZO WAŻNE ZASADY:
                     document.getElementById('man-title').value = parsedLocal.title;
                     document.getElementById('man-ingredients').value = parsedLocal.ingredientsText;
                     document.getElementById('man-steps').value = parsedLocal.stepsText;
+                    document.getElementById('man-recipe-share-public').checked = sharePublic;
                     setAddRecipeMode('manual');
                     showToast("Lokalny parser wyodrębnił tytuł, składniki i kroki! Sprawdź je i kliknij Zapisz Przepis.");
                     return;
@@ -2858,7 +3360,7 @@ BARDZO WAŻNE ZASADY:
 
                 const payload = {
                     contents: [{ parts: [{ text: promptText }] }],
-                    systemInstruction: { parts: [{ text: "Jesteś polskim szefem kuchni. Wyciągnij lub stwórz ustrukturyzowany przepis po polsku na podstawie podanego tekstu/strony z realistycznymi cenami składników w zł." }] },
+                    systemInstruction: { parts: [{ text: "Jesteś polskim szefem kuchni. Wyciągnij lub stwórz ustrukturyzowany przepis po polsku na podstawie podanego tekstu/strony z realistycznymi cenami składników w zł. Używaj podstawowych polskich nazw składników (np. 'Jajka', 'Cebula', 'Ryż', 'Pierś z kurczaka')." }] },
                     generationConfig: {
                         responseMimeType: "application/json",
                         responseSchema: {
@@ -2898,15 +3400,20 @@ BARDZO WAŻNE ZASADY:
                 if (!jsonStr) throw new Error("Brak danych z AI");
 
                 const newRecipe = { id: 'rec_' + Date.now(), ...JSON.parse(jsonStr) };
-                await persistNewRecipe(newRecipe);
+                await persistNewRecipe(newRecipe, sharePublic);
                 document.getElementById('ai-recipe-prompt').value = '';
+                document.getElementById('ai-recipe-share-public').checked = false;
                 closeModal('modal-add-recipe');
-                showToast(`Dodano przepis przez AI: <strong>${newRecipe.title}</strong>!`);
+                showToast(sharePublic
+                    ? `Dodano przepis <strong>${newRecipe.title}</strong> i udostępniono go innym kuchniom!`
+                    : `Dodano przepis przez AI: <strong>${newRecipe.title}</strong>!`
+                );
             } catch (err) {
                 const parsedLocal = parseRecipeLocallyFromText(promptText);
                 document.getElementById('man-title').value = parsedLocal.title;
                 document.getElementById('man-ingredients').value = parsedLocal.ingredientsText;
                 document.getElementById('man-steps').value = parsedLocal.stepsText;
+                document.getElementById('man-recipe-share-public').checked = sharePublic;
                 setAddRecipeMode('manual');
                 showToast("Wypełniono formularz lokalnym parserem — kliknij Zapisz Przepis.", "warning");
             } finally {
@@ -2921,27 +3428,34 @@ BARDZO WAŻNE ZASADY:
             const category = document.getElementById('man-category').value;
             const time = Number(document.getElementById('man-time').value) || 25;
             const portions = Number(document.getElementById('man-portions').value) || 4;
-            const rawIngs = document.getElementById('man-ingredients').value.trim().split('\n');
-            const steps = document.getElementById('man-steps').value.trim().split('\n').filter(Boolean);
+            const rawIngs = document.getElementById('man-ingredients').value.trim().split('
+');
+            const steps = document.getElementById('man-steps').value.trim().split('
+').filter(Boolean);
+            const sharePublic = document.getElementById('man-recipe-share-public').checked;
 
             const ingredients = rawIngs.map(line => {
                 const parts = line.split('|').map(s => s.trim());
                 return { name: parts[0] || 'Składnik', amount: parts[1] || '1 porcja', price: parseFloat(parts[2]) || 3.00, cat: 'Inne' };
             });
 
-            await persistNewRecipe({ id: 'rec_' + Date.now(), title, category, time, portions, ingredients, steps });
+            const newRec = { id: 'rec_' + Date.now(), title, category, time, portions, ingredients, steps };
+            await persistNewRecipe(newRec, sharePublic);
             e.target.reset();
             closeModal('modal-add-recipe');
-            showToast(`Zapisano przepis: <strong>${title}</strong>`);
+            showToast(sharePublic
+                ? `Zapisano przepis <strong>${title}</strong> i udostępniono go innym kuchniom!`
+                : `Zapisano przepis: <strong>${title}</strong>`
+            );
         };
 
-        async function persistNewRecipe(recipeObj) {
+        async function persistNewRecipe(recipeObj, sharePublic = false) {
             recipeObj.ingredients.forEach(ing => {
                 const key = window.normalizeKey(ing.name);
                 if (!window.appState.pricebook[key]) {
                     window.appState.pricebook[key] = {
-                        name: ing.name,
-                        unit: "1 szt.",
+                        name: key === 'jajka' ? 'Jajka' : ing.name,
+                        unit: key === 'jajka' ? '10 szt.' : "1 szt.",
                         category: ing.cat || 'Inne',
                         price: ing.price,
                         basePrice: ing.price,
@@ -2953,6 +3467,10 @@ BARDZO WAŻNE ZASADY:
             });
             window.appState.recipes.unshift(recipeObj);
             await saveKitchenChanges();
+
+            if (sharePublic) {
+                await window.shareRecipeToCommunity(recipeObj.id);
+            }
         }
 
         window.deleteRecipe = async (recipeId) => {
@@ -2963,8 +3481,10 @@ BARDZO WAŻNE ZASADY:
         };
 
         // ================= LISTA ZAKUPÓW =================
-        window.addMissingToShopping = async (recipeId) => {
-            const recipe = window.appState.recipes.find(r => r.id === recipeId);
+        window.addMissingToShopping = async (recipeId, isPublic = false) => {
+            const recipe = isPublic
+                ? (window.appState.publicRecipes || []).find(r => r.publicId === recipeId)
+                : (window.appState.recipes || []).find(r => r.id === recipeId);
             if (!recipe) return;
             const metrics = calculateRecipeMetrics(recipe);
 
@@ -3027,7 +3547,7 @@ BARDZO WAŻNE ZASADY:
             checkedItems.forEach(item => {
                 const cleanName = item.baseName || item.name.replace(/\(.*?\)/g, '').trim();
                 const key = window.normalizeKey(cleanName);
-                const existing = window.getPantryEntry(key);
+                const existing = window.getPantryEntry(key, true);
                 window.appState.pantry[key] = existing
                     ? { ...existing, qty: Number((existing.qty + 1).toFixed(2)) }
                     : { qty: 1, unit: 'szt.', location: 'Spiżarnia' };
@@ -3086,8 +3606,10 @@ BARDZO WAŻNE ZASADY:
         };
 
         // ================= RECENZJE, WALIDACJA SPIŻARNI & ROZLICZENIE KOSZTÓW =================
-        window.openReviewModal = (recipeId) => {
-            const recipe = window.appState.recipes.find(r => r.id === recipeId);
+        window.openReviewModal = (recipeId, isPublic = false) => {
+            const recipe = isPublic
+                ? (window.appState.publicRecipes || []).find(r => r.publicId === recipeId)
+                : (window.appState.recipes || []).find(r => r.id === recipeId);
             if (!recipe) return;
             const metrics = calculateRecipeMetrics(recipe);
 
@@ -3117,7 +3639,7 @@ BARDZO WAŻNE ZASADY:
                 submitBtn.textContent = "Zatwierdź Ugotowanie i Odejmij ze Spiżarni";
             }
 
-            document.getElementById('review-recipe-id').value = recipe.id;
+            document.getElementById('review-recipe-id').value = isPublic ? `PUBLIC::${recipeId}` : recipe.id;
             document.getElementById('review-recipe-title').textContent = recipe.title;
             document.getElementById('review-cost').value = metrics.currentTotal.toFixed(2);
             document.getElementById('review-dinners').value = Math.max(1, Math.round((recipe.portions || 4) / 2));
@@ -3135,8 +3657,13 @@ BARDZO WAŻNE ZASADY:
 
         window.submitRecipeReview = async (e) => {
             e.preventDefault();
-            const recipeId = document.getElementById('review-recipe-id').value;
-            const recipe = window.appState.recipes.find(r => r.id === recipeId);
+            const rawId = document.getElementById('review-recipe-id').value;
+            const isPublic = rawId.startsWith('PUBLIC::');
+            const cleanId = isPublic ? rawId.replace('PUBLIC::', '') : rawId;
+
+            const recipe = isPublic
+                ? (window.appState.publicRecipes || []).find(r => r.publicId === cleanId)
+                : (window.appState.recipes || []).find(r => r.id === cleanId);
             if (!recipe) return;
 
             const metrics = calculateRecipeMetrics(recipe);
@@ -3154,7 +3681,7 @@ BARDZO WAŻNE ZASADY:
 
             window.appState.reviews.unshift({
                 id: 'rev_' + Date.now(),
-                recipeId,
+                recipeId: cleanId,
                 recipeTitle: recipe.title,
                 cost,
                 dinnersForTwo,
@@ -3261,7 +3788,7 @@ BARDZO WAŻNE ZASADY:
         }
 
         window.switchTab = (tabName) => {
-            ['recipes', 'pantry', 'pricebook', 'promos', 'verify', 'shopping', 'reviews'].forEach(t => {
+            ['recipes', 'pantry', 'pricebook', 'promos', 'verify', 'shopping', 'reviews', 'feedback'].forEach(t => {
                 const el = document.getElementById(`tab-${t}`);
                 if (el) el.classList.toggle('hidden', t !== tabName);
             });
@@ -3280,10 +3807,17 @@ BARDZO WAŻNE ZASADY:
             });
         };
 
-        window.openAddRecipeModal = () => document.getElementById('modal-add-recipe').classList.remove('hidden');
-        window.openKitchenModal = () => document.getElementById('modal-kitchen-code').classList.remove('hidden');
+        window.openAddRecipeModal = () => {
+            syncKitchenLabelsUI();
+            document.getElementById('modal-add-recipe').classList.remove('hidden');
+        };
+        window.openKitchenModal = () => {
+            syncKitchenLabelsUI();
+            document.getElementById('modal-kitchen-code').classList.remove('hidden');
+        };
         window.closeModal = (id) => document.getElementById(id).classList.add('hidden');
 
+        // Zapisuje nową widoczną nazwę kuchni, klucz AI oraz aktualizuje podpis autora w udostępnionych przepisach!
         window.saveKitchenAiSettings = async (e) => {
             e.preventDefault();
             const newLabel = document.getElementById('input-kitchen-label').value.trim() || "Wspólna Kuchnia";
@@ -3292,10 +3826,25 @@ BARDZO WAŻNE ZASADY:
             window.appState.kitchenLabel = newLabel;
             window.appState.geminiApiKey = newKey;
             localStorage.setItem('kuchnia_gemini_key', newKey);
+            syncKitchenLabelsUI();
             updateAiKeyBadge();
             closeModal('modal-kitchen-code');
+
             await saveKitchenChanges();
-            showToast(newKey ? "Zapisano ustawienia kuchni oraz klucz Gemini AI!" : "Zapisano ustawienia kuchni.");
+
+            // Zaktualizuj też pole "sharedBy" we wszystkich przepisach udostępnionych przez tę kuchnię
+            const myPublicRecipes = (window.appState.publicRecipes || []).filter(
+                p => p.sourceKitchen === window.appState.kitchenCode
+            );
+            for (const pub of myPublicRecipes) {
+                try {
+                    await setDoc(doc(db, "publiczne_przepisy", pub.publicId), {
+                        sharedBy: newLabel
+                    }, { merge: true });
+                } catch (_) {}
+            }
+
+            showToast(`Zapisano nazwę kuchni: <strong>${newLabel}</strong>${myPublicRecipes.length > 0 ? ` i zaktualizowano podpis przy ${myPublicRecipes.length} udostępnionych przepisach!` : '!'}`);
         };
 
         // ================= START APLIKACJI (ROUTING) =================
