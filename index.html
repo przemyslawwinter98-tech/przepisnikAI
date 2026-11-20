@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KuchniaBudżet PRO — Multi-Tenant & Panel Admina</title>
+    <title>KuchniaBudżet PRO — Multi-Tenant, Walidacja Spiżarni & Panel Admina</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script>
@@ -720,16 +720,17 @@
         </div>
     </div>
 
-    <!-- MODAL 3: Ugotowane! Oceń i rozlicz -->
+    <!-- MODAL 3: Ugotowane! Oceń, rozlicz i odejmij ze spiżarni -->
     <div id="modal-review-recipe" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
         <div class="bg-[#1e293b] border border-slate-700 rounded-2xl max-w-md w-full p-6 shadow-2xl">
             <div class="flex items-center justify-between mb-4">
-                <h3 class="text-lg font-bold text-white">Rozlicz i Oceń Danie</h3>
+                <h3 class="text-lg font-bold text-white">Ugotowane! Rozlicz i Oceń Danie</h3>
                 <button onclick="closeModal('modal-review-recipe')" class="p-1.5 rounded-lg bg-slate-800 text-slate-400 hover:text-white">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                 </button>
             </div>
-            <p id="review-recipe-title" class="text-sm font-semibold text-emerald-400 mb-4"></p>
+            <p id="review-recipe-title" class="text-sm font-semibold text-emerald-400 mb-3"></p>
+            <div id="review-pantry-status-banner" class="mb-4"></div>
             <form onsubmit="submitRecipeReview(event)" class="space-y-4">
                 <input type="hidden" id="review-recipe-id">
                 <div class="grid grid-cols-2 gap-3">
@@ -760,8 +761,12 @@
                     <label class="block text-xs font-semibold text-slate-400 mb-1">Notatka na przyszłość</label>
                     <input type="text" id="review-note" placeholder="np. Starczyło na 3 obiady, dać mniej soli..." class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-sm text-white">
                 </div>
-                <button type="submit" class="w-full py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-sm shadow-lg shadow-amber-500/20">
-                    Zapisz Rozliczenie i Ocenę
+                <label class="flex items-center gap-2.5 p-3 rounded-xl bg-emerald-950/35 border border-emerald-500/40 cursor-pointer select-none">
+                    <input type="checkbox" id="review-deduct-pantry" checked class="rounded text-emerald-500 focus:ring-0">
+                    <span class="text-xs sm:text-sm font-semibold text-emerald-200">Automatycznie odejmij zużyte składniki ze Spiżarni / Lodówki</span>
+                </label>
+                <button type="submit" id="btn-submit-review" class="w-full py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-sm shadow-lg shadow-amber-500/20">
+                    Zatwierdź Ugotowanie i Rozlicz
                 </button>
             </form>
         </div>
@@ -789,7 +794,7 @@
         </div>
     </div>
 
-    <!-- ================= LOGIKA APLIKACJI (MULTI-TENANT + ADMIN) ================= -->
+    <!-- ================= LOGIKA APLIKACJI (MULTI-TENANT + ADMIN + WALIDACJA SPIŻARNI) ================= -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getFirestore, doc, getDoc, setDoc, deleteDoc, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
@@ -1699,6 +1704,64 @@
             return merged;
         }
 
+        // ================= PARSER ILOŚCI I ODEJMOWANIE ZE SPIŻARNI =================
+        function parseQuantityString(str) {
+            if (!str) return { val: 1, baseUnit: 'szt.' };
+            const clean = String(str).toLowerCase().trim().replace(',', '.');
+            const match = clean.match(/(\d+(?:\.\d+)?)\s*(kg|g|l|ml|szt\.?|puszk[ia]?|opak\.?|słoik[ia]?|kromk[ia]?|ząbk[iów]?|łyżk[ia]?)?/);
+            if (!match) return { val: 1, baseUnit: 'szt.' };
+
+            let val = parseFloat(match[1]);
+            let unit = (match[2] || 'szt.').replace(/\.$/, '');
+
+            if (unit === 'kg') return { val: val * 1000, baseUnit: 'g' };
+            if (unit === 'g') return { val: val, baseUnit: 'g' };
+            if (unit === 'l') return { val: val * 1000, baseUnit: 'ml' };
+            if (unit === 'ml') return { val: val, baseUnit: 'ml' };
+            if (unit.startsWith('puszk')) return { val: val, baseUnit: 'puszka' };
+            if (unit.startsWith('opak')) return { val: val, baseUnit: 'opak.' };
+            return { val: val, baseUnit: 'szt.' };
+        }
+
+        window.deductRecipeFromPantry = (recipe) => {
+            if (!recipe || !Array.isArray(recipe.ingredients)) return 0;
+            let deductedCount = 0;
+
+            recipe.ingredients.forEach(ing => {
+                const key = window.normalizeKey(ing.name);
+                const current = window.getPantryEntry(key);
+                if (!current) return;
+
+                const req = parseQuantityString(ing.amount);
+                const have = parseQuantityString(`${current.qty} ${current.unit}`);
+
+                if (req.baseUnit === have.baseUnit) {
+                    let remaining = have.val - req.val;
+                    if (remaining <= 0) {
+                        delete window.appState.pantry[key];
+                    } else {
+                        if (current.unit === 'kg' && have.baseUnit === 'g') {
+                            window.appState.pantry[key].qty = Number((remaining / 1000).toFixed(2));
+                        } else if (current.unit === 'l' && have.baseUnit === 'ml') {
+                            window.appState.pantry[key].qty = Number((remaining / 1000).toFixed(2));
+                        } else {
+                            window.appState.pantry[key].qty = Number(remaining.toFixed(2));
+                        }
+                    }
+                    deductedCount++;
+                } else {
+                    if (current.qty <= 1) {
+                        delete window.appState.pantry[key];
+                    } else {
+                        window.appState.pantry[key].qty = Number((current.qty - 1).toFixed(2));
+                    }
+                    deductedCount++;
+                }
+            });
+
+            return deductedCount;
+        };
+
         // ================= SPIŻARNIA, LODÓWKA & ZAMRAŻARKA =================
         window.addManualPantryItem = async (e) => {
             e.preventDefault();
@@ -2430,7 +2493,7 @@ BARDZO WAŻNE ZASADY:
             showToast("Wyczyszczono poczekalnię.");
         };
 
-        // ================= OBLICZENIA I PRZEPISY =================
+        // ================= OBLICZENIA I PRZEPISY (Z WALIDACJĄ ILOŚCI W SPIŻARNI) =================
         function calculateRecipeMetrics(recipe) {
             let currentTotal = 0;
             let missingIngredients = [];
@@ -2442,8 +2505,18 @@ BARDZO WAŻNE ZASADY:
                 const activeP = pbItem ? Number(pbItem.price ?? pbItem.basePrice ?? ing.price) : Number(ing.price);
                 currentTotal += activeP;
 
-                if (window.getPantryEntry(key)) ownedCount++;
-                else missingIngredients.push({ ...ing, activePrice: activeP });
+                const pantryEntry = window.getPantryEntry(key);
+                if (!pantryEntry) {
+                    missingIngredients.push({ ...ing, activePrice: activeP, reason: 'brak w spiżarni' });
+                } else {
+                    const req = parseQuantityString(ing.amount);
+                    const have = parseQuantityString(`${pantryEntry.qty} ${pantryEntry.unit}`);
+                    if (req.baseUnit === have.baseUnit && have.val < req.val) {
+                        missingIngredients.push({ ...ing, activePrice: activeP, reason: `masz ${pantryEntry.qty} ${pantryEntry.unit}, potrzeba ${ing.amount}` });
+                    } else {
+                        ownedCount++;
+                    }
+                }
             });
 
             const recipeReviews = window.appState.reviews.filter(r => r.recipeId === recipe.id || r.recipeTitle === recipe.title);
@@ -2548,7 +2621,9 @@ BARDZO WAŻNE ZASADY:
                                 + Zakupy (${metrics.missingIngredients.length})
                             </button>
                         ` : ''}
-                        <button onclick="openReviewModal('${recipe.id}')" class="py-2 px-3 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-400 border border-amber-500/30 text-xs font-semibold transition-colors">⭐ Oceń</button>
+                        <button onclick="openReviewModal('${recipe.id}')" class="py-2 px-3 rounded-xl ${metrics.isReadyFromPantry ? 'bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border-amber-500/40' : 'bg-slate-800/80 text-slate-400 border-slate-700'} border text-xs font-semibold transition-colors">
+                            ${metrics.isReadyFromPantry ? '🍳 Ugotuj' : '🔒 Brak zapasów'}
+                        </button>
                     </div>
                 </div>
             `).join('');
@@ -2580,18 +2655,19 @@ BARDZO WAŻNE ZASADY:
                         ${recipe.ingredients.map(ing => {
                             const key = window.normalizeKey(ing.name);
                             const pantryEntry = window.getPantryEntry(key);
-                            const inPantry = !!pantryEntry;
+                            const isMissingThis = metrics.missingIngredients.some(m => m.name === ing.name);
+                            const inPantry = !!pantryEntry && !isMissingThis;
                             const pb = window.appState.pricebook[key];
                             const price = pb ? Number(pb.price ?? pb.basePrice ?? ing.price) : Number(ing.price);
                             return `
-                            <div onclick="togglePantryItem('${key}')" class="flex items-center justify-between p-2.5 rounded-xl border cursor-pointer transition-all ${inPantry ? 'bg-emerald-950/30 border-emerald-500/40' : 'bg-slate-900/80 border-slate-800 hover:border-slate-700'}">
-                                <div class="flex items-center gap-2.5">
-                                    <span class="w-5 h-5 rounded-md flex items-center justify-center text-xs ${inPantry ? 'bg-emerald-500 text-slate-950 font-bold' : 'bg-slate-800 text-slate-500'}">${inPantry ? '✓' : ''}</span>
+                            <div onclick="togglePantryItem('${key}')" class="flex items-center justify-between p-2.5 rounded-xl border cursor-pointer transition-all ${inPantry ? 'bg-emerald-950/30 border-emerald-500/40' : pantryEntry ? 'bg-amber-950/25 border-amber-500/40' : 'bg-slate-900/80 border-slate-800 hover:border-slate-700'}">
+                                <div class="flex items-center gap-2.5 flex-wrap">
+                                    <span class="w-5 h-5 rounded-md flex items-center justify-center text-xs ${inPantry ? 'bg-emerald-500 text-slate-950 font-bold' : pantryEntry ? 'bg-amber-500 text-slate-950 font-bold' : 'bg-slate-800 text-slate-500'}">${inPantry ? '✓' : pantryEntry ? '!' : ''}</span>
                                     <span class="text-sm font-medium ${inPantry ? 'text-emerald-200' : 'text-slate-200'}">${ing.name}</span>
                                     <span class="text-xs text-slate-400">(${ing.amount})</span>
-                                    ${inPantry ? `<span class="text-[11px] px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-mono">W domu: ${pantryEntry.qty} ${pantryEntry.unit}</span>` : ''}
+                                    ${pantryEntry ? `<span class="text-[11px] px-2 py-0.5 rounded ${inPantry ? 'bg-emerald-500/20 text-emerald-300' : 'bg-amber-500/20 text-amber-300'} font-mono">W domu: ${pantryEntry.qty} ${pantryEntry.unit}</span>` : ''}
                                 </div>
-                                <div class="text-right">
+                                <div class="text-right shrink-0">
                                     <span class="text-xs font-bold text-slate-300">${price.toFixed(2)} zł</span>
                                     ${pb && pb.unit ? `<span class="block text-[10px] text-slate-500">za ${pb.unit}</span>` : ''}
                                 </div>
@@ -2629,7 +2705,10 @@ BARDZO WAŻNE ZASADY:
                     <button onclick="deleteRecipe('${recipe.id}')" class="px-3.5 py-2.5 rounded-xl bg-red-950/40 hover:bg-red-900/60 text-red-400 text-xs font-semibold">Usuń przepis</button>
                     <div class="flex flex-wrap gap-2">
                         <button onclick="freezeFromRecipe('${recipe.id}')" class="px-4 py-2.5 rounded-xl bg-sky-500/20 hover:bg-sky-500/30 text-sky-300 border border-sky-500/30 font-bold text-xs sm:text-sm">❄️ Zamroź porcje</button>
-                        <button onclick="closeModal('modal-recipe-detail'); openReviewModal('${recipe.id}')" class="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs sm:text-sm">Ugotowane! Oceń i rozlicz</button>
+                        ${metrics.isReadyFromPantry
+                            ? `<button onclick="closeModal('modal-recipe-detail'); openReviewModal('${recipe.id}')" class="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs sm:text-sm">🍳 Ugotowane! Odejmij ze spiżarni i oceń</button>`
+                            : `<button onclick="addMissingToShopping('${recipe.id}')" title="Uzupełnij brakujące składniki w spiżarni, aby ugotować" class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-500/40 font-bold text-xs sm:text-sm">🔒 Brakuje ${metrics.missingIngredients.length} składników (+ Zakupy)</button>`
+                        }
                     </div>
                 </div>
             `;
@@ -3006,11 +3085,37 @@ BARDZO WAŻNE ZASADY:
             `).join('');
         };
 
-        // ================= RECENZJE & ROZLICZENIE KOSZTÓW =================
+        // ================= RECENZJE, WALIDACJA SPIŻARNI & ROZLICZENIE KOSZTÓW =================
         window.openReviewModal = (recipeId) => {
             const recipe = window.appState.recipes.find(r => r.id === recipeId);
             if (!recipe) return;
             const metrics = calculateRecipeMetrics(recipe);
+
+            const statusBanner = document.getElementById('review-pantry-status-banner');
+            const submitBtn = document.getElementById('btn-submit-review');
+
+            if (!metrics.isReadyFromPantry) {
+                const missingList = metrics.missingIngredients.map(m => `${m.name} (${m.reason})`).join(', ');
+                statusBanner.innerHTML = `
+                    <div class="p-3 rounded-xl bg-red-950/50 border border-red-500/40 text-xs text-red-200 space-y-1">
+                        <p class="font-bold text-red-300">⛔ Brakuje składników w spiżarni (${metrics.missingIngredients.length}):</p>
+                        <p>${missingList}</p>
+                        <p class="text-[11px] text-slate-400 pt-1">Uzupełnij braki w Spiżarni przed ugotowaniem tego przepisu.</p>
+                    </div>
+                `;
+                submitBtn.disabled = true;
+                submitBtn.className = "w-full py-3 rounded-xl bg-slate-800 text-slate-500 border border-slate-700 font-bold text-sm cursor-not-allowed";
+                submitBtn.textContent = "Uzupełnij brakujące składniki w Spiżarni";
+            } else {
+                statusBanner.innerHTML = `
+                    <div class="p-2.5 rounded-xl bg-emerald-950/40 border border-emerald-500/30 text-xs text-emerald-300 font-medium">
+                        ✅ Masz 100% składników w spiżarni! Po zatwierdzeniu ilości zostaną automatycznie odjęte.
+                    </div>
+                `;
+                submitBtn.disabled = false;
+                submitBtn.className = "w-full py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-sm shadow-lg shadow-amber-500/20";
+                submitBtn.textContent = "Zatwierdź Ugotowanie i Odejmij ze Spiżarni";
+            }
 
             document.getElementById('review-recipe-id').value = recipe.id;
             document.getElementById('review-recipe-title').textContent = recipe.title;
@@ -3032,16 +3137,25 @@ BARDZO WAŻNE ZASADY:
             e.preventDefault();
             const recipeId = document.getElementById('review-recipe-id').value;
             const recipe = window.appState.recipes.find(r => r.id === recipeId);
+            if (!recipe) return;
+
+            const metrics = calculateRecipeMetrics(recipe);
+            if (!metrics.isReadyFromPantry) {
+                showToast(`Nie możesz ugotować — brakuje ${metrics.missingIngredients.length} składników w spiżarni!`, "error");
+                return;
+            }
+
             const cost = parseFloat(document.getElementById('review-cost').value) || 0;
             const dinnersForTwo = parseFloat(document.getElementById('review-dinners').value) || 1;
             const rating = parseInt(document.getElementById('review-rating').value, 10) || 5;
             const note = document.getElementById('review-note').value.trim();
+            const shouldDeduct = document.getElementById('review-deduct-pantry').checked;
             const portionCost = cost / (dinnersForTwo * 2);
 
             window.appState.reviews.unshift({
                 id: 'rev_' + Date.now(),
                 recipeId,
-                recipeTitle: recipe ? recipe.title : 'Danie',
+                recipeTitle: recipe.title,
                 cost,
                 dinnersForTwo,
                 portionCost,
@@ -3050,9 +3164,18 @@ BARDZO WAŻNE ZASADY:
                 date: new Date().toLocaleDateString('pl-PL')
             });
 
+            let deducted = 0;
+            if (shouldDeduct) {
+                deducted = window.deductRecipeFromPantry(recipe);
+            }
+
             await saveKitchenChanges();
             closeModal('modal-review-recipe');
-            showToast(`Rozliczono! Koszt 1 porcji wyszedł ${portionCost.toFixed(2)} zł.`);
+            showToast(
+                shouldDeduct && deducted > 0
+                    ? `Ugotowane! Odjęto ${deducted} składników ze spiżarni (${portionCost.toFixed(2)} zł/porcja).`
+                    : `Rozliczono! Koszt 1 porcji wyszedł ${portionCost.toFixed(2)} zł.`
+            );
         };
 
         window.renderReviewsAndStats = () => {
@@ -3096,7 +3219,7 @@ BARDZO WAŻNE ZASADY:
             `).join('');
         };
 
-        // ================= RENDEROWANIE zbiorcze & NAWIGACJA =================
+        // ================= RENDEROWANIE ZBIORCZE & NAWIGACJA =================
         window.renderAll = () => {
             renderRecipes();
             renderFreezer();
