@@ -5950,8 +5950,7 @@ BARDZO WAŻNE ZASADY:
 
             triggerFileDownload(
                 `spis_spizarni_${code}_${dateStr}.txt`,
-                lines.join("
-"),
+                lines.join("\n"),
                 "text/plain;charset=utf-8"
             );
             showToast("📄 Pobrano czytelny spis spiżarni i zamrażarki (TXT)!");
