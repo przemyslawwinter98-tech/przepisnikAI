@@ -2611,7 +2611,7 @@
             if (normName.includes('papryk')) {
                 if (/\b(slodk|ostr|wedzon|mielon|suszon|przypraw|szczypt|lyzeczk|lyzk)\b/.test(normName + ' ' + normAmt)) return true;
             } else if (!normName.includes('tunczyk') && !normName.includes('sledz') && !normName.includes('kurczak')) {
-                if (spiceWords.some(sw => normName === sw || normName.startsWith(sw + ' ') || normName.endsWith(' ' + sw) || normName.includes(sw))) {
+                if (spiceWords.some(sw => new RegExp('(?:^|\\s)' + sw + '(?:\\s|$)').test(normName))) {
                     return true;
                 }
             }
