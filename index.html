@@ -443,7 +443,14 @@
                                 <h2 class="text-xl font-bold text-white">Domowa Spiżarnia, Lodówka & Zamrażarka</h2>
                                 <p class="text-sm text-slate-400 mt-0.5">Dodawaj produkty ręcznie (apka sama poprawi literówki i polskie znaki), zmieniaj ich ilości (możesz ustawić 0) oraz prowadź ewidencję gotowych dań w zamrażarce.</p>
                             </div>
-                            <button onclick="clearPantry()" class="self-start sm:self-auto px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold border border-slate-700 transition-all">Wyczyść zapasy</button>
+                            <div class="flex flex-wrap items-center gap-2 self-start sm:self-auto">
+                                <button onclick="exportInventoryBackupJson()" title="Pobierz kopię zapasową spiżarni, lodówki i zamrażarki (JSON)" class="px-3.5 py-2 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 text-xs font-bold transition-all">💾 Eksportuj JSON</button>
+                                <label title="Wczytaj stan spiżarni i zamrażarki z pliku JSON" class="cursor-pointer px-3.5 py-2 rounded-xl bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 border border-indigo-500/40 text-xs font-bold transition-all">
+                                    📂 Importuj JSON
+                                    <input type="file" accept=".json,application/json" onchange="importInventoryBackupJson(event)" class="hidden">
+                                </label>
+                                <button onclick="clearPantry()" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold border border-slate-700 transition-all">Wyczyść zapasy</button>
+                            </div>
                         </div>
 
                         <form onsubmit="addManualPantryItem(event)" class="grid grid-cols-1 sm:grid-cols-12 gap-2.5 pt-3 border-t border-slate-800">
@@ -521,6 +528,28 @@
                     </div>
 
                     <div id="pantry-categories-container" class="space-y-5"></div>
+
+                    <!-- Pasek Kopii Zapasowej Inwentarza (Spiżarnia, Lodówka & Zamrażarka) -->
+                    <div class="bg-[#1e293b]/80 rounded-2xl border border-slate-800 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div>
+                            <h4 class="text-sm font-bold text-white flex items-center gap-1.5">
+                                <span>🛡️ Kopia Zapasowa Inwentarza (Spiżarnia, Lodówka & Zamrażarka)</span>
+                            </h4>
+                            <p class="text-xs text-slate-400">Zapisz aktualny stan produktów w domu oraz zamrożonych porcji do pliku JSON (lub czytelnego pliku TXT), aby w każdej chwili odtworzyć bazę 1:1.</p>
+                        </div>
+                        <div class="flex flex-wrap items-center gap-2 shrink-0">
+                            <button onclick="exportInventoryBackupJson()" class="px-3.5 py-2 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 text-xs font-bold transition-colors">
+                                💾 Eksportuj Inwentarz (JSON)
+                            </button>
+                            <button onclick="exportInventoryReadableTxt()" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-semibold transition-colors">
+                                📄 Pobierz spis (TXT)
+                            </button>
+                            <label class="cursor-pointer px-3.5 py-2 rounded-xl bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 border border-indigo-500/40 text-xs font-bold transition-colors">
+                                📂 Przywróć z JSON
+                                <input type="file" accept=".json,application/json" onchange="importInventoryBackupJson(event)" class="hidden">
+                            </label>
+                        </div>
+                    </div>
                 </section>
 
                 <!-- ================= ZAKŁADKA 3: CENNIK & SKANER PARAGONÓW ================= -->
@@ -5555,6 +5584,225 @@ BARDZO WAŻNE ZASADY:
             } catch (err) {
                 console.error("Błąd importu JSON:", err);
                 showToast("Nie udało się odczytać pliku kopii zapasowej (niepoprawny format JSON).", "error");
+            } finally {
+                event.target.value = '';
+            }
+        };
+
+        // ================= EKSPORT & IMPORT KOPII ZAPASOWEJ INWENTARZA (SPIŻARNIA + ZAMRAŻARKA) =================
+        window.exportInventoryBackupJson = () => {
+            const pantry = window.appState.pantry || {};
+            const freezer = window.appState.freezer || [];
+            const code = window.appState.kitchenCode || 'KUCHNIA';
+            const dateStr = new Date().toISOString().slice(0, 10);
+
+            const pantryItemsList = Object.entries(pantry).map(([key, val]) => {
+                const pb = window.appState.pricebook?.[key];
+                const entry = typeof val === 'object' && val !== null
+                    ? val
+                    : { qty: val ? 1 : 0, unit: 'szt.', location: 'Spiżarnia' };
+                return {
+                    key,
+                    name: pb?.name || key,
+                    qty: Number(entry.qty || 0),
+                    unit: entry.unit || 'szt.',
+                    location: entry.location || 'Spiżarnia',
+                    category: pb?.category || 'Inne',
+                    unitPrice: pb ? Number(pb.price || 0) : null,
+                    packUnit: pb?.unit || null
+                };
+            });
+
+            const payload = {
+                app: "KuchniaBudżet PRO",
+                backupType: "inventory",
+                exportedAt: new Date().toISOString(),
+                kitchenCode: code,
+                kitchenLabel: window.appState.kitchenLabel || "Wspólna Kuchnia",
+                pantryCount: pantryItemsList.length,
+                freezerMealsCount: freezer.length,
+                pantry: pantry,
+                pantryDetailed: pantryItemsList,
+                freezer: freezer
+            };
+
+            triggerFileDownload(
+                `inwentarz_${code}_${dateStr}.json`,
+                JSON.stringify(payload, null, 2),
+                "application/json;charset=utf-8"
+            );
+            showToast(`💾 Wyeksportowano inwentarz: <strong>${pantryItemsList.length} produktów</strong> w spiżarni/lodówce oraz <strong>${freezer.length} dań</strong> w zamrażarce!`);
+        };
+
+        window.exportInventoryReadableTxt = () => {
+            const pantry = window.appState.pantry || {};
+            const freezer = window.appState.freezer || [];
+            const code = window.appState.kitchenCode || 'KUCHNIA';
+            const dateStr = new Date().toISOString().slice(0, 10);
+
+            const lines = [
+                `STAN SPIŻARNI, LODÓWKI I ZAMRAŻARKI — ${window.appState.kitchenLabel || 'Wspólna Kuchnia'} (${code})`,
+                `Data eksportu: ${new Date().toLocaleDateString('pl-PL')}`,
+                "=".repeat(60),
+                "",
+                "1. SPIŻARNIA I LODÓWKA:",
+            ];
+
+            const entries = Object.entries(pantry).sort((a, b) => a[0].localeCompare(b[0]));
+            if (entries.length === 0) {
+                lines.push("   (brak zapisanych produktów)");
+            } else {
+                entries.forEach(([key, val]) => {
+                    const pb = window.appState.pricebook?.[key];
+                    const name = pb?.name || key;
+                    const entry = typeof val === 'object' && val !== null ? val : { qty: 1, unit: 'szt.', location: 'Spiżarnia' };
+                    lines.push(`   - ${name}: ${entry.qty} ${entry.unit || 'szt.'} [${entry.location || 'Spiżarnia'}]`);
+                });
+            }
+
+            lines.push("");
+            lines.push("2. ZAMRAŻARKA (GOTOWE DANIA):");
+            if (freezer.length === 0) {
+                lines.push("   (zamrażarka pusta)");
+            } else {
+                freezer.forEach(meal => {
+                    lines.push(`   - ${meal.name}: ${meal.portions} porc.${meal.note ? ` (${meal.note})` : ''}`);
+                });
+            }
+
+            triggerFileDownload(
+                `spis_spizarni_${code}_${dateStr}.txt`,
+                lines.join("
+"),
+                "text/plain;charset=utf-8"
+            );
+            showToast("📄 Pobrano czytelny spis spiżarni i zamrażarki (TXT)!");
+        };
+
+        window.importInventoryBackupJson = async (event) => {
+            const file = event.target.files?.[0];
+            if (!file) return;
+
+            try {
+                const rawText = await file.text();
+                const parsed = JSON.parse(rawText);
+
+                const hasPantryObj = parsed && typeof parsed.pantry === 'object' && parsed.pantry !== null && !Array.isArray(parsed.pantry);
+                const hasDetailedArr = parsed && Array.isArray(parsed.pantryDetailed);
+                const hasFreezerArr = parsed && Array.isArray(parsed.freezer);
+
+                if (!hasPantryObj && !hasDetailedArr && !hasFreezerArr) {
+                    showToast("Wybrany plik nie zawiera danych spiżarni ani zamrażarki.", "error");
+                    return;
+                }
+
+                const replaceMode = confirm(
+                    "Jak przywrócić inwentarz z pliku?\n\n" +
+                    "• Kliknij OK, aby NADPISAĆ obecny stan dokładnie stanem z pliku kopii.\n" +
+                    "• Kliknij Anuluj, aby POŁĄCZYĆ / ZAKTUALIZOWAĆ (zachowa obecne produkty i dopisze/zaktualizuje te z pliku)."
+                );
+
+                const nextPantry = replaceMode ? {} : { ...(window.appState.pantry || {}) };
+                let restoredPantryCount = 0;
+
+                if (hasDetailedArr && parsed.pantryDetailed.length > 0) {
+                    parsed.pantryDetailed.forEach(item => {
+                        if (!item || (!item.key && !item.name)) return;
+                        const key = window.normalizeKey(item.key || item.name);
+                        if (!key) return;
+
+                        nextPantry[key] = {
+                            qty: Math.max(0, Number(item.qty) || 0),
+                            unit: item.unit || 'szt.',
+                            location: item.location || 'Spiżarnia'
+                        };
+                        restoredPantryCount++;
+
+                        // Jeśli produktu nie ma w Cenniku, odtwórz go również w Cenniku, aby kafelek był od razu widoczny
+                        if (!window.appState.pricebook[key]) {
+                            window.appState.deletedPricebookKeys = (window.appState.deletedPricebookKeys || []).filter(k => k !== key);
+                            window.appState.pricebook[key] = {
+                                name: item.name || key,
+                                unit: key === 'jajka' ? '10 szt.' : (item.packUnit || '1 szt.'),
+                                category: item.category || (item.location === 'Lodówka' ? 'Lodówka i mrożonki' : 'Inne'),
+                                price: Number(item.unitPrice) > 0 ? Number(item.unitPrice) : 5.00,
+                                basePrice: Number(item.unitPrice) > 0 ? Number(item.unitPrice) : 5.00,
+                                promoPrice: Number(item.unitPrice) > 0 ? Number(item.unitPrice) : 5.00,
+                                isPromo: false,
+                                store: "Kopia JSON"
+                            };
+                        }
+                    });
+                } else if (hasPantryObj) {
+                    Object.entries(parsed.pantry).forEach(([rawKey, val]) => {
+                        const key = window.normalizeKey(rawKey);
+                        if (!key || val === null || val === undefined || val === false) return;
+                        const entry = typeof val === 'object'
+                            ? {
+                                qty: Math.max(0, Number(val.qty) || 0),
+                                unit: val.unit || 'szt.',
+                                location: val.location || 'Spiżarnia'
+                            }
+                            : { qty: 1, unit: 'szt.', location: 'Spiżarnia' };
+                        nextPantry[key] = entry;
+                        restoredPantryCount++;
+
+                        if (!window.appState.pricebook[key]) {
+                            window.appState.deletedPricebookKeys = (window.appState.deletedPricebookKeys || []).filter(k => k !== key);
+                            window.appState.pricebook[key] = {
+                                name: key.replace(/_/g, ' ').replace(/^./, c => c.toUpperCase()),
+                                unit: key === 'jajka' ? '10 szt.' : '1 szt.',
+                                category: entry.location === 'Lodówka' ? 'Lodówka i mrożonki' : 'Inne',
+                                price: 5.00,
+                                basePrice: 5.00,
+                                promoPrice: 5.00,
+                                isPromo: false,
+                                store: "Kopia JSON"
+                            };
+                        }
+                    });
+                }
+
+                window.appState.pantry = nextPantry;
+
+                let restoredFreezerCount = 0;
+                if (hasFreezerArr) {
+                    if (replaceMode) {
+                        window.appState.freezer = parsed.freezer.map((m, idx) => ({
+                            id: m.id || ('frz_imp_' + Date.now() + '_' + idx),
+                            name: String(m.name || 'Danie').trim(),
+                            portions: Math.max(1, parseInt(m.portions, 10) || 1),
+                            note: m.note || '',
+                            frozenAt: m.frozenAt || new Date().toLocaleDateString('pl-PL')
+                        }));
+                        restoredFreezerCount = window.appState.freezer.length;
+                    } else {
+                        const existingFreezer = [...(window.appState.freezer || [])];
+                        parsed.freezer.forEach((m, idx) => {
+                            if (!m || !m.name) return;
+                            const found = existingFreezer.find(e => window.stripDiacritics(e.name) === window.stripDiacritics(m.name));
+                            if (found) {
+                                found.portions = Number(found.portions || 0) + (parseInt(m.portions, 10) || 1);
+                            } else {
+                                existingFreezer.unshift({
+                                    id: 'frz_imp_' + Date.now() + '_' + idx,
+                                    name: String(m.name).trim(),
+                                    portions: Math.max(1, parseInt(m.portions, 10) || 1),
+                                    note: m.note || '',
+                                    frozenAt: m.frozenAt || new Date().toLocaleDateString('pl-PL')
+                                });
+                            }
+                            restoredFreezerCount++;
+                        });
+                        window.appState.freezer = existingFreezer;
+                    }
+                }
+
+                await saveKitchenChanges();
+                showToast(`📂 Przywrócono inwentarz: <strong>${restoredPantryCount} produktów</strong> w spiżarni/lodówce oraz <strong>${restoredFreezerCount} dań</strong> w zamrażarce!`);
+            } catch (err) {
+                console.error("Błąd importu inwentarza JSON:", err);
+                showToast("Nie udało się odczytać pliku inwentarza (niepoprawny format JSON).", "error");
             } finally {
                 event.target.value = '';
             }
