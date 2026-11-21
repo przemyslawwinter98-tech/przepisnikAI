@@ -280,8 +280,8 @@
                 </button>
                 <button onclick="switchTab('verify')" data-tab="verify" class="nav-btn w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800/70 transition-all">
                     <span class="flex items-center gap-3">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                        Weryfikacja Scrapera
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path></svg>
+                        Promocje
                     </span>
                     <span id="badge-verify-count" class="px-2 py-0.5 text-xs rounded-full bg-indigo-500/25 text-indigo-300 font-semibold">0</span>
                 </button>
@@ -646,6 +646,9 @@
                                 <h2 class="text-lg sm:text-xl font-bold text-white">Twoja Lista Śledzonych Produktów</h2>
                                 <p class="text-xs sm:text-sm text-slate-400 mt-0.5">Dopisz tutaj produkty (możesz pisać bez polskich znaków lub z literówką np. <em>"tundzyk w puszcze"</em>, <em>"mieso mielone"</em>) — apka poprawi nazwę i zapisze na liście śledzonych.</p>
                             </div>
+                            <button onclick="switchTab('verify'); triggerScraperNow()" class="self-start sm:self-center px-4 py-2.5 rounded-xl bg-indigo-500 hover:bg-indigo-400 text-white font-bold text-xs shadow-lg shadow-indigo-500/20 transition-all shrink-0">
+                                🔍 Sprawdź promocje teraz
+                            </button>
                         </div>
 
                         <form onsubmit="addTrackedProductWithAI(event)" class="flex flex-col sm:flex-row gap-2.5">
@@ -667,10 +670,13 @@
                             <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-indigo-500/20 text-indigo-300 text-xs font-bold mb-2">
                                 <span>🛡️ KONTROLA JAKOŚCI DANYCH Z BOTA</span>
                             </div>
-                            <h2 class="text-xl font-bold text-white">Poczekalnia Cen & Okazji ze Scrapera</h2>
-                            <p class="text-sm text-slate-300 mt-1">Tutaj trafiają dopasowania ze scrapera. Zatwierdź poprawne do Cennika lub odrzuć błędne.</p>
+                            <h2 class="text-xl font-bold text-white">Promocje & Okazje z Gazetek</h2>
+                            <p class="text-sm text-slate-300 mt-1">Tutaj trafiają dopasowania ze scrapera. Zatwierdź poprawne do Cennika lub odrzuć błędne. <span id="verify-last-scraped-info" class="text-xs text-indigo-300 font-semibold block sm:inline mt-1 sm:mt-0"></span></p>
                         </div>
                         <div class="flex flex-wrap gap-2 shrink-0">
+                            <button id="btn-run-scraper-now" onclick="triggerScraperNow()" class="px-4 py-2.5 rounded-xl bg-indigo-500 hover:bg-indigo-400 text-white font-bold text-xs sm:text-sm shadow-lg shadow-indigo-500/25 transition-all flex items-center gap-1.5">
+                                <span>🔍 Sprawdź promocje teraz</span>
+                            </button>
                             <button onclick="approveAllPendingScraper()" class="px-4 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs sm:text-sm shadow-lg shadow-emerald-500/20 transition-all">
                                 ✓ Zatwierdź wszystkie (<span id="verify-btn-count">0</span>)
                             </button>
@@ -910,9 +916,9 @@
                         <p class="text-[10px] text-slate-400">Alerty promocyjne</p>
                     </button>
                     <button onclick="switchTab('verify'); toggleMobileMoreMenu(false)" class="p-3.5 rounded-2xl bg-slate-900 border border-slate-800 hover:border-indigo-500/40 text-left space-y-1">
-                        <span class="text-lg">🛡️</span>
-                        <p class="text-xs font-bold text-white">Weryfikacja Scrapera</p>
-                        <p class="text-[10px] text-slate-400">Poczekalnia okazji</p>
+                        <span class="text-lg">🏷️</span>
+                        <p class="text-xs font-bold text-white">Promocje</p>
+                        <p class="text-[10px] text-slate-400">Okazje z gazetek</p>
                     </button>
                     <button onclick="switchTab('feedback'); toggleMobileMoreMenu(false)" class="p-3.5 rounded-2xl bg-slate-900 border border-slate-800 text-left space-y-1">
                         <span class="text-lg">💡</span>
@@ -1100,6 +1106,25 @@
                     <label class="block text-xs font-semibold text-slate-400 mb-1">Klucz Google Gemini API (do Skanera Paragonów i AI)</label>
                     <input type="password" id="input-gemini-key" placeholder="AIzaSy... (wklej klucz z aistudio.google.com)" class="w-full px-4 py-3 rounded-xl bg-slate-900 border border-slate-700 text-sm font-mono text-white placeholder-slate-600 focus:outline-none focus:border-indigo-500">
                 </div>
+                <div class="pt-2 border-t border-slate-800 space-y-2.5">
+                    <div class="flex items-center justify-between">
+                        <label class="block text-xs font-semibold text-indigo-300">🤖 Zdalne uruchamianie Scrapera („Sprawdź promocje teraz”)</label>
+                    </div>
+                    <div>
+                        <label class="block text-[11px] text-slate-400 mb-1">GitHub Personal Access Token (uprawnienie: <code>workflow</code> / Actions: Write)</label>
+                        <input type="password" id="input-github-pat" placeholder="ghp_... lub github_pat_..." class="w-full px-3.5 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs font-mono text-white placeholder-slate-600 focus:outline-none focus:border-indigo-500">
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-[11px] text-slate-400 mb-1">Repozytorium GitHub</label>
+                            <input type="text" id="input-github-repo" placeholder="login/przepisnikAI" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs font-mono text-slate-200 focus:outline-none focus:border-indigo-500">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] text-slate-400 mb-1">Plik workflow</label>
+                            <input type="text" id="input-github-wf" placeholder="scraper.yml" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs font-mono text-slate-200 focus:outline-none focus:border-indigo-500">
+                        </div>
+                    </div>
+                </div>
                 <div class="flex gap-2">
                     <button type="button" onclick="closeModal('modal-kitchen-code')" class="flex-1 py-2.5 rounded-xl bg-slate-800 text-slate-300 font-semibold text-sm">Anuluj</button>
                     <button type="submit" class="flex-1 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-sm">Zapisz zmiany</button>
@@ -1209,6 +1234,9 @@
             kitchenCode: localStorage.getItem('kodKuchni') || '',
             kitchenLabel: 'Wspólna Kuchnia',
             geminiApiKey: localStorage.getItem('kuchnia_gemini_key') || '',
+            githubToken: localStorage.getItem('kuchnia_github_pat') || '',
+            githubRepo: localStorage.getItem('kuchnia_github_repo') || 'przemyslawwinter/przepisnikAI',
+            githubWorkflow: localStorage.getItem('kuchnia_github_wf') || 'scraper.yml',
             recipes: [],
             publicRecipes: [],
             pricebook: {},
@@ -2821,12 +2849,24 @@
             const current = window.getPantryEntry(key, true);
             if (current) {
                 delete window.appState.pantry[key];
+                renderAll();
+                const code = window.appState.kitchenCode;
+                if (code) {
+                    try {
+                        await updateDoc(doc(db, "kuchnie", code), {
+                            [`pantry.${key}`]: deleteField(),
+                            updatedAt: new Date().toISOString()
+                        });
+                    } catch (_) {
+                        await saveKitchenChanges();
+                    }
+                }
             } else {
                 const pb = window.appState.pricebook[key];
                 const isFridge = pb && (pb.category === 'Lodówka i mrożonki' || pb.category === 'Mięso i świeże');
                 window.appState.pantry[key] = { qty: 1, unit: 'szt.', location: isFridge ? 'Lodówka' : 'Spiżarnia' };
+                await saveKitchenChanges();
             }
-            await saveKitchenChanges();
             if (!document.getElementById('modal-recipe-detail').classList.contains('hidden')) {
                 const titleEl = document.querySelector('#recipe-detail-content h2');
                 if (titleEl) {
@@ -2834,6 +2874,114 @@
                     if (rec) openRecipeDetail(rec.id, false);
                 }
             }
+        };
+
+        window.deletePantryProductCompletely = async (key) => {
+            const itemName = window.appState.pricebook[key]?.name || key;
+            if (!confirm(`Czy na pewno całkowicie usunąć "${itemName}" ze Spiżarni oraz Cennika (nie będzie widoczny nawet jako 0)?`)) return;
+
+            delete window.appState.pantry[key];
+            delete window.appState.pricebook[key];
+
+            if (!Array.isArray(window.appState.deletedPricebookKeys)) {
+                window.appState.deletedPricebookKeys = [];
+            }
+            if (!window.appState.deletedPricebookKeys.includes(key)) {
+                window.appState.deletedPricebookKeys.push(key);
+            }
+
+            renderAll();
+
+            const code = window.appState.kitchenCode;
+            if (code) {
+                try {
+                    await updateDoc(doc(db, "kuchnie", code), {
+                        [`pantry.${key}`]: deleteField(),
+                        [`pricebook.${key}`]: deleteField(),
+                        deletedPricebookKeys: window.appState.deletedPricebookKeys,
+                        updatedAt: new Date().toISOString()
+                    });
+                } catch (_) {
+                    await saveKitchenChanges();
+                }
+            }
+            showToast(`🗑️ Całkowicie usunięto <strong>${itemName}</strong> ze Spiżarni i Cennika.`);
+        };
+
+        window.renameProductEverywhere = async (oldKey) => {
+            const oldPb = window.appState.pricebook?.[oldKey];
+            const currentName = oldPb?.name || oldKey;
+            const input = prompt(`Podaj nową nazwę dla produktu "${currentName}":`, currentName);
+            if (input === null) return;
+            const trimmed = input.trim();
+            if (!trimmed || trimmed === currentName) return;
+
+            const newName = trimmed.charAt(0).toUpperCase() + trimmed.slice(1);
+            const newKey = window.normalizeKey(newName);
+            if (!newKey) return;
+
+            const code = window.appState.kitchenCode;
+
+            if (newKey === oldKey) {
+                // Zmiana tylko wielkości liter / nazwy wyświetlanej przy tym samym kluczu kanonicznym
+                if (window.appState.pricebook[oldKey]) {
+                    window.appState.pricebook[oldKey].name = newName;
+                }
+                await saveKitchenChanges();
+                showToast(`✏️ Zmieniono nazwę na: <strong>${newName}</strong>`);
+                return;
+            }
+
+            // Przeniesienie z oldKey -> newKey w Cenniku oraz Spiżarni (z połączeniem ilości jeśli nowy produkt już istnieje!)
+            const existingNewPb = window.appState.pricebook[newKey];
+            if (!existingNewPb && oldPb) {
+                window.appState.pricebook[newKey] = {
+                    ...oldPb,
+                    name: newKey === 'jajka' ? 'Jajka' : newName,
+                    unit: newKey === 'jajka' ? '10 szt.' : (oldPb.unit || '1 szt.')
+                };
+            }
+            delete window.appState.pricebook[oldKey];
+            window.appState.deletedPricebookKeys = (window.appState.deletedPricebookKeys || []).filter(k => k !== newKey);
+            if (!window.appState.deletedPricebookKeys.includes(oldKey)) {
+                window.appState.deletedPricebookKeys.push(oldKey);
+            }
+
+            const oldPantry = window.getPantryEntry(oldKey, true);
+            const newPantry = window.getPantryEntry(newKey, true);
+            if (oldPantry) {
+                if (newPantry && newPantry.unit === oldPantry.unit) {
+                    window.appState.pantry[newKey] = {
+                        ...newPantry,
+                        qty: Number((Number(newPantry.qty || 0) + Number(oldPantry.qty || 0)).toFixed(2))
+                    };
+                } else if (!newPantry || Number(newPantry.qty || 0) === 0) {
+                    window.appState.pantry[newKey] = { ...oldPantry };
+                }
+                delete window.appState.pantry[oldKey];
+            }
+
+            renderAll();
+
+            if (code) {
+                try {
+                    await updateDoc(doc(db, "kuchnie", code), {
+                        [`pricebook.${oldKey}`]: deleteField(),
+                        [`pantry.${oldKey}`]: deleteField(),
+                        [`pricebook.${newKey}`]: window.appState.pricebook[newKey],
+                        ...(window.appState.pantry[newKey] ? { [`pantry.${newKey}`]: window.appState.pantry[newKey] } : {}),
+                        deletedPricebookKeys: window.appState.deletedPricebookKeys,
+                        updatedAt: new Date().toISOString()
+                    });
+                } catch (_) {
+                    await saveKitchenChanges();
+                }
+            }
+
+            showToast(existingNewPb
+                ? `✏️ Zmieniono nazwę "${currentName}" i połączono z istniejącym produktem <strong>${existingNewPb.name}</strong>!`
+                : `✏️ Zmieniono nazwę produktu: "${currentName}" → <strong>${newName}</strong>`
+            );
         };
 
         window.clearPantry = async () => {
@@ -3001,24 +3149,31 @@
                             const entry = window.getPantryEntry(item.key, true);
                             if (!entry) {
                                 return `
-                                <button onclick="togglePantryItem('${item.key}')" class="px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-medium border bg-slate-900/90 text-slate-300 border-slate-700/80 hover:border-slate-500 transition-all flex items-center justify-between gap-2 text-left">
-                                    <span class="truncate">+ ${item.name}</span>
-                                    <span class="text-[11px] text-slate-500 shrink-0">Brak</span>
-                                </button>
+                                <div class="px-3 py-2 rounded-xl text-xs sm:text-sm font-medium border bg-slate-900/90 text-slate-300 border-slate-700/80 hover:border-slate-500 transition-all flex items-center justify-between gap-2">
+                                    <button onclick="togglePantryItem('${item.key}')" class="flex-1 flex items-center justify-between gap-2 text-left min-w-0">
+                                        <span class="truncate">+ ${item.name}</span>
+                                        <span class="text-[11px] text-slate-500 shrink-0">Brak</span>
+                                    </button>
+                                    <button onclick="deletePantryProductCompletely('${item.key}')" title="Usuń trwale ten produkt ze spiżarni i cennika" class="px-1.5 py-0.5 rounded text-slate-500 hover:text-red-400 hover:bg-red-950/50 text-xs font-bold shrink-0">✕</button>
+                                </div>
                                 `;
                             }
                             const isZero = entry.qty <= 0;
                             return `
                             <div class="p-2.5 rounded-xl border ${isZero ? 'bg-slate-900/70 border-slate-700 opacity-80' : 'bg-emerald-950/35 border-emerald-500/50'} flex flex-col gap-2 shadow-sm">
-                                <div class="flex items-center justify-between gap-2">
-                                    <button onclick="togglePantryItem('${item.key}')" title="Schowaj kafelek ze spiżarni" class="flex items-center gap-1.5 text-left min-w-0">
+                                <div class="flex items-center justify-between gap-1.5">
+                                    <button onclick="togglePantryItem('${item.key}')" title="Zwiń do stanu Brak (0)" class="flex items-center gap-1.5 text-left min-w-0 flex-1">
                                         <span class="w-4 h-4 rounded ${isZero ? 'bg-slate-700 text-slate-400' : 'bg-emerald-500 text-slate-950'} font-bold text-[11px] flex items-center justify-center shrink-0">${isZero ? '0' : '✓'}</span>
                                         <span class="text-xs sm:text-sm font-bold ${isZero ? 'text-slate-400' : 'text-emerald-200'} truncate">${item.name}</span>
                                     </button>
-                                    <select onchange="changePantryUnitOrLocation('${item.key}', 'location', this.value)" class="px-1.5 py-0.5 rounded bg-slate-900 border border-slate-700 text-[10px] text-slate-300">
-                                        <option value="Lodówka" ${entry.location === 'Lodówka' ? 'selected' : ''}>🧊 Lodówka</option>
-                                        <option value="Spiżarnia" ${entry.location !== 'Lodówka' ? 'selected' : ''}>🥫 Spiżarnia</option>
-                                    </select>
+                                    <div class="flex items-center gap-1 shrink-0">
+                                        <button onclick="renameProductEverywhere('${item.key}')" title="Zmień nazwę produktu" class="px-1.5 py-0.5 rounded bg-slate-900 hover:bg-indigo-950/70 text-slate-400 hover:text-indigo-300 border border-slate-800 text-[11px]">✏️</button>
+                                        <select onchange="changePantryUnitOrLocation('${item.key}', 'location', this.value)" class="px-1.5 py-0.5 rounded bg-slate-900 border border-slate-700 text-[10px] text-slate-300">
+                                            <option value="Lodówka" ${entry.location === 'Lodówka' ? 'selected' : ''}>🧊 Lodówka</option>
+                                            <option value="Spiżarnia" ${entry.location !== 'Lodówka' ? 'selected' : ''}>🥫 Spiżarnia</option>
+                                        </select>
+                                        <button onclick="deletePantryProductCompletely('${item.key}')" title="Usuń trwale produkt (nie będzie nawet jako 0)" class="px-1.5 py-0.5 rounded bg-slate-900 hover:bg-red-950/70 text-slate-400 hover:text-red-400 border border-slate-800 text-xs font-bold">✕</button>
+                                    </div>
                                 </div>
                                 <div class="flex items-center justify-between gap-1.5 bg-slate-950/80 p-1 rounded-lg border border-slate-800">
                                     <button onclick="adjustPantryQuantity('${item.key}', -1)" class="w-7 h-7 rounded bg-slate-800 hover:bg-red-950/70 text-slate-200 hover:text-red-300 font-bold text-sm flex items-center justify-center">−</button>
@@ -3402,8 +3557,9 @@ BARDZO WAŻNE ZASADY:
                 return `
                 <div class="p-3.5 rounded-xl border bg-slate-900/90 border-slate-800 hover:border-slate-700 transition-all flex items-center justify-between gap-3">
                     <div class="min-w-0">
-                        <div class="flex items-center gap-2">
+                        <div class="flex items-center gap-1.5">
                             <p class="text-sm font-bold text-white truncate">${item.name}</p>
+                            <button onclick="renameProductEverywhere('${key}')" title="Zmień nazwę produktu" class="text-[11px] text-slate-400 hover:text-indigo-300 px-1">✏️</button>
                             <span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-800 text-slate-400">${item.store || 'Cennik'}</span>
                         </div>
                         <p class="text-[11px] text-slate-400 mt-0.5">${item.category || 'Inne'}</p>
@@ -3665,11 +3821,118 @@ BARDZO WAŻNE ZASADY:
             });
         }
 
+        window.triggerScraperNow = async () => {
+            const pat = window.appState.githubToken;
+            const repo = (window.appState.githubRepo || 'przemyslawwinter/przepisnikAI').replace(/^https?:\/\/github\.com\//i, '').replace(/\.git$/i, '').replace(/\/$/, '');
+            const wf = window.appState.githubWorkflow || 'scraper.yml';
+
+            if (!pat) {
+                showToast("Wklej swój GitHub Token (PAT z uprawnieniem Actions/Workflow) w ustawieniach kuchni, aby uruchamiać scraper jednym kliknięciem!", "warning");
+                openKitchenModal();
+                return;
+            }
+
+            const btn = document.getElementById('btn-run-scraper-now');
+            const origHtml = btn ? btn.innerHTML : '';
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = `<span class="animate-spin inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full"></span> <span>Uruchamiam bota...</span>`;
+            }
+
+            const prevScrapedAt = window.appState.scraperUpdatedAt;
+
+            try {
+                // Wykryj domyślną gałąź repozytorium (main lub master)
+                let defaultBranch = 'main';
+                try {
+                    const repoInfoResp = await fetch(`https://api.github.com/repos/${repo}`, {
+                        headers: {
+                            'Authorization': `Bearer ${pat}`,
+                            'Accept': 'application/vnd.github+json'
+                        }
+                    });
+                    if (repoInfoResp.ok) {
+                        const repoJson = await repoInfoResp.json();
+                        if (repoJson.default_branch) defaultBranch = repoJson.default_branch;
+                    }
+                } catch (_) {}
+
+                const dispatchResp = await fetch(`https://api.github.com/repos/${repo}/actions/workflows/${encodeURIComponent(wf)}/dispatches`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${pat}`,
+                        'Accept': 'application/vnd.github+json',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ ref: defaultBranch })
+                });
+
+                if (dispatchResp.status === 204 || dispatchResp.ok) {
+                    showToast("🚀 Bot wystartował na GitHub Actions! Skanuje gazetki Lidla, Biedronki i Netto (ok. 30–45 sek.) — lista odświeży się automatycznie.");
+                    if (btn) {
+                        btn.innerHTML = `<span class="animate-spin inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full"></span> <span>Skanuję gazetki...</span>`;
+                    }
+
+                    // Obserwuj przez max 90 sekund pojawienie się nowego lastScraped w Firestore
+                    let checks = 0;
+                    const pollTimer = setInterval(() => {
+                        checks++;
+                        if (window.appState.scraperUpdatedAt && window.appState.scraperUpdatedAt !== prevScrapedAt) {
+                            clearInterval(pollTimer);
+                            if (btn) {
+                                btn.disabled = false;
+                                btn.innerHTML = origHtml;
+                            }
+                            showToast("✅ Świeże promocje z gazetek zostały pobrane i załadowane do poczekalni!");
+                        } else if (checks >= 30) {
+                            clearInterval(pollTimer);
+                            if (btn) {
+                                btn.disabled = false;
+                                btn.innerHTML = origHtml;
+                            }
+                        }
+                    }, 3000);
+                } else {
+                    const errText = await dispatchResp.text();
+                    console.error("GitHub workflow dispatch error:", dispatchResp.status, errText);
+                    if (btn) {
+                        btn.disabled = false;
+                        btn.innerHTML = origHtml;
+                    }
+                    if (dispatchResp.status === 404) {
+                        showToast(`Nie znaleziono workflow <code>${wf}</code> w repozytorium <code>${repo}</code>. Sprawdź nazwę pliku w ustawieniach.`, "error");
+                    } else if (dispatchResp.status === 401 || dispatchResp.status === 403) {
+                        showToast("Brak uprawnień tokena GitHub (wymagany zakres: workflow / Actions: Write).", "error");
+                    } else {
+                        showToast(`Błąd uruchamiania bota (HTTP ${dispatchResp.status}).`, "error");
+                    }
+                }
+            } catch (err) {
+                console.error("Błąd połączenia z GitHub API:", err);
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = origHtml;
+                }
+                showToast("Błąd połączenia z GitHub API.", "error");
+            }
+        };
+
         window.renderVerifyScraper = () => {
             const listEl = document.getElementById('verify-scraper-list');
             const filtersEl = document.getElementById('verify-store-filters');
             const catFiltersEl = document.getElementById('verify-category-filters');
             const datePresetsEl = document.getElementById('verify-date-presets');
+            const lastScrapedEl = document.getElementById('verify-last-scraped-info');
+            if (lastScrapedEl) {
+                if (window.appState.scraperUpdatedAt) {
+                    const d = new Date(window.appState.scraperUpdatedAt);
+                    lastScrapedEl.textContent = !isNaN(d.getTime())
+                        ? `• Ostatnie skanowanie: ${d.toLocaleString('pl-PL', { dateStyle: 'short', timeStyle: 'short' })}`
+                        : '';
+                } else {
+                    lastScrapedEl.textContent = '';
+                }
+            }
             const allItems = Object.entries(window.appState.pendingScraper || {});
 
             // 1. Pigułki sklepów
@@ -5420,6 +5683,12 @@ BARDZO WAŻNE ZASADY:
         };
         window.openKitchenModal = () => {
             syncKitchenLabelsUI();
+            const patEl = document.getElementById('input-github-pat');
+            const repoEl = document.getElementById('input-github-repo');
+            const wfEl = document.getElementById('input-github-wf');
+            if (patEl) patEl.value = window.appState.githubToken || '';
+            if (repoEl) repoEl.value = window.appState.githubRepo || 'przemyslawwinter/przepisnikAI';
+            if (wfEl) wfEl.value = window.appState.githubWorkflow || 'scraper.yml';
             document.getElementById('modal-kitchen-code').classList.remove('hidden');
         };
         window.closeModal = (id) => document.getElementById(id).classList.add('hidden');
@@ -5428,10 +5697,19 @@ BARDZO WAŻNE ZASADY:
             e.preventDefault();
             const newLabel = document.getElementById('input-kitchen-label').value.trim() || "Wspólna Kuchnia";
             const newKey = document.getElementById('input-gemini-key').value.trim();
+            const newPat = (document.getElementById('input-github-pat')?.value || '').trim();
+            const newRepo = (document.getElementById('input-github-repo')?.value || '').trim() || 'przemyslawwinter/przepisnikAI';
+            const newWf = (document.getElementById('input-github-wf')?.value || '').trim() || 'scraper.yml';
 
             window.appState.kitchenLabel = newLabel;
             window.appState.geminiApiKey = newKey;
+            window.appState.githubToken = newPat;
+            window.appState.githubRepo = newRepo;
+            window.appState.githubWorkflow = newWf;
             localStorage.setItem('kuchnia_gemini_key', newKey);
+            localStorage.setItem('kuchnia_github_pat', newPat);
+            localStorage.setItem('kuchnia_github_repo', newRepo);
+            localStorage.setItem('kuchnia_github_wf', newWf);
             syncKitchenLabelsUI();
             updateAiKeyBadge();
             closeModal('modal-kitchen-code');
