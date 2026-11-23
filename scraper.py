@@ -62,12 +62,13 @@ EXCLUDED_URL_PATTERNS = [
     "/blog", "blog.", "/artykul", "/artykuly", "/poradnik", "/poradniki",
     "/aktualnosci", "/news", "/przepis", "/przepisy", "/ciekawostki",
     "/ranking", "/test-", "/opinie", "/konkurs", "/kontakt", "/regulamin",
-    "/polityka", "/o-nas", "/kariera", "/faq", "/godziny-otwarcia", "/sklepy-w-"
+    "/polityka", "/o-nas", "/kariera", "/faq", "/godziny-otwarcia", "/sklepy-w-",
+    "archiwaln"
 ]
 
 # Znane składniki kulinarne (do kanonicznego ujednolicania nazw + priorytetu, jeśli pasują)
 CORE_CULINARY_ITEMS = {
-    "piers_z_kurczaka": ("Pierś z kurczaka", "Mięso i świeże", ["piers z kurczaka", "filet z kurczaka", "filet z piersi"], ["przypraw", "wedlin", "szynk", "pasztet", "parowk", "kabanos", "panier", "nuggets", "strips", "konserw", "salatk", "karma"], 8.00, 28.00),
+    "piers_z_kurczaka": ("Pierś z kurczaka", "Mięso i świeże", ["piers z kurczaka", "filet z kurczaka", "filet z piersi"], ["przypraw", "wedlin", "szynk", "pasztet", "parowk", "kabanos", "panier", "nuggets", "strips", "paski", "konserw", "salatk", "karma"], 8.00, 28.00),
     "mieso_mielone": ("Mięso mielone", "Mięso i świeże", ["mieso mielone", "mielone wieprzow", "mielone wolow", "mielone drobiow"], ["przypraw", "fix", "pomysl na", "sos", "pierogi", "krokiety", "nalesniki"], 5.00, 18.00),
     "schab": ("Schab wieprzowy", "Mięso i świeże", ["schab wieprzow", "schab bez kosci", "schab ze"], ["wedlin", "szynk", "pieczon", "wedzon", "konserw"], 9.00, 26.00),
     "karkowka": ("Karkówka wieprzowa", "Mięso i świeże", ["karkowk"], ["wedlin", "szynk", "pieczon", "wedzon"], 9.00, 26.00),
@@ -75,7 +76,7 @@ CORE_CULINARY_ITEMS = {
     "boczek": ("Wędzony boczek", "Mięso i świeże", ["boczek wedzon", "boczek surowy"], ["chips", "chrupk", "przypraw"], 4.50, 35.00),
     "losos": ("Łosoś filet", "Mięso i świeże", ["losos filet", "filet z lososia", "losos swiezy", "losos atlantycki"], ["salatk", "pasta", "karma"], 10.00, 55.00),
     "dorsz": ("Dorsz filet", "Mięso i świeże", ["dorsz", "filet z dorsza"], ["salatk", "pasta"], 7.00, 42.00),
-    "tunczyk": ("Tuńczyk w puszce", "Konserwy i słoiki", ["tunczyk"], ["salatk", "pasta", "karma", "dla kota"], 2.50, 11.00),
+    "tunczyk": ("Tuńczyk w puszce", "Konserwy i słoiki", ["tunczyk w", "tunczyk kawalki", "tunczyk rozdrobniony", "filet z tunczyka"], ["pesto", "sos", "salatk", "pasta", "karma", "dla kota", "makaron"], 2.50, 11.00),
     "maslo": ("Masło", "Lodówka i mrożonki", ["maslo ekstra", "maslo polskie", "maslo 82", "maslo 83", "maslo"], ["orzech", "roslinn", "margaryn", "mix", "krem", "balsam", "do ciala", "shea", "czekolad"], 3.00, 11.00),
     "mleko": ("Mleko", "Lodówka i mrożonki", ["mleko uht", "mleko swieze", "mleko 3,2", "mleko 2%", "mleko"], ["kokos", "sojow", "owsian", "migdal", "zageszczon", "skondensowan", "w proszku", "czekolad", "do demakijazu", "balsam", "modifikowan", "bebiko", "nan", "ptasie"], 1.50, 5.50),
     "jajka": ("Jajka", "Lodówka i mrożonki", ["jajka", "jaja sciolkow", "jaja z wolnego", "jaja klasa"], ["niespodziank", "czekolad", "makaron", "majonez", "kinder"], 4.00, 16.00),
@@ -116,12 +117,15 @@ CORE_CULINARY_ITEMS = {
     "olej": ("Olej rzepakowy", "Przyprawy i dodatki", ["olej rzepakowy", "olej slonecznikowy"], ["silnikow", "do ciala", "olejek"], 4.00, 14.00),
 }
 
-# Twarde odrzucanie artykułów niespożywczych, chemii, ubrań, elektroniki, alkoholu, słodyczy (bez chipsów i energetyków) oraz śmieci UI
+# Twarde odrzucanie artykułów niespożywczych, chemii, alkoholu, słodyczy (bez chipsów i energetyków) oraz śmieci UI
 NON_FOOD_AND_UI_NOISE = [
     # Kosmetyki, chemia, higiena
     "blyszczyk", "pomadk", "szmink", "tusz do rzes", "podklad", "puder", "krem do", "balsam",
     "chusteczk", "papier toaletowy", "recznik papierowy", "szampon", "zel pod prysznic",
-    "mydlo", "pasta do zebow", "szczoteczk", "dezodorant", "perfum", "woda toaletowa",
+    "mydlo", "pasta do zebow", "szczoteczk", "dezodorant", "antyperspirant", "perfum",
+    "woda toaletowa", "woda po goleniu", "balsam po goleniu", "pianka do golenia", "maszynka do golenia",
+    "str8", "axe", "old spice", "nivea", "dove", "fa ", "rexona", "garnier", "l'oreal", "loreal",
+    "zestaw kosmetykow", "zestaw prezentowy", "zestaw str8", "zestaw axe", "zestaw nivea", "zestaw dove",
     "proszek do prania", "plyn do", "kapsulki do", "domestos", "wybielacz", "odplamiacz",
     "gabka", "zmywak", "folia aluminiowa", "papier do pieczenia", "worki na smieci",
     # Zwierzęta, dzieci (niespożywcze)
@@ -135,23 +139,42 @@ NON_FOOD_AND_UI_NOISE = [
     "lampka", "latarka", "kabel", "ladowarka", "sluchawki", "doniczka", "ziemia ogrodowa",
     "kosiarka", "sekator", "zabawka", "klocki", "lalka", "pluszak", "gra planszowa",
     "znicz", "wklad do znicza", "kwiaty", "bukiet", "roslina", "storczyk", "tulipan",
-    # Słodycze i wypieki cukiernicze (chipsy i energetyki celowo zostawione!)
-    "czekolad", "bombonierk", "pralin", "baton", "wafel", "wafelk",
+    # Słodycze, dekoracje cukiernicze, słodkie napoje gazowane (chipsy i energetyki celowo zostawione!)
+    "czekolad", "bombonierk", "pralin", "lindor", "baton", "wafel", "wafelk",
     "ciastk", "herbatnik", "biszkopt", "markiz", "piernik", "delicj",
     "cukierk", "zelk", "lizak", "karmelk", "krowk", "chalw", "sezamk",
     "ptasie mleczko", "nutella", "krem czekoladowy", "krem orzechowy",
+    "dekoracji cukrow", "dekoracje cukrow", "posypka cukrow", "lukier", "masa cukrow",
     "lody", "lodow", "rozek", "sorbet", "paczek", "donut", "drozdzowk",
-    "croissant", "rogali",
+    "croissant", "rogali", "cola", "pepsi", "fanta", "sprite", "oranzad",
     # Alkohol i wyroby tytoniowe
     "piwo", "wodka", "whisky", "likier", "cydr", "gin ", "rum ", "tequila", "prosecco",
     "szampan", "browar", "harna", "tyskie", "zubr", "zywiec", "lech ", "perla", "heineken",
+    "miod pitny", "poltorak", "dwojniak", "trojniak",
     # Elementy nawigacji / teksty UI portali gazetek
-    "zobacz aktualna", "gazetka ", "strona ", "oferta wazna", "wszystkie promocje",
+    "gazetka ", "strona ", "oferta wazna", "wszystkie promocje",
     "sprawdz gazetke", "przejdz do", "pokaz wiecej", "wczytaj wiecej", "nastepna strona",
     "poprzednia strona", "kategoria", "filtry", "sortuj", "regulamin", "polityka prywatnosci",
     "zapisz sie", "newsletter", "aplikacja mobilna", "pobierz aplikacje", "opinie o",
     "godziny otwarcia", "znajdz sklep", "lista zakupow", "cena regularna", "najtansza cena z 30 dni"
 ]
+
+PORTAL_PREFIX_RE = re.compile(
+    r"^(?:zobacz\s+(?:aktualn[aąe]|archiwaln[aąe]|najnowsz[aąe]|od\s+dzi[sś]|ju[zż]\s+od\s+jutr[ao]|jutro|w\s+sklepie|ofert[eę])?\s*|"
+    r"aktualn[aąe]\s+|archiwaln[aąe]\s+|od\s+dzi[sś]\s+|ju[zż]\s+w\s+sprzeda[zż]y\s+|oferta\s+)",
+    re.I,
+)
+
+
+def strip_portal_prefixes(text: str) -> str:
+    """Usuwa wielokrotnie sklejone prefiksy portali typu 'Zobacz archiwalna ', 'Zobacz od dziś '."""
+    s = " ".join(str(text or "").split()).strip(" -–|:•,./")
+    for _ in range(4):
+        updated = PORTAL_PREFIX_RE.sub("", s).strip(" -–|:•,./")
+        if updated == s:
+            break
+        s = updated
+    return s
 
 
 def normalize_ascii(text: str) -> str:
@@ -184,8 +207,8 @@ def extract_weight_from_text(text: str) -> Optional[str]:
 
 
 def clean_generic_offer_name(raw_title: str) -> str:
-    """Czyści surową nazwę z gazetki z cen, gramatur i zbędnych dopisków promocyjnych."""
-    s = " ".join(str(raw_title or "").split()).strip(" -–|:•,./")
+    """Czyści surową nazwę z gazetki z prefiksów portali, cen, gramatur i dopisków promocyjnych."""
+    s = strip_portal_prefixes(raw_title)
     s = re.sub(r"\b\d+\s*\+\s*\d+\s*gratis\b", " ", s, flags=re.I)
     s = re.sub(r"\bdrugi\s+(?:produkt\s+)?\d+%\s*taniej\b", " ", s, flags=re.I)
     s = re.sub(r"[-–]\s*\d{1,2}\s*%", " ", s)
@@ -194,7 +217,7 @@ def clean_generic_offer_name(raw_title: str) -> str:
     s = re.sub(r"\b\d+(?:[.,]\d+)?\s*(?:kg|g|dag|ml|l|szt\.?)\b", " ", s, flags=re.I)
     s = re.sub(r"\s+", " ", s).strip(" -–|:•,./")
     if not s:
-        return raw_title.strip()
+        return strip_portal_prefixes(raw_title)
     return s[0].upper() + s[1:]
 
 
@@ -206,7 +229,7 @@ def guess_food_category(norm_text: str) -> str:
         return "Lodówka i mrożonki"
     if re.search(r"(pomidor|ogor|papryk|cebul|czosn|ziemniak|marchew|pietruszk|seler|kapust|brokul|kalafior|cukini|baklazan|szpinak|salat|rzodkiew|burak|por|pieczark|dyni|awokado|jablk|banan|cytryn|pomarancz|mandarynk|grejpfrut|borowk|malin|truskawk|winogron|gruszk|sliwk|brzoskwini|ananas|mango|kiwi|arbuz)", norm_text) and not re.search(r"(passat|przecier|koncentrat|krojon|puszk)", norm_text):
         return "Warzywa i owoce"
-    if re.search(r"(oliw|olej|maslo orzech|sos sojowy|bulion|ketchup|majonez|musztard|przypraw)", norm_text):
+    if re.search(r"(oliw|olej|maslo orzech|sos sojowy|bulion|ketchup|majonez|musztard|przypraw|pesto)", norm_text):
         return "Przyprawy i dodatki"
     if re.search(r"(puszk|sloik|passat|koncentrat|fasol|kukurydz|groszek konserw|ogorki kiszon|ogorki konserw)", norm_text):
         return "Konserwy i słoiki"
@@ -218,7 +241,7 @@ def is_valid_leaflet_url(url: str, store_slug: str, link_text: str = "") -> bool
     low_txt = normalize_ascii(link_text)
     if any(bad in low_url for bad in EXCLUDED_URL_PATTERNS):
         return False
-    if any(w in low_txt for w in ["blog", "artykul", "poradnik", "czytaj dalej", "przepis na", "godziny otwarcia"]):
+    if any(w in low_txt for w in ["blog", "artykul", "poradnik", "czytaj dalej", "przepis na", "godziny otwarcia", "archiwaln"]):
         return False
     return (store_slug in low_url) or (store_slug in low_txt)
 
@@ -246,6 +269,7 @@ def parse_polish_date(day_str: str, month_str: str, year_str: Optional[str] = No
 def extract_validity_dates(text: str) -> tuple[Optional[str], Optional[str]]:
     if not text:
         return None, None
+    # Wzorzec pełny: "19.11 - 21.11" lub "od 19.11 do 21.11"
     m_range = re.search(
         r"(?:od\s*)?(\d{1,2})[./](\d{1,2})(?:[./](\d{2,4}))?\s*(?:-|–|—|do)\s*(\d{1,2})[./](\d{1,2})(?:[./](\d{2,4}))?",
         text,
@@ -257,12 +281,44 @@ def extract_validity_dates(text: str) -> tuple[Optional[str], Optional[str]]:
         v_to = parse_polish_date(d2, m2, y2 or y1)
         if v_from and v_to:
             return v_from, v_to
-    m_until = re.search(r"(?:wazn[ae]|obowiazuje|oferta)?\s*do\s*(\d{1,2})[./](\d{1,2})(?:[./](\d{2,4}))?", text, re.I)
+
+    # Wzorzec skrócony typu "19-21.11" lub "19–21.11.2026"
+    m_short_range = re.search(
+        r"\b(\d{1,2})\s*(?:-|–|—)\s*(\d{1,2})[./](\d{1,2})(?:[./](\d{2,4}))?\b",
+        text,
+        re.I,
+    )
+    if m_short_range:
+        d1, d2, m2, y2 = m_short_range.groups()
+        v_from = parse_polish_date(d1, m2, y2)
+        v_to = parse_polish_date(d2, m2, y2)
+        if v_from and v_to:
+            return v_from, v_to
+
+    # Wzorzec "do soboty 21.11", "do 21.11", "ważne do 21.11"
+    m_until = re.search(
+        r"(?:wazn[ae]|obowiazuje|oferta|tylko)?\s*do\s+(?:[a-ząćęłńóśźż]+\s+)?(\d{1,2})[./](\d{1,2})(?:[./](\d{2,4}))?",
+        text,
+        re.I,
+    )
     if m_until:
         d2, m2, y2 = m_until.groups()
         v_to = parse_polish_date(d2, m2, y2)
         if v_to:
             return None, v_to
+
+    # Wzorzec jednodniowy: "tylko w sobotę 21.11", "w piątek 20.11", "tylko 21.11"
+    m_single_day = re.search(
+        r"(?:tylko\s+)?(?:w\s+)?(?:poniedzialek|wtorek|srod[eę]|czwartek|piatek|sobot[eę]|niedziel[eę]|tylko)\s+(\d{1,2})[./](\d{1,2})(?:[./](\d{2,4}))?",
+        normalize_ascii(text),
+        re.I,
+    )
+    if m_single_day:
+        d1, m1, y1 = m_single_day.groups()
+        v_exact = parse_polish_date(d1, m1, y1)
+        if v_exact:
+            return v_exact, v_exact
+
     m_iso = re.findall(r"\b(202\d-\d{2}-\d{2})\b", text)
     if len(m_iso) >= 2:
         return m_iso[0], m_iso[1]
@@ -282,23 +338,25 @@ def is_promotion_active(valid_to: Optional[str]) -> bool:
 
 def classify_any_food_offer(raw_title: str, price_val: float) -> Optional[tuple[str, str, str, bool]]:
     """
-    Akceptuje wszystkie sensowne promocje spożywcze (z wykluczeniem słodyczy, ale z zachowaniem chipsów i energetyków).
-    Zwraca: (offer_slug, czysta_nazwa, kategoria, is_core_essential)
+    Akceptuje wszystkie sensowne promocje spożywcze (z wykluczeniem słodyczy, alkoholu i archiwalnych gazetek,
+    ale z zachowaniem chipsów i energetyków).
     """
     if price_val < 0.50 or price_val > 120.00:
         return None
 
+    raw_norm = normalize_ascii(raw_title)
+    if "archiwaln" in raw_norm:
+        return None
+
     clean_title = clean_generic_offer_name(raw_title)
     norm = normalize_ascii(clean_title)
-    raw_norm = normalize_ascii(raw_title)
 
     if len(norm) < 3 or len(norm) > 85 or not re.search(r"[a-z]{3,}", norm):
         return None
 
-    # Odrzuć artykuły niespożywcze, słodycze i śmieci UI (z wyjątkiem osobnego słowa 'wino' tak, aby nie blokować winogron)
-    if any(bad in raw_norm for bad in NON_FOOD_AND_UI_NOISE):
+    if any(bad in norm for bad in NON_FOOD_AND_UI_NOISE):
         return None
-    if re.search(r"\bwino\b", raw_norm):
+    if re.search(r"\bwino\b", norm):
         return None
 
     # 1. Jeśli oferta pasuje do jednego z podstawowych składników kulinarnych — daj jej czystą kanoniczną nazwę
@@ -327,6 +385,9 @@ def parse_offers(html: str, store_name: str, source_url: str) -> list[dict]:
         soup.title.get_text(" ", strip=True) if soup.title else "",
         " ".join(h.get_text(" ", strip=True) for h in soup.find_all(["h1", "h2"], limit=4)),
     ])
+    if "archiwaln" in normalize_ascii(page_header_text):
+        return []
+
     page_valid_from, page_valid_to = extract_validity_dates(page_header_text)
 
     if not is_promotion_active(page_valid_to):
@@ -338,6 +399,7 @@ def parse_offers(html: str, store_name: str, source_url: str) -> list[dict]:
             return
         offer_slug, clean_label, cat_name, is_core = matched
         weight_str = extract_weight_from_text(raw_prod) or extract_weight_from_text(raw_text)
+        clean_raw_display = strip_portal_prefixes(raw_text)
         sig = f"{offer_slug}_{price_val}_{weight_str or ''}"
         if sig not in seen:
             seen.add(sig)
@@ -345,32 +407,39 @@ def parse_offers(html: str, store_name: str, source_url: str) -> list[dict]:
                 "store": store_name,
                 "canon_key": offer_slug,
                 "category": cat_name,
-                "raw_name": raw_prod,
+                "raw_name": strip_portal_prefixes(raw_prod),
                 "generic_name": clean_label,
                 "weight": weight_str,
                 "price": round(price_val, 2),
                 "is_core": is_core,
                 "valid_from": v_from,
                 "valid_to": v_to,
-                "raw_text": raw_text,
+                "raw_text": clean_raw_display,
                 "source_url": source_url,
             })
 
-    # 1. Dane osadzone w JSON / skryptach na stronie
+    # 1. Dane osadzone w JSON / skryptach na stronie (sprawdzamy też daty ważności samej oferty w oknie JSON!)
     for script in soup.find_all("script"):
         s_text = script.string or ""
         if not s_text:
             continue
         for m in re.finditer(
-            r'"(?:name|title|productName)"\s*:\s*"([^"]{3,110})".{0,450}?"(?:price|lowPrice|promoPrice|value)"\s*:\s*"?(\d{1,3}[.,]\d{2})"?',
+            r'"(?:name|title|productName)"\s*:\s*"([^"]{3,110})".{0,550}?"(?:price|lowPrice|promoPrice|value)"\s*:\s*"?(\d{1,3}[.,]\d{2})"?',
             s_text,
             re.S,
         ):
             raw_prod = m.group(1).encode("utf-8").decode("unicode_escape", errors="ignore").strip()
             price_val = float(m.group(2).replace(",", "."))
-            try_add(raw_prod, price_val, f"{raw_prod} — {price_val:.2f} zł", page_valid_from, page_valid_to)
+            snippet = s_text[max(0, m.start() - 120):min(len(s_text), m.end() + 260)]
+            j_from, j_to = extract_validity_dates(snippet)
+            v_from = j_from or page_valid_from
+            v_to = j_to or page_valid_to
+            if not is_promotion_active(v_to):
+                continue
+            clean_p = strip_portal_prefixes(raw_prod)
+            try_add(raw_prod, price_val, f"{clean_p} — {price_val:.2f} zł", v_from, v_to)
 
-    # 2. Atrybuty alt obrazków gazetek
+    # 2. Atrybuty alt obrazków gazetek + tekst rodzica karty (gdzie często jest podana data końca sub-promocji np. "do soboty 21.11")
     for img in soup.find_all("img", alt=True):
         alt_txt = " ".join((img.get("alt") or "").split())
         if len(alt_txt) < 8 or len(alt_txt) > 220:
@@ -379,8 +448,14 @@ def parse_offers(html: str, store_name: str, source_url: str) -> list[dict]:
         if 1 <= len(price_matches) <= 2:
             first_m = price_matches[0]
             price_val = float(first_m.group(1).replace(",", "."))
-            raw_prod = re.sub(r"^zobacz\s+aktualn[aą]\s+", "", alt_txt[:first_m.start()], flags=re.I).strip(" -–|:•,")
-            try_add(raw_prod, price_val, alt_txt, page_valid_from, page_valid_to)
+            raw_prod = alt_txt[:first_m.start()].strip(" -–|:•,")
+            parent_txt = " ".join(img.parent.get_text(" ", strip=True).split()) if img.parent else ""
+            c_from, c_to = extract_validity_dates(f"{alt_txt} {parent_txt[:220]}")
+            v_from = c_from or page_valid_from
+            v_to = c_to or page_valid_to
+            if not is_promotion_active(v_to):
+                continue
+            try_add(raw_prod, price_val, alt_txt, v_from, v_to)
 
     # 3. Kafelki ofert HTML
     for el in soup.find_all(["article", "div", "li", "a", "tr", "section"]):
@@ -392,13 +467,14 @@ def parse_offers(html: str, store_name: str, source_url: str) -> list[dict]:
             continue
         first_m = price_matches[0]
         price_val = float(first_m.group(1).replace(",", "."))
-        raw_prod = re.sub(r"^zobacz\s+aktualn[aą]\s+", "", text[:first_m.start()], flags=re.I).strip(" -–|:•,")
+        raw_prod = text[:first_m.start()].strip(" -–|:•,")
         card_from, card_to = extract_validity_dates(text)
         v_from = card_from or page_valid_from
         v_to = card_to or page_valid_to
         if not is_promotion_active(v_to):
             continue
-        try_add(raw_prod, price_val, f"{raw_prod} — {price_val:.2f} zł", v_from, v_to)
+        clean_p = strip_portal_prefixes(raw_prod)
+        try_add(raw_prod, price_val, f"{clean_p} — {price_val:.2f} zł", v_from, v_to)
 
     return offers
 
@@ -488,7 +564,7 @@ def fetch_all_store_offers() -> list[dict]:
 
 def build_all_food_pending(offers: list[dict], max_items: int = 350) -> dict:
     """
-    Zwraca wszystkie unikalne promocje spożywcze (z pominięciem słodyczy, ale z chipsami i energetykami),
+    Zwraca wszystkie unikalne promocje spożywcze (z pominięciem słodyczy, alkoholu i archiwalnych),
     zachowując najniższą cenę dla identycznego (sklep + produkt + gramatura).
     """
     best_offers = {}
@@ -521,7 +597,11 @@ def build_all_food_pending(offers: list[dict], max_items: int = 350) -> dict:
 def purge_expired_pending(existing_pending: dict) -> dict:
     cleaned = {}
     for k, v in (existing_pending or {}).items():
-        if isinstance(v, dict) and is_promotion_active(v.get("validTo")):
+        if not isinstance(v, dict):
+            continue
+        if "archiwaln" in normalize_ascii(f"{v.get('name', '')} {v.get('rawText', '')}"):
+            continue
+        if is_promotion_active(v.get("validTo")):
             cleaned[k] = v
     return cleaned
 
@@ -564,13 +644,13 @@ def init_firestore():
 
 def main():
     dry_run = "--dry-run" in sys.argv
-    print(f"=== START SCRAPERA — PROMOCJE BEZ SŁODYCZY ({'TRYB LOKALNY --dry-run' if dry_run else 'TRYB FIREBASE'}) ===", flush=True)
+    print(f"=== START SCRAPERA — CZYSTE PROMOCJE ({'TRYB LOKALNY --dry-run' if dry_run else 'TRYB FIREBASE'}) ===", flush=True)
 
     offers = fetch_all_store_offers()
     export_csv(offers)
 
     all_promos = build_all_food_pending(offers)
-    print(f"Przygotowano {len(all_promos)} promocji spożywczych do zakładki Promocje.", flush=True)
+    print(f"Przygotowano {len(all_promos)} czystych promocji spożywczych.", flush=True)
 
     if dry_run:
         with open("wynik_testu.json", "w", encoding="utf-8") as f:
@@ -591,8 +671,8 @@ def main():
         if data.get("active") is False:
             continue
 
-        active_existing = purge_expired_pending(data.get("pendingScraper") or {})
-        active_existing.update(all_promos)
+        # Zastępujemy poczekalnię wyłącznie świeżo zweryfikowanymi i aktywnymi promocjami z bieżącego skanowania
+        active_existing = dict(all_promos)
 
         db.collection("kuchnie").document(doc_snap.id).set({
             "pendingScraper": active_existing,

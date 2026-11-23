@@ -2390,6 +2390,10 @@
             let s = String(rawStr || '').trim();
             if (!s) return 'Produkt';
 
+            for (let i = 0; i < 3; i++) {
+                s = s.replace(/^(?:zobacz\s+(?:aktualn[aąe]|archiwaln[aąe]|najnowsz[aąe]|od\s+dzi[sś]|ju[zż]\s+od\s+jutr[ao]|jutro|w\s+sklepie|ofert[eę])?\s*|aktualn[aąe]\s+|archiwaln[aąe]\s+|od\s+dzi[sś]\s+|ju[zż]\s+w\s+sprzeda[zż]y\s+|oferta\s+)/i, '').trim();
+            }
+
             // Usuń gramatury i procenty tłuszczu z nazwy (np. "200g", "3,2%", "1L", "2%")
             s = s.replace(/\b\d+(?:[.,]\d+)?\s*(?:kg|g|dag|ml|l|szt\.?|%)\b/gi, ' ');
             s = s.replace(/\b\d+[.,]\d+%?/g, ' ');
@@ -2436,7 +2440,7 @@
             if (ascii.includes('czerwon') && ascii.includes('fasol')) return 'Czerwona fasola';
             if (ascii.includes('bial') && ascii.includes('fasol')) return 'Biała fasola';
             if (ascii.includes('kukurydz')) return 'Kukurydza konserwowa';
-            if (ascii.includes('tunczyk')) return 'Tuńczyk w puszce';
+            if (ascii.includes('tunczyk') && !ascii.includes('pesto') && !ascii.includes('sos') && !ascii.includes('salatk')) return 'Tuńczyk w puszce';
             if (ascii.includes('ananas')) return 'Ananas w puszce';
             if (/\bryz\b/.test(ascii)) return 'Ryż';
             if (ascii.includes('makaron')) return 'Makaron';
@@ -4297,11 +4301,11 @@ BARDZO WAŻNE ZASADY:
                         </div>
 
                         <div class="flex items-center gap-2">
-                            <input type="text" id="verify-name-${key}" value="${cleanName}" class="bg-slate-950/80 border border-slate-700 focus:border-emerald-500 rounded-lg px-2.5 py-1 text-base font-bold text-white w-full max-w-xs focus:outline-none">
+                            <input type="text" id="verify-name-${key}" value="${cleanName}" class="bg-slate-950/80 border border-slate-700 focus:border-emerald-500 rounded-lg px-2.5 py-1 text-base font-bold text-white w-full focus:outline-none">
                         </div>
 
                         <p class="text-xs text-slate-400 truncate">
-                            Z gazetki: <span class="font-mono text-slate-300">${item.rawText || item.name || ''}</span>
+                            Z gazetki: <span class="font-mono text-slate-300">${String(item.rawText || item.name || '').replace(/^(?:zobacz\s+(?:aktualn[aąe]|archiwaln[aąe]|od\s+dzi[sś])?\s*|archiwaln[aąe]\s+|aktualn[aąe]\s+)/i, '')}</span>
                             ${item.sourceUrl ? ` • <a href="${item.sourceUrl}" target="_blank" rel="noopener" class="text-indigo-400 hover:underline">Źródło ↗</a>` : ''}
                         </p>
                     </div>
