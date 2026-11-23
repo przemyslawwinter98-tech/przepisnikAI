@@ -80,7 +80,7 @@ CORE_CULINARY_ITEMS = {
     "maslo": ("Masło", "Lodówka i mrożonki", ["maslo ekstra", "maslo polskie", "maslo 82", "maslo 83", "maslo"], ["orzech", "roslinn", "margaryn", "mix", "krem", "balsam", "do ciala", "shea", "czekolad"], 3.00, 11.00),
     "mleko": ("Mleko", "Lodówka i mrożonki", ["mleko uht", "mleko swieze", "mleko 3,2", "mleko 2%", "mleko"], ["kokos", "sojow", "owsian", "migdal", "zageszczon", "skondensowan", "w proszku", "czekolad", "do demakijazu", "balsam", "modifikowan", "bebiko", "nan", "ptasie"], 1.50, 5.50),
     "jajka": ("Jajka", "Lodówka i mrożonki", ["jajka", "jaja sciolkow", "jaja z wolnego", "jaja klasa"], ["niespodziank", "czekolad", "makaron", "majonez", "kinder"], 4.00, 16.00),
-    "ser_zolty": ("Ser żółty", "Lodówka i mrożonki", ["ser zolty", "ser gouda", "ser edam", "ser morski", "ser ementaler", "gouda"], ["topion", "plesniow", "feta", "twarog", "wiejski", "mascarpone"], 3.50, 32.00),
+    "ser_zolty": ("Ser żółty", "Lodówka i mrożonki", ["ser zolty", "ser gouda", "ser edam", "ser edamski", "ser morski", "ser ementaler", "gouda"], ["topion", "plesniow", "feta", "twarog", "wiejski", "mascarpone", "deser", "sernik", "serduszk"], 3.50, 32.00),
     "twarog": ("Twaróg", "Lodówka i mrożonki", ["twarog poltlusty", "twarog chudy", "twarog tlusty", "twarog sernikowy", "twarog"], ["deser", "danio", "sernik", "baton"], 2.00, 16.00),
     "serek_wiejski": ("Serek wiejski", "Lodówka i mrożonki", ["serek wiejski"], ["deser"], 1.40, 5.00),
     "jogurt_naturalny": ("Jogurt naturalny", "Lodówka i mrożonki", ["jogurt naturalny", "jogurt grecki"], ["owocow", "pitny", "deser", "stracciatella", "czekolad"], 1.00, 7.00),
@@ -151,13 +151,38 @@ NON_FOOD_AND_UI_NOISE = [
     "lody", "lodow", "rozek", "sorbet", "paczek", "donut", "drozdzowk",
     "croissant", "rogali", "babeczk", "muffin", "tort ",
     "chipsy", "chrupki", "prazynki", "popcorn", "paluszki", "krakersy", "nachosy", "lays", "pringles", "crunchips",
-    "herbat", "lipton", "dilmah", "saga", "tetley", "earl grey", "yerba", "kaw", "nescafe", "jacobs", "tchibo", "lavazza",
+    "herbat", "lipton", "dilmah", "saga", "tetley", "earl grey", "yerba", "kawa ", "kawy ", "kawowa ", "kawowy ", "nescafe", "jacobs", "tchibo", "lavazza",
     "napoj", "cola", "pepsi", "fanta", "sprite", "oranzad", "energetyk", "energetyczn",
     "tiger", "red bull", "monster", "black ", "burn ", "oshee", "4move", "izotonik", "tymbark", "kubus", "nektar",
     # Alkohol i wyroby tytoniowe
     "piwo", "wodka", "whisky", "likier", "cydr", "gin ", "rum ", "tequila", "prosecco",
     "szampan", "browar", "harna", "tyskie", "zubr", "zywiec", "lech ", "perla", "heineken",
     "miod pitny", "poltorak", "dwojniak", "trojniak",
+    # Dodatkowe wykluczenia z gazetek (sprzęt AGD, dekoracje, słodycze, przyprawy w młynkach, gotowce/fastfood)
+    "frytkownica", "blender", "toster", "odkurzacz", "gofrownica", "siekacz", "dzbanek filtrujacy",
+    "miska na pranie", "lancuch swietlny", "kurtyna swietlna", "girlanda", "drzewko led", "choinka",
+    "dziadek do orzechow", "album na zdjecia", "akcesoria krawieckie", "akcesoria do czyszczenia",
+    "akcesoria swiateczne", "opaski zaciskowe", "listki piorace", "calgon", "finish", "pronto",
+    "air wick", "pachnaca szafa", "pachnace patyczki", "tolpa", "bielenda", "palette", "farba do wlosow",
+    "bizuteria", "skarpety", "skarpetki", "bokserki", "chodaki", "dres ", "materac", "koldra",
+    "torba na butelki", "worek na prezenty", "katalog zabawek", "produkty z gazetek",
+    "kalendarz adwentowy", "mikolaj z czekolady", "figurka mikolaja", "figurka miko", "poinsecja",
+    "cyclamen", "gaultheria", "pinus", "gwiazda betlejemska", "gozdziki carnaval",
+    "mlynek z przyprawami", "barwnik spozywczy", "pisaki cukrowe", "pisaki pastelowe", "pisaki shrek",
+    "pisaki koci", "aromat do ciast", "cukier wanilinowy", "cukier z wanilia", "cukier ze skorka",
+    "polewa ", "masa makowa", "chatka z piernika", "cantuccini", "cannoli", "makaroniki",
+    "marmoladki", "beziki", "ptasie mleczko", "krolewskie mleczko", "alpejskie mleczko",
+    "krajanka piernikowa", "gwiazdka piernikowa", "warkocz makowy", "ciacho", "cynamonka",
+    "malinianka", "kisiel", "granola", "cornflakes", "platki kukurydziane", "mus owocowy",
+    "mus jablkowy", "mus bobovita", "przekaska owocowa", "daktyle smakowe", "daktyle suszone",
+    "migdaly w ", "migdaly zimowe", "orzechy w czekoladzie", "orzechy laskowe o smaku",
+    "pistacje prazone", "pomysl na danie", "panierka do nuggetsow", "zawartosc dla osob pelnoletnich",
+    "brandy", "whiskey", "katalog ", "tablet lcd", "aparat natychmiastowy", "mysz bezprzewodowa",
+    "hub usb", "przewod ", "pojazd zdalnie", "samochod zdalnie", "hulajnoga", "drewniana kolejka",
+    "tor wyscigowy", "ukladanka", "puzzle", "gra karciana", "gra zrecznosciowa", "gry podrozne",
+    "zestaw gier", "zestaw zabawek", "zestaw do zabawy", "zestaw kreatywny", "zestaw figurek",
+    "zestaw superthings", "karty kolekcjonerskie", "squashi", "maskotka", "telefon chicco",
+    "zestaw all'aura", "zestaw big star", "zestaw meski", "zestaw damski", "zestaw gloss",
     # Elementy nawigacji / teksty UI portali gazetek
     "gazetka ", "strona ", "oferta wazna", "wszystkie promocje",
     "sprawdz gazetke", "przejdz do", "pokaz wiecej", "wczytaj wiecej", "nastepna strona",
@@ -178,7 +203,7 @@ POSITIVE_FOOD_KEYWORDS = re.compile(
     r"losos\w*|dorsz\w*|tunczyk\w*|sledz\w*|pstrag\w*|makrel\w*|mintaj\w*|morszczuk\w*|"
     r"halibut\w*|sandacz\w*|karp\w*|tilapi\w*|krewetk\w*|kalmar\w*|ryb\w*|"
     # Nabiał i jaja
-    r"mleko|mleka|maslo|masla|ser|sera|sery|serem|gouda|edam\w*|ementaler\w*|morski|mozzarell\w*|"
+    r"mleko|mleka|maslo|masla|ser zolty|ser gouda|ser edam\w*|ser mozzarella|ser camembert|ser feta|ser plesniowy|gouda|edam\w*|ementaler\w*|mozzarell\w*|"
     r"twarog\w*|serek|serki|jogurt\w*|smietan\w*|kefir\w*|maslank\w*|jaj\w*|feta|camembert|brie|parmezan\w*|ricotta|mascarpone|"
     # Pieczywo
     r"chleb\w*|bulk\w*|bagietk\w*|tortill\w*|pieczyw\w*|kajzerk\w*|graham\w*|tostow\w*|"
@@ -415,11 +440,12 @@ def classify_any_food_offer(raw_title: str, price_val: float) -> Optional[tuple[
     if re.search(r"\bwino\b", norm):
         return None
 
-    # 1. Podstawowe składniki kulinarne
+    # 1. Podstawowe składniki kulinarne (sprawdzamy zarówno surową nazwę przed wycięciem przymiotników, jak i oczyszczoną)
+    combined_check = f"{raw_norm} {norm}"
     for canon_key, (clean_label, cat_name, must_kws, excl_kws, min_p, max_p) in CORE_CULINARY_ITEMS.items():
-        if min_p <= price_val <= max_p and not any(ex in norm for ex in excl_kws):
-            if any(kw in norm for kw in must_kws):
-                if canon_key == "serek_wiejski" and ("lekk" in norm or "light" in norm):
+        if min_p <= price_val <= max_p and not any(ex in combined_check for ex in excl_kws):
+            if any(kw in combined_check for kw in must_kws):
+                if canon_key == "serek_wiejski" and ("lekk" in combined_check or "light" in combined_check):
                     return "serek_wiejski_lekki", "Serek wiejski lekki", cat_name, True
                 return canon_key, clean_label, cat_name, True
 
@@ -725,6 +751,7 @@ def filter_pending_with_gemini(pending_dict: dict, api_key: str) -> dict:
             )
             if resp.status_code == 200:
                 raw_txt = resp.json().get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "[]")
+                raw_txt = re.sub(r"^```(?:json)?\s*|\s*```$", "", raw_txt.strip())
                 parsed = json.loads(raw_txt)
                 if isinstance(parsed, list):
                     for row in parsed:
@@ -804,10 +831,10 @@ def main():
         gemini_key = os.environ.get("GEMINI_API_KEY") or data.get("geminiApiKey") or ""
         active_existing = filter_pending_with_gemini(dict(all_promos), gemini_key) if gemini_key else dict(all_promos)
 
-        db.collection("kuchnie").document(doc_snap.id).set({
+        db.collection("kuchnie").document(doc_snap.id).update({
             "pendingScraper": active_existing,
             "lastScraped": datetime.now().isoformat(),
-        }, merge=True)
+        })
         updated += 1
         print(f"[Kuchnia {doc_snap.id}] Aktywnych pozycji w zakładce Promocje: {len(active_existing)}.", flush=True)
 
