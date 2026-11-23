@@ -5040,12 +5040,80 @@ ${JSON.stringify(chunk)}`;
             }
         };
 
+        function sanitizeScrapedRecipeMarkdown(rawMarkdown) {
+            let text = String(rawMarkdown || '');
+
+            // Wyciągnij tytuł z nagłówka r.jina.ai ("Title: Zupa meksykańska - AniaGotuje.pl")
+            let extractedTitle = '';
+            const titleMatch = text.match(/^Title:\s*(.+)$/m);
+            if (titleMatch) {
+                extractedTitle = titleMatch[1]
+                    .replace(/\s*[-|–—]\s*(AniaGotuje\.pl|Kwestia Smaku|PrzyslijPrzepis\.pl|Doradca Smaku|Moje Wypieki|Poprostupycha).*$/i, '')
+                    .replace(/\s*przepis\s*$/i, '')
+                    .trim();
+            }
+
+            // Odetnij nagłówki techniczne r.jina.ai
+            const mdStartIdx = text.indexOf('Markdown Content:');
+            if (mdStartIdx !== -1) {
+                text = text.slice(mdStartIdx + 'Markdown Content:'.length);
+            }
+
+            // Usuń obrazki markdown [![...](...)](...) oraz ![...](...)
+            text = text.replace(/\[!\[[^\]]*\]\([^)]*\)\]\([^)]*\)/g, ' ');
+            text = text.replace(/!\[[^\]]*\]\([^)]*\)/g, ' ');
+
+            // Zamień linki markdown [Tekst](https://...) na sam Tekst, a puste [](https://...) usuń całkowicie
+            text = text.replace(/\[\s*\]\([^)]*\)/g, ' ');
+            text = text.replace(/\[([^\]]+)\]\([^)]*\)/g, '$1');
+
+            // Podziel na linie i odfiltruj śmieci nawigacyjne (pigułki kategorii, social media, cookies)
+            const navNoisePatterns = [
+                /^(facebook|instagram|youtube|tiktok|pinterest|losuj\s*!|szukaj|menu|zaloguj|rejestracja|polityka prywatności|regulamin|ciasteczka|cookies|udostępnij|drukuj|zapisz przepis|oceń przepis|dodaj komentarz|wszystkie przepisy|kategorie|pomysł na)/i,
+                /^(obiad|śniadanie|kolacja|desery|ciasta|zupy|sałatki|przekąski|napoje|wegetariańskie|bez glutenu|cynamonki|dynia|jabłka|rogale)$/i
+            ];
+
+            let cleanedLines = text
+                .split('\n')
+                .map(l => l.replace(/\s+/g, ' ').trim())
+                .filter(l => {
+                    if (!l) return false;
+                    if (/^[-=*_]{3,}$/.test(l)) return false;
+                    if (/^https?:\/\//i.test(l)) return false;
+                    const plain = l.replace(/^#+\s*/, '').replace(/^[*•-]+\s*/, '').trim();
+                    if (!plain || plain.length < 2) return false;
+                    if (navNoisePatterns.some(rx => rx.test(plain))) return false;
+                    return true;
+                });
+
+            // Jeśli na górze nadal jest menu przed głównym nagłówkiem H1 (# Tytuł) lub sekcją Składniki, przeskocz bezpośrednio do przepisu!
+            const h1Idx = cleanedLines.findIndex(l => /^#\s+/.test(l) || (extractedTitle && l.toLowerCase().includes(extractedTitle.toLowerCase())));
+            const ingIdx = cleanedLines.findIndex(l => /^(?:#+\s*)?(?:składniki|skladniki|czego potrzebujesz)/i.test(l));
+            let startIdx = 0;
+            if (h1Idx > 0 && h1Idx < 60) startIdx = h1Idx;
+            else if (ingIdx > 5 && ingIdx < 80) startIdx = Math.max(0, ingIdx - 5);
+
+            cleanedLines = cleanedLines.slice(startIdx);
+
+            // Odetnij sekcję komentarzy i podobnych przepisów na dole strony
+            const endIdx = cleanedLines.findIndex((l, idx) => idx > 8 && /^(?:#+\s*)?(?:komentarze|wasze zdjęcia|podobne przepisy|polecane przepisy|zobacz również|zobacz także|może cię zainteresować)/i.test(l));
+            if (endIdx !== -1) {
+                cleanedLines = cleanedLines.slice(0, endIdx);
+            }
+
+            const finalBody = cleanedLines.join('\n');
+            return extractedTitle ? `TYTUŁ PRZEPISU: ${extractedTitle}\n\n${finalBody}` : finalBody;
+        }
+
         async function fetchWebpageReadableText(targetUrl) {
             try {
                 const jinaResp = await fetch(`https://r.jina.ai/${targetUrl}`, { headers: { 'Accept': 'text/plain' } });
                 if (jinaResp.ok) {
                     const txt = await jinaResp.text();
-                    if (txt && txt.length > 150) return txt.slice(0, 15000);
+                    if (txt && txt.length > 150) {
+                        const sanitized = sanitizeScrapedRecipeMarkdown(txt);
+                        if (sanitized.length > 120) return sanitized.slice(0, 16000);
+                    }
                 }
             } catch (_) {}
 
@@ -5053,40 +5121,72 @@ ${JSON.stringify(chunk)}`;
             if (!proxyResp.ok) throw new Error("Nie udało się pobrać strony.");
             const data = await proxyResp.json();
             const docParser = new DOMParser().parseFromString(data.contents || "", "text/html");
-            docParser.querySelectorAll("script, style, nav, footer, header, aside").forEach(el => el.remove());
+            const pageTitle = (docParser.querySelector('h1')?.innerText || docParser.title || '').trim();
+            docParser.querySelectorAll("script, style, nav, footer, header, aside, .comments, #comments").forEach(el => el.remove());
             const cleanText = (docParser.body?.innerText || "").replace(/\n{3,}/g, "\n\n").trim();
             if (cleanText.length < 100) throw new Error("Strona jest pusta lub zablokowana.");
-            return cleanText.slice(0, 15000);
+            const combined = pageTitle ? `TYTUŁ PRZEPISU: ${pageTitle}\n\n${cleanText}` : cleanText;
+            return combined.slice(0, 16000);
         }
 
         function parseRecipeLocallyFromText(rawText) {
-            const lines = rawText
-                .split('\n')
-                .map(l => l.replace(/^#+\s*/, '').replace(/^\*+\s*/, '').replace(/^-\s*/, '').trim())
-                .filter(l => l && !l.startsWith('Title:') && !l.startsWith('URL Source:') && !l.startsWith('Markdown Content:') && !l.startsWith('Źródło:') && !l.startsWith('!['));
+            const sanitizedText = rawText.includes('Markdown Content:') || /\]\(https?:\/\//.test(rawText)
+                ? sanitizeScrapedRecipeMarkdown(rawText)
+                : rawText;
 
-            const title = (lines[0] || "Nowy przepis z linku").slice(0, 80);
+            let explicitTitle = '';
+            const expMatch = sanitizedText.match(/^TYTUŁ PRZEPISU:\s*(.+)$/m);
+            if (expMatch) explicitTitle = expMatch[1].trim();
+
+            const lines = sanitizedText
+                .split('\n')
+                .map(l => l.replace(/^#+\s*/, '').replace(/^\*+\s*/, '').replace(/^[-•]\s*/, '').trim())
+                .filter(l => l && !l.startsWith('TYTUŁ PRZEPISU:') && !l.startsWith('Title:') && !l.startsWith('URL Source:') && !l.startsWith('Źródło:'));
+
+            const title = (explicitTitle || lines[0] || "Nowy przepis z linku").slice(0, 85);
             let mode = 'none';
             const ingLines = [], stepLines = [];
 
-            for (let i = 1; i < lines.length; i++) {
+            for (let i = 0; i < lines.length; i++) {
                 const line = lines[i];
                 const low = line.toLowerCase();
-                if (/^(składniki|skladniki|czego potrzebujesz)/i.test(low)) { mode = 'ing'; continue; }
-                if (/^(przygotowanie|sposób przygotowania|wykonanie|instrukcja|krok po kroku)/i.test(low)) { mode = 'steps'; continue; }
-                if (/^(komentarze|powiązane|zobacz także|udostępnij|tagi|kategorie)/i.test(low) && (ingLines.length > 0 || stepLines.length > 0)) break;
 
-                if (mode === 'ing' && line.length < 90) ingLines.push(line);
-                else if (mode === 'steps' && line.length > 15) stepLines.push(line.replace(/^\d+[\.\)]\s*/, ''));
-            }
+                if (/^(składniki|skladniki|czego potrzebujesz|na\s+[a-ząćęłńóśźż\s]{3,25}:)$/i.test(low)) {
+                    mode = 'ing';
+                    continue;
+                }
+                if (/^(przygotowanie|sposób przygotowania|wykonanie|instrukcja|krok po kroku)/i.test(low)) {
+                    mode = 'steps';
+                    continue;
+                }
+                if (/^(komentarze|powiązane|podobne przepisy|zobacz także|udostępnij|tagi|kategorie|wasze zdjęcia)/i.test(low) && (ingLines.length > 0 || stepLines.length > 0)) {
+                    break;
+                }
 
-            if (ingLines.length === 0) {
-                for (const line of lines.slice(1, 35)) {
-                    if (line.length < 75 && /\b(\d+\s*(g|kg|ml|l|szt|łyżk|łyżeczk|szklank|puszk|ząbk|opak))\b/i.test(line)) ingLines.push(line);
+                // Pomiń podsumowania typu "Czas przygotowania: 30 minut", "Liczba porcji: 4"
+                if (/^(czas przygotowania|czas gotowania|liczba porcji|kaloryczność|dieta):/i.test(low)) continue;
+
+                if (mode === 'ing' && line.length < 95) {
+                    ingLines.push(line);
+                } else if (mode === 'steps' && line.length > 15) {
+                    stepLines.push(line.replace(/^\d+[\.\)]\s*/, ''));
                 }
             }
 
-            const formattedIngredients = (ingLines.length > 0 ? ingLines : ["Składnik główny | 1 porcja | 5.00"]).slice(0, 20).map(item => {
+            if (ingLines.length === 0) {
+                for (const line of lines.slice(0, 45)) {
+                    if (line.length < 80 && /\b(\d+\s*(g|kg|ml|l|szt|łyżk|łyżeczk|szklank|puszk|ząbk|opak))\b/i.test(line)) {
+                        ingLines.push(line);
+                    }
+                }
+            }
+
+            const formattedIngredients = (ingLines.length > 0 ? ingLines : ["Składnik główny | 1 porcja | 5.00"]).slice(0, 25).map(item => {
+                // Obsługa formatu z Aniagotuje: "Mięso mielone - 500 g" lub "500 g mięsa mielonego"
+                const dashSplit = item.split(/\s+[-–—]\s+/);
+                if (dashSplit.length === 2 && /\d/.test(dashSplit[1])) {
+                    return `${dashSplit[0].trim()} | ${dashSplit[1].trim()} | 3.50`;
+                }
                 const amountMatch = item.match(/(\d+(?:[.,]\d+)?\s*(?:g|kg|ml|l|szt\.?|łyżk[ia]?|łyżeczk[ia]?|szklank[ia]?|puszk[ia]?|ząbk[iów]?|opak\.?))/i);
                 if (amountMatch) {
                     const amount = amountMatch[1].trim();
@@ -5096,7 +5196,7 @@ ${JSON.stringify(chunk)}`;
                 return `${item} | 1 porcja | 3.50`;
             });
 
-            const formattedSteps = stepLines.length > 0 ? stepLines.slice(0, 12) : lines.slice(1, 8).filter(l => l.length > 25);
+            const formattedSteps = stepLines.length > 0 ? stepLines.slice(0, 15) : lines.slice(1, 10).filter(l => l.length > 25);
             return {
                 title,
                 ingredientsText: formattedIngredients.join('\n'),
