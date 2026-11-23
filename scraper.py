@@ -116,7 +116,7 @@ CORE_CULINARY_ITEMS = {
     "olej": ("Olej rzepakowy", "Przyprawy i dodatki", ["olej rzepakowy", "olej slonecznikowy"], ["silnikow", "do ciala", "olejek"], 4.00, 14.00),
 }
 
-# Twarde odrzucanie artykułów niespożywczych, chemii, ubrań, elektroniki, alkoholu i śmieci UI z portali gazetek
+# Twarde odrzucanie artykułów niespożywczych, chemii, ubrań, elektroniki, alkoholu, słodyczy (bez chipsów i energetyków) oraz śmieci UI
 NON_FOOD_AND_UI_NOISE = [
     # Kosmetyki, chemia, higiena
     "blyszczyk", "pomadk", "szmink", "tusz do rzes", "podklad", "puder", "krem do", "balsam",
@@ -135,8 +135,15 @@ NON_FOOD_AND_UI_NOISE = [
     "lampka", "latarka", "kabel", "ladowarka", "sluchawki", "doniczka", "ziemia ogrodowa",
     "kosiarka", "sekator", "zabawka", "klocki", "lalka", "pluszak", "gra planszowa",
     "znicz", "wklad do znicza", "kwiaty", "bukiet", "roslina", "storczyk", "tulipan",
+    # Słodycze i wypieki cukiernicze (chipsy i energetyki celowo zostawione!)
+    "czekolad", "bombonierk", "pralin", "baton", "wafel", "wafelk",
+    "ciastk", "herbatnik", "biszkopt", "markiz", "piernik", "delicj",
+    "cukierk", "zelk", "lizak", "karmelk", "krowk", "chalw", "sezamk",
+    "ptasie mleczko", "nutella", "krem czekoladowy", "krem orzechowy",
+    "lody", "lodow", "rozek", "sorbet", "paczek", "donut", "drozdzowk",
+    "croissant", "rogali",
     # Alkohol i wyroby tytoniowe
-    "piwo", "wodka", "wino ", "whisky", "likier", "cydr", "gin ", "rum ", "tequila", "prosecco",
+    "piwo", "wodka", "whisky", "likier", "cydr", "gin ", "rum ", "tequila", "prosecco",
     "szampan", "browar", "harna", "tyskie", "zubr", "zywiec", "lech ", "perla", "heineken",
     # Elementy nawigacji / teksty UI portali gazetek
     "zobacz aktualna", "gazetka ", "strona ", "oferta wazna", "wszystkie promocje",
@@ -161,11 +168,11 @@ def extract_weight_from_text(text: str) -> Optional[str]:
     cleaned = re.sub(r"\d+[.,]\d+\s*zł\s*/\s*(?:1\s*)?(?:kg|l|100\s*g)", " ", text, flags=re.I)
     cleaned = re.sub(r"\(\s*\d+[.,]\d+\s*zł\s*/\s*[^)]+\)", " ", cleaned, flags=re.I)
 
-    m_multi = re.search(r"(\d+\s*[x×]\s*\d+(?:[.,]\d+)?\s*(?:kg|g|dag|ml|l))", cleaned, re.I)
+    m_multi = re.search(r"\b(\d+\s*[x×]\s*\d+(?:[.,]\d+)?\s*(?:kg|g|dag|ml|l))\b", cleaned, re.I)
     if m_multi:
         return re.sub(r"\s+", " ", m_multi.group(1).lower()).replace("×", "x")
 
-    m_std = re.search(r"(\d+(?:[.,]\d+)?)\s*(kg|g|dag|ml|l|szt\.?)", cleaned, re.I)
+    m_std = re.search(r"\b(\d+(?:[.,]\d+)?)\s*(kg|g|dag|ml|l|szt\.?)\b", cleaned, re.I)
     if m_std:
         num = m_std.group(1).replace(".", ",")
         unit = m_std.group(2).lower().rstrip(".")
@@ -179,14 +186,12 @@ def extract_weight_from_text(text: str) -> Optional[str]:
 def clean_generic_offer_name(raw_title: str) -> str:
     """Czyści surową nazwę z gazetki z cen, gramatur i zbędnych dopisków promocyjnych."""
     s = " ".join(str(raw_title or "").split()).strip(" -–|:•,./")
-    # Usuń wtrącenia typu "1+1 gratis", "2+1 gratis", "drugi 50% taniej", "-30%"
-    s = re.sub(r"\d+\s*\+\s*\d+\s*gratis", " ", s, flags=re.I)
-    s = re.sub(r"drugi\s+(?:produkt\s+)?\d+%\s*taniej", " ", s, flags=re.I)
+    s = re.sub(r"\b\d+\s*\+\s*\d+\s*gratis\b", " ", s, flags=re.I)
+    s = re.sub(r"\bdrugi\s+(?:produkt\s+)?\d+%\s*taniej\b", " ", s, flags=re.I)
     s = re.sub(r"[-–]\s*\d{1,2}\s*%", " ", s)
-    s = re.sub(r"super\s*cena|hit\s*cenowy|taniej|promocja", " ", s, flags=re.I)
-    # Usuń gramaturę z samej nazwy (bo trafia do osobnego pola 'weight')
-    s = re.sub(r"\d+\s*[x×]\s*\d+(?:[.,]\d+)?\s*(?:kg|g|dag|ml|l)", " ", s, flags=re.I)
-    s = re.sub(r"\d+(?:[.,]\d+)?\s*(?:kg|g|dag|ml|l|szt\.?)", " ", s, flags=re.I)
+    s = re.sub(r"\bsuper\s*cena\b|\bhit\s*cenowy\b|\btaniej\b|\bpromocja\b", " ", s, flags=re.I)
+    s = re.sub(r"\b\d+\s*[x×]\s*\d+(?:[.,]\d+)?\s*(?:kg|g|dag|ml|l)\b", " ", s, flags=re.I)
+    s = re.sub(r"\b\d+(?:[.,]\d+)?\s*(?:kg|g|dag|ml|l|szt\.?)\b", " ", s, flags=re.I)
     s = re.sub(r"\s+", " ", s).strip(" -–|:•,./")
     if not s:
         return raw_title.strip()
@@ -258,7 +263,7 @@ def extract_validity_dates(text: str) -> tuple[Optional[str], Optional[str]]:
         v_to = parse_polish_date(d2, m2, y2)
         if v_to:
             return None, v_to
-    m_iso = re.findall(r"(202\d-\d{2}-\d{2})", text)
+    m_iso = re.findall(r"\b(202\d-\d{2}-\d{2})\b", text)
     if len(m_iso) >= 2:
         return m_iso[0], m_iso[1]
     if len(m_iso) == 1:
@@ -277,7 +282,7 @@ def is_promotion_active(valid_to: Optional[str]) -> bool:
 
 def classify_any_food_offer(raw_title: str, price_val: float) -> Optional[tuple[str, str, str, bool]]:
     """
-    Akceptuje WSZYSTKIE sensowne promocje spożywcze z gazetki (nie tylko esencję!).
+    Akceptuje wszystkie sensowne promocje spożywcze (z wykluczeniem słodyczy, ale z zachowaniem chipsów i energetyków).
     Zwraca: (offer_slug, czysta_nazwa, kategoria, is_core_essential)
     """
     if price_val < 0.50 or price_val > 120.00:
@@ -287,12 +292,13 @@ def classify_any_food_offer(raw_title: str, price_val: float) -> Optional[tuple[
     norm = normalize_ascii(clean_title)
     raw_norm = normalize_ascii(raw_title)
 
-    # Odrzuć za krótkie/za długie śmieci tekstowe oraz tytuły bez liter
     if len(norm) < 3 or len(norm) > 85 or not re.search(r"[a-z]{3,}", norm):
         return None
 
-    # Odrzuć artykuły niespożywcze i śmieci z interfejsu gazetek
+    # Odrzuć artykuły niespożywcze, słodycze i śmieci UI (z wyjątkiem osobnego słowa 'wino' tak, aby nie blokować winogron)
     if any(bad in raw_norm for bad in NON_FOOD_AND_UI_NOISE):
+        return None
+    if re.search(r"\bwino\b", raw_norm):
         return None
 
     # 1. Jeśli oferta pasuje do jednego z podstawowych składników kulinarnych — daj jej czystą kanoniczną nazwę
@@ -303,7 +309,7 @@ def classify_any_food_offer(raw_title: str, price_val: float) -> Optional[tuple[
                     return "serek_wiejski_lekki", "Serek wiejski lekki", cat_name, True
                 return canon_key, clean_label, cat_name, True
 
-    # 2. Każda inna oferta z gazetki spożywczej również przechodzi dalej!
+    # 2. Każda inna dozwolona oferta z gazetki przechodzi dalej
     cat_name = guess_food_category(norm)
     slug = re.sub(r"[^a-z0-9]+", "_", norm).strip("_")[:48]
     if not slug:
@@ -482,7 +488,7 @@ def fetch_all_store_offers() -> list[dict]:
 
 def build_all_food_pending(offers: list[dict], max_items: int = 350) -> dict:
     """
-    Zwraca WSZYSTKIE unikalne promocje spożywcze (zarówno esencję kulinarną, jak i pozostałe produkty z gazetek),
+    Zwraca wszystkie unikalne promocje spożywcze (z pominięciem słodyczy, ale z chipsami i energetykami),
     zachowując najniższą cenę dla identycznego (sklep + produkt + gramatura).
     """
     best_offers = {}
@@ -505,7 +511,6 @@ def build_all_food_pending(offers: list[dict], max_items: int = 350) -> dict:
                 "sourceUrl": off["source_url"],
             }
 
-    # Sortujemy: najpierw podstawowe składniki (isCore=True), potem reszta alfabetycznie
     sorted_items = sorted(
         best_offers.items(),
         key=lambda x: (not x[1]["isCore"], x[1]["name"], x[1]["detectedPrice"])
@@ -559,7 +564,7 @@ def init_firestore():
 
 def main():
     dry_run = "--dry-run" in sys.argv
-    print(f"=== START SCRAPERA — PEŁNE PROMOCJE ({'TRYB LOKALNY --dry-run' if dry_run else 'TRYB FIREBASE'}) ===", flush=True)
+    print(f"=== START SCRAPERA — PROMOCJE BEZ SŁODYCZY ({'TRYB LOKALNY --dry-run' if dry_run else 'TRYB FIREBASE'}) ===", flush=True)
 
     offers = fetch_all_store_offers()
     export_csv(offers)
