@@ -139,14 +139,20 @@ NON_FOOD_AND_UI_NOISE = [
     "lampka", "latarka", "kabel", "ladowarka", "sluchawki", "doniczka", "ziemia ogrodowa",
     "kosiarka", "sekator", "zabawka", "klocki", "lalka", "pluszak", "gra planszowa",
     "znicz", "wklad do znicza", "kwiaty", "bukiet", "roslina", "storczyk", "tulipan",
-    # Słodycze, dekoracje cukiernicze, słodkie napoje gazowane (chipsy i energetyki celowo zostawione!)
-    "czekolad", "bombonierk", "pralin", "lindor", "baton", "wafel", "wafelk",
-    "ciastk", "herbatnik", "biszkopt", "markiz", "piernik", "delicj",
-    "cukierk", "zelk", "lizak", "karmelk", "krowk", "chalw", "sezamk",
+    "dyfuzor", "odswiezacz", "swieca", "swieczk", "olejek zapachowy", "zapach do",
+    # Słodycze, ciastka, herbaty, praliny, chipsy, energetyki, napoje
+    "czekolad", "bombonierk", "pralin", "lindor", "raffaello", "ferrero", "merci", "toblerone",
+    "baton", "wafel", "wafelk", "prince polo", "grzeski", "kitkat", "snickers", "mars", "twix",
+    "ciastk", "ciasteczk", "herbatnik", "biszkopt", "markiz", "piernik", "delicj", "jezyki",
+    "cukierk", "zelk", "lizak", "karmelk", "krowk", "chalw", "sezamk", "piank", "marshmallow",
     "ptasie mleczko", "nutella", "krem czekoladowy", "krem orzechowy",
     "dekoracji cukrow", "dekoracje cukrow", "posypka cukrow", "lukier", "masa cukrow",
     "lody", "lodow", "rozek", "sorbet", "paczek", "donut", "drozdzowk",
-    "croissant", "rogali", "cola", "pepsi", "fanta", "sprite", "oranzad",
+    "croissant", "rogali", "babeczk", "muffin", "tort ",
+    "chipsy", "chrupki", "prazynki", "popcorn", "paluszki", "krakersy", "nachosy", "lays", "pringles", "crunchips",
+    "herbat", "lipton", "dilmah", "saga", "tetley", "earl grey", "yerba", "kaw", "nescafe", "jacobs", "tchibo", "lavazza",
+    "napoj", "cola", "pepsi", "fanta", "sprite", "oranzad", "energetyk", "energetyczn",
+    "tiger", "red bull", "monster", "black ", "burn ", "oshee", "4move", "izotonik", "tymbark", "kubus", "nektar",
     # Alkohol i wyroby tytoniowe
     "piwo", "wodka", "whisky", "likier", "cydr", "gin ", "rum ", "tequila", "prosecco",
     "szampan", "browar", "harna", "tyskie", "zubr", "zywiec", "lech ", "perla", "heineken",
@@ -627,6 +633,76 @@ def export_csv(offers: list[dict], filename="promocje_spozywcze.csv"):
     print(f"Zapisano CSV: {filename} ({len(offers)} wierszy)", flush=True)
 
 
+
+def filter_pending_with_gemini(pending_dict: dict, api_key: str) -> dict:
+    """Opcjonalny filtr AI (Gemini Flash) po stronie Pythona — odrzuca wszystko, co nie jest realnym jedzeniem/składnikiem kuchennym."""
+    if not api_key or not pending_dict:
+        return pending_dict
+
+    items_payload = [
+        {"key": k, "name": v.get("name"), "raw": v.get("rawText")}
+        for k, v in pending_dict.items()
+    ]
+    kept_keys = set()
+    cleaned_names = {}
+    cleaned_cats = {}
+
+    chunk_size = 90
+    for i in range(0, len(items_payload), chunk_size):
+        chunk = items_payload[i:i + chunk_size]
+        prompt = (
+            "Jesteś filtrem bazy produktów spożywczych do gotowania w domu. "
+            "Z poniższej listy wybierz WYŁĄCZNIE prawdziwe produkty spożywcze / składniki kulinarne "
+            "(mięso, wędliny, ryby, nabiał, jaja, warzywa, owoce, pieczywo, makarony, ryż, kasze, mąka, konserwy, przyprawy, oleje, masło, bakalie, miód, dżem). "
+            "BEZWZGLĘDNIE ODRZUĆ: artykuły niespożywcze (dyfuzory zapachowe, świeczki, chemię, kosmetyki, zestawy prezentowe, odzież, zabawki), "
+            "słodycze (ciastka, praliny, czekolady, batony, wafelki, lody, żelki), "
+            "chipsy, chrupki, herbaty, kawy, napoje gazowane, soki, energetyki oraz alkohol. "
+            "Zwróć JSON jako listę obiektów dla ZAAKCEPTOWANYCH pozycji: "
+            '[{"key": "...", "cleanName": "Krótka czysta nazwa po polsku", "category": "Mięso i świeże|Lodówka i mrożonki|Warzywa i owoce|Konserwy i słoiki|Suche i makarony|Przyprawy i dodatki"}]\n\n'
+            f"Lista: {json.dumps(chunk, ensure_ascii=False)}"
+        )
+        try:
+            resp = requests.post(
+                f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={api_key}",
+                json={
+                    "contents": [{"parts": [{"text": prompt}]}],
+                    "generationConfig": {"responseMimeType": "application/json"},
+                },
+                timeout=35,
+            )
+            if resp.status_code == 200:
+                raw_txt = resp.json().get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "[]")
+                parsed = json.loads(raw_txt)
+                if isinstance(parsed, list):
+                    for row in parsed:
+                        k = row.get("key")
+                        if k in pending_dict:
+                            kept_keys.add(k)
+                            if row.get("cleanName"):
+                                cleaned_names[k] = row["cleanName"]
+                            if row.get("category"):
+                                cleaned_cats[k] = row["category"]
+            else:
+                return pending_dict
+        except Exception as exc:
+            print(f"[AI Filter] Pominięto krok AI ({exc}), używam filtra regułowego.", flush=True)
+            return pending_dict
+
+    if not kept_keys:
+        return pending_dict
+
+    filtered = {}
+    for k in kept_keys:
+        entry = dict(pending_dict[k])
+        if k in cleaned_names:
+            entry["name"] = cleaned_names[k]
+        if k in cleaned_cats:
+            entry["category"] = cleaned_cats[k]
+        filtered[k] = entry
+
+    print(f"[AI Filter] Gemini zaakceptowało {len(filtered)}/{len(pending_dict)} pozycji spożywczych.", flush=True)
+    return filtered
+
 def init_firestore():
     import firebase_admin
     from firebase_admin import credentials, firestore
@@ -650,7 +726,7 @@ def main():
     export_csv(offers)
 
     all_promos = build_all_food_pending(offers)
-    print(f"Przygotowano {len(all_promos)} czystych promocji spożywczych.", flush=True)
+    print(f"Przygotowano {len(all_promos)} promocji spożywczych po filtrze regułowym.", flush=True)
 
     if dry_run:
         with open("wynik_testu.json", "w", encoding="utf-8") as f:
@@ -671,8 +747,9 @@ def main():
         if data.get("active") is False:
             continue
 
-        # Zastępujemy poczekalnię wyłącznie świeżo zweryfikowanymi i aktywnymi promocjami z bieżącego skanowania
-        active_existing = dict(all_promos)
+        # Użyj klucza Gemini z env lub z ustawień danej kuchni, aby AI odsiało wszelkie śmieci
+        gemini_key = os.environ.get("GEMINI_API_KEY") or data.get("geminiApiKey") or ""
+        active_existing = filter_pending_with_gemini(dict(all_promos), gemini_key) if gemini_key else dict(all_promos)
 
         db.collection("kuchnie").document(doc_snap.id).set({
             "pendingScraper": active_existing,
