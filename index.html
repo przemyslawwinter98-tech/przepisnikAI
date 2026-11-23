@@ -4677,7 +4677,7 @@ ${JSON.stringify(chunk)}`;
             el.innerHTML = allOptions.map(tag => {
                 const isChecked = normSelected.has(window.stripDiacritics(tag));
                 return `
-                <button type="button" data-tag-val="${tag}" onclick="toggleRecipeTagPill(this)" class="recipe-tag-pill px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all ${isChecked ? 'bg-emerald-500/25 text-emerald-300 border-emerald-500/50' : 'bg-slate-900 text-slate-400 border-slate-700 hover:border-slate-500'}">
+                <button type="button" data-tag-val="${tag}" data-selected="${isChecked ? '1' : '0'}" onclick="toggleRecipeTagPill(this)" class="recipe-tag-pill px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all ${isChecked ? 'bg-emerald-500/25 text-emerald-300 border-emerald-500/50' : 'bg-slate-900 text-slate-400 border-slate-700 hover:border-slate-500'}">
                     ${isChecked ? '✓ ' : '+ '}${tag}
                 </button>
                 `;
@@ -4686,11 +4686,13 @@ ${JSON.stringify(chunk)}`;
 
         window.toggleRecipeTagPill = (btn) => {
             const val = btn.dataset.tagVal;
-            const isActive = btn.classList.contains('bg-emerald-500/25');
+            const isActive = btn.dataset.selected === '1';
             if (isActive) {
+                btn.dataset.selected = '0';
                 btn.className = 'recipe-tag-pill px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all bg-slate-900 text-slate-400 border-slate-700 hover:border-slate-500';
                 btn.textContent = `+ ${val}`;
             } else {
+                btn.dataset.selected = '1';
                 btn.className = 'recipe-tag-pill px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all bg-emerald-500/25 text-emerald-300 border-emerald-500/50';
                 btn.textContent = `✓ ${val}`;
             }
@@ -4701,7 +4703,7 @@ ${JSON.stringify(chunk)}`;
             if (primaryCategory) tags.add(primaryCategory.trim());
             const container = document.getElementById(containerId);
             if (container) {
-                container.querySelectorAll('.recipe-tag-pill.bg-emerald-500\/25').forEach(btn => {
+                container.querySelectorAll('.recipe-tag-pill[data-selected="1"]').forEach(btn => {
                     if (btn.dataset.tagVal) tags.add(btn.dataset.tagVal.trim());
                 });
             }
@@ -5402,28 +5404,37 @@ ${JSON.stringify(chunk)}`;
 
         window.saveManualRecipe = async (e) => {
             e.preventDefault();
-            const title = document.getElementById('man-title').value.trim();
-            const category = document.getElementById('man-category').value;
-            const time = Number(document.getElementById('man-time').value) || 25;
-            const portions = Number(document.getElementById('man-portions').value) || 4;
-            const rawIngs = document.getElementById('man-ingredients').value.trim().split('\n');
-            const steps = document.getElementById('man-steps').value.trim().split('\n').filter(Boolean);
-            const sharePublic = document.getElementById('man-recipe-share-public').checked;
+            try {
+                const title = document.getElementById('man-title').value.trim();
+                if (!title) {
+                    showToast("Podaj nazwę przepisu!", "warning");
+                    return;
+                }
+                const category = document.getElementById('man-category').value;
+                const time = Number(document.getElementById('man-time').value) || 25;
+                const portions = Number(document.getElementById('man-portions').value) || 4;
+                const rawIngs = document.getElementById('man-ingredients').value.trim().split('\n').filter(Boolean);
+                const steps = document.getElementById('man-steps').value.trim().split('\n').filter(Boolean);
+                const sharePublic = document.getElementById('man-recipe-share-public').checked;
 
-            const ingredients = rawIngs.map(line => {
-                const parts = line.split('|').map(s => s.trim());
-                return { name: parts[0] || 'Składnik', amount: parts[1] || '1 porcja', price: parseFloat(parts[2]) || 3.00, cat: 'Inne' };
-            });
+                const ingredients = rawIngs.map(line => {
+                    const parts = line.split('|').map(s => s.trim());
+                    return { name: parts[0] || 'Składnik', amount: parts[1] || '1 porcja', price: parseFloat((parts[2] || '3.00').replace(',', '.')) || 3.00, cat: 'Inne' };
+                });
 
-            const tags = collectSelectedTagsFromContainer('man-recipe-tags-selector', 'man-custom-tags', category);
-            const newRec = { id: 'rec_' + Date.now(), title, category, tags, time, portions, ingredients, steps };
-            await persistNewRecipe(newRec, sharePublic);
-            e.target.reset();
-            closeModal('modal-add-recipe');
-            showToast(sharePublic
-                ? `Zapisano przepis <strong>${title}</strong> i udostępniono go innym kuchniom!`
-                : `Zapisano przepis: <strong>${title}</strong>`
-            );
+                const tags = collectSelectedTagsFromContainer('man-recipe-tags-selector', 'man-custom-tags', category);
+                const newRec = { id: 'rec_' + Date.now(), title, category, tags, time, portions, ingredients, steps };
+                await persistNewRecipe(newRec, sharePublic);
+                e.target.reset();
+                closeModal('modal-add-recipe');
+                showToast(sharePublic
+                    ? `Zapisano przepis <strong>${title}</strong> i udostępniono go innym kuchniom!`
+                    : `Zapisano przepis: <strong>${title}</strong>`
+                );
+            } catch (err) {
+                console.error("Błąd zapisu przepisu:", err);
+                showToast(`Błąd zapisu przepisu: ${err.message}`, "error");
+            }
         };
 
         function ensureIngredientsInPricebookAndPantry(ingredientsList) {
