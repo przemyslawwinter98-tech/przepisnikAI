@@ -5138,67 +5138,128 @@ ${JSON.stringify(chunk)}`;
             const expMatch = sanitizedText.match(/^TYTUŁ PRZEPISU:\s*(.+)$/m);
             if (expMatch) explicitTitle = expMatch[1].trim();
 
-            const lines = sanitizedText
+            const rawLines = sanitizedText
                 .split('\n')
-                .map(l => l.replace(/^#+\s*/, '').replace(/^\*+\s*/, '').replace(/^[-•]\s*/, '').trim())
+                .map(l => l.replace(/\*\*/g, '').trim())
                 .filter(l => l && !l.startsWith('TYTUŁ PRZEPISU:') && !l.startsWith('Title:') && !l.startsWith('URL Source:') && !l.startsWith('Źródło:'));
 
-            const title = (explicitTitle || lines[0] || "Nowy przepis z linku").slice(0, 85);
+            const cleanLine = (l) => l.replace(/^#+\s*/, '').replace(/^[-•*]\s*/, '').trim();
+            const title = (explicitTitle || cleanLine(rawLines[0] || "Nowy przepis z linku")).slice(0, 85);
+
+            // Wyciągnij czas i liczbę porcji jeśli występują
+            let detectedTime = 30;
+            let detectedPortions = 4;
+            const prepM = sanitizedText.match(/Czas przygotowania:\s*(\d+)/i);
+            const cookM = sanitizedText.match(/Czas gotowania(?:\s+zupy)?:\s*(\d+)/i);
+            if (prepM || cookM) {
+                detectedTime = (prepM ? parseInt(prepM[1], 10) : 0) + (cookM ? parseInt(cookM[1], 10) : 0);
+            }
+            const mlM = sanitizedText.match(/Liczba porcji:\s*(\d{3,4})\s*ml/i);
+            const porM = sanitizedText.match(/Liczba porcji:\s*(\d{1,2})\b/i);
+            if (mlM) detectedPortions = Math.max(2, Math.round(parseInt(mlM[1], 10) / 450));
+            else if (porM) detectedPortions = parseInt(porM[1], 10);
+
             let mode = 'none';
             const ingLines = [], stepLines = [];
 
-            for (let i = 0; i < lines.length; i++) {
-                const line = lines[i];
+            const stopFooterRegex = /^(średnia\s+\d|oceń!|dodaj notatkę|powrót|dziękuję za wspólne gotowanie|komentarze|powiązane|podobne przepisy|zobacz podobne|zobacz także|udostępnij|wasze zdjęcia|zostaw mi swój email)/i;
+            const uiButtonRegex = /^(kopiuj|nie wygaszaj ekranu|ukryj zdjęcia|pokaż zdjęcia|drukuj przepis)$/i;
+
+            for (let i = 0; i < rawLines.length; i++) {
+                const rawLine = rawLines[i];
+                const isHeading = /^#{1,4}\s+/.test(rawLine);
+                const line = cleanLine(rawLine);
                 const low = line.toLowerCase();
 
-                if (/^(składniki|skladniki|czego potrzebujesz|na\s+[a-ząćęłńóśźż\s]{3,25}:)$/i.test(low)) {
+                if (stopFooterRegex.test(low)) break;
+                // Odrzuć pasek tagów z kropkami "bulion · cebula · chili · cukier..."
+                if ((line.match(/·/g) || []).length >= 3) break;
+                if (uiButtonRegex.test(low)) {
+                    if (mode === 'ing') mode = 'pre_steps';
+                    continue;
+                }
+
+                // Start sekcji składników
+                if (/^(składniki|skladniki|czego potrzebujesz)$/i.test(low)) {
                     mode = 'ing';
                     continue;
                 }
-                if (/^(przygotowanie|sposób przygotowania|wykonanie|instrukcja|krok po kroku)/i.test(low)) {
+                if (mode === 'ing' && /^składniki:/i.test(low)) {
+                    mode = 'pre_steps';
+                    continue;
+                }
+                if (mode === 'ing' && /^na\s+[a-ząćęłńóśźż\s]{3,28}:$/i.test(low)) {
+                    continue;
+                }
+
+                // Start sekcji przygotowania (w tym nagłówki H3 na Aniagotuje typu "### Zupa meksykańska przepis")
+                if (/^(przygotowanie|sposób przygotowania|wykonanie|instrukcja|krok po kroku)/i.test(low) || (isHeading && /przepis$/i.test(low) && ingLines.length > 0)) {
                     mode = 'steps';
                     continue;
                 }
-                if (/^(komentarze|powiązane|podobne przepisy|zobacz także|udostępnij|tagi|kategorie|wasze zdjęcia)/i.test(low) && (ingLines.length > 0 || stepLines.length > 0)) {
-                    break;
+
+                if (mode === 'ing') {
+                    if (isHeading || line.length > 110) {
+                        mode = 'pre_steps';
+                    } else {
+                        ingLines.push(line);
+                        continue;
+                    }
                 }
 
-                // Pomiń podsumowania typu "Czas przygotowania: 30 minut", "Liczba porcji: 4"
-                if (/^(czas przygotowania|czas gotowania|liczba porcji|kaloryczność|dieta):/i.test(low)) continue;
-
-                if (mode === 'ing' && line.length < 95) {
-                    ingLines.push(line);
-                } else if (mode === 'steps' && line.length > 15) {
-                    stepLines.push(line.replace(/^\d+[\.\)]\s*/, ''));
+                if (mode === 'steps') {
+                    if (isHeading && !/przepis/i.test(low)) continue;
+                    // Pomiń luźne porady/wstępy meta jeśli krok jest bardzo krótki
+                    if (line.length < 22) continue;
+                    const cleanedStep = line.replace(/^_?Porada_?:\s*/i, 'Porada: ').replace(/^\d+[\.\)]\s*/, '');
+                    stepLines.push(cleanedStep);
                 }
             }
 
-            if (ingLines.length === 0) {
-                for (const line of lines.slice(0, 45)) {
-                    if (line.length < 80 && /\b(\d+\s*(g|kg|ml|l|szt|łyżk|łyżeczk|szklank|puszk|ząbk|opak))\b/i.test(line)) {
-                        ingLines.push(line);
+            // Fallback jeśli strona nie miała wyraźnego nagłówka "Przygotowanie"
+            if (stepLines.length === 0) {
+                for (const rawLine of rawLines) {
+                    const line = cleanLine(rawLine);
+                    const low = line.toLowerCase();
+                    if (stopFooterRegex.test(low) || (line.match(/·/g) || []).length >= 3) break;
+                    if (line.length > 55 && !/^(czas przygotowania|czas gotowania|liczba porcji|w 100 ml|szklanka ma u mnie|warzywa ważone były|kalorie policzone)/i.test(low)) {
+                        stepLines.push(line);
                     }
                 }
             }
 
-            const formattedIngredients = (ingLines.length > 0 ? ingLines : ["Składnik główny | 1 porcja | 5.00"]).slice(0, 25).map(item => {
-                // Obsługa formatu z Aniagotuje: "Mięso mielone - 500 g" lub "500 g mięsa mielonego"
-                const dashSplit = item.split(/\s+[-–—]\s+/);
-                if (dashSplit.length === 2 && /\d/.test(dashSplit[1])) {
-                    return `${dashSplit[0].trim()} | ${dashSplit[1].trim()} | 3.50`;
+            const formattedIngredients = (ingLines.length > 0 ? ingLines : ["Składnik główny | 1 porcja | 5.00"]).slice(0, 30).map(item => {
+                // Usuń nawiasy opisowe np. "(waga z zalewą)", "(można pominąć)" z nazwy składnika
+                const noParens = item.replace(/\([^)]*\)/g, '').replace(/\s+/g, ' ').trim();
+                // Format Aniagotuje: "1 duża cebula - 220 g" albo "fasola czerwona z puszki - 400 g"
+                const dashSplit = noParens.split(/\s+[-–—]\s+/);
+                if (dashSplit.length === 2) {
+                    const left = dashSplit[0].trim();
+                    const right = dashSplit[1].trim();
+                    // Jeśli lewa strona zaczyna się od ilości (np. "1 duża cebula"), użyj jej lub prawej gramatury
+                    const leftAmt = left.match(/^(\d+(?:[.,]\d+)?\s*(?:g|kg|ml|l|szt\.?|łyżk[ia]?|łyżeczk[ia]?|szklank[ia]?|puszk[ia]?|ząbk[iów]?|opak\.?))/i);
+                    if (leftAmt) {
+                        const cleanName = left.replace(leftAmt[0], '').replace(/^(duża|duży|duże|średnia|średni|średnie|mała|mały|małe)\s+/i, '').trim();
+                        return `${cleanName || left} | ${/\d+\s*(g|kg|ml|l)/i.test(right) ? right : leftAmt[1]} | 3.50`;
+                    }
+                    if (/\d/.test(right)) {
+                        return `${left} | ${right} | 3.50`;
+                    }
                 }
-                const amountMatch = item.match(/(\d+(?:[.,]\d+)?\s*(?:g|kg|ml|l|szt\.?|łyżk[ia]?|łyżeczk[ia]?|szklank[ia]?|puszk[ia]?|ząbk[iów]?|opak\.?))/i);
+                const amountMatch = noParens.match(/(\d+(?:[.,]\d+)?\s*(?:g|kg|ml|l|szt\.?|łyżk[ia]?|łyżeczk[ia]?|szklank[ia]?|puszk[ia]?|ząbk[iów]?|opak\.?))/i);
                 if (amountMatch) {
                     const amount = amountMatch[1].trim();
-                    const name = item.replace(amountMatch[0], '').replace(/^[-–•:,\s]+|[-–•:,\s]+$/g, '').trim() || item;
+                    const name = noParens.replace(amountMatch[0], '').replace(/^[-–•:,\s]+|[-–•:,\s]+$/g, '').trim() || noParens;
                     return `${name} | ${amount} | 3.50`;
                 }
-                return `${item} | 1 porcja | 3.50`;
+                return `${noParens} | 1 porcja | 3.50`;
             });
 
-            const formattedSteps = stepLines.length > 0 ? stepLines.slice(0, 15) : lines.slice(1, 10).filter(l => l.length > 25);
+            const formattedSteps = stepLines.slice(0, 18);
             return {
                 title,
+                time: detectedTime,
+                portions: detectedPortions,
                 ingredientsText: formattedIngredients.join('\n'),
                 stepsText: (formattedSteps.length > 0 ? formattedSteps : ["Przygotuj składniki według opisu ze strony."]).join('\n')
             };
@@ -5255,11 +5316,13 @@ ${JSON.stringify(chunk)}`;
                 if (!activeGeminiKey) {
                     const parsedLocal = parseRecipeLocallyFromText(promptText);
                     document.getElementById('man-title').value = parsedLocal.title;
+                    if (parsedLocal.time) document.getElementById('man-time').value = parsedLocal.time;
+                    if (parsedLocal.portions) document.getElementById('man-portions').value = parsedLocal.portions;
                     document.getElementById('man-ingredients').value = parsedLocal.ingredientsText;
                     document.getElementById('man-steps').value = parsedLocal.stepsText;
                     document.getElementById('man-recipe-share-public').checked = sharePublic;
                     setAddRecipeMode('manual');
-                    showToast("Lokalny parser wyodrębnił tytuł, składniki i kroki! Sprawdź je i kliknij Zapisz Przepis.");
+                    showToast("Lokalny parser (brak klucza Gemini AI) wyodrębnił tytuł, składniki i kroki! Sprawdź je i kliknij Zapisz Przepis.");
                     return;
                 }
 
@@ -5296,12 +5359,15 @@ ${JSON.stringify(chunk)}`;
                     }
                 };
 
-                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${activeGeminiKey}`, {
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${activeGeminiKey}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
                 });
                 const result = await response.json();
+                if (!response.ok || result.error) {
+                    throw new Error(result.error?.message || `Błąd Gemini API (${response.status})`);
+                }
                 const jsonStr = result.candidates?.[0]?.content?.parts?.[0]?.text;
                 if (!jsonStr) throw new Error("Brak danych z AI");
 
@@ -5318,13 +5384,16 @@ ${JSON.stringify(chunk)}`;
                     : `Dodano przepis przez AI: <strong>${newRecipe.title}</strong>!`
                 );
             } catch (err) {
+                console.error("Błąd Gemini AI przy przepisie:", err);
                 const parsedLocal = parseRecipeLocallyFromText(promptText);
                 document.getElementById('man-title').value = parsedLocal.title;
+                if (parsedLocal.time) document.getElementById('man-time').value = parsedLocal.time;
+                if (parsedLocal.portions) document.getElementById('man-portions').value = parsedLocal.portions;
                 document.getElementById('man-ingredients').value = parsedLocal.ingredientsText;
                 document.getElementById('man-steps').value = parsedLocal.stepsText;
                 document.getElementById('man-recipe-share-public').checked = sharePublic;
                 setAddRecipeMode('manual');
-                showToast("Wypełniono formularz lokalnym parserem — kliknij Zapisz Przepis.", "warning");
+                showToast(`AI zwróciło błąd (${err.message}) — wypełniono formularz lokalnym parserem.`, "warning");
             } finally {
                 btn.disabled = false;
                 btn.innerHTML = origText;
