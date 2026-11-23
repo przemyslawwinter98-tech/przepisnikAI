@@ -2984,7 +2984,7 @@
             const activeGeminiKey = window.appState.geminiApiKey;
             if (activeGeminiKey) {
                 try {
-                    const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${activeGeminiKey}`, {
+                    const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${activeGeminiKey}`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
@@ -3512,7 +3512,7 @@ BARDZO WAŻNE ZASADY:
 4. Zwróć WYŁĄCZNIE poprawny JSON:
 [{"name": "Masło", "isFood": true, "unit": "1 szt.", "unitPrice": 6.49, "purchasedQty": 1, "pantryUnit": "szt.", "category": "Lodówka i mrożonki", "store": "Lidl"}]`;
 
-                const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${activeGeminiKey}`, {
+                const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${activeGeminiKey}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -4218,7 +4218,7 @@ Zwróć WYŁĄCZNIE poprawną tablicę JSON:
 Lista do przefiltrowania:
 ${JSON.stringify(chunk)}`;
 
-                    const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`, {
+                    const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
@@ -4776,7 +4776,7 @@ ${JSON.stringify(chunk)}`;
                         const isAct = window.stripDiacritics(activeTypeTag) === window.stripDiacritics(t);
                         const cnt = tagCounts[t] || 0;
                         const icon = t === 'Desery' ? '🍰 ' : t === 'Zupy' ? '🍲 ' : t === 'Makarony' ? '🍝 ' : t === 'Śniadanie / Kolacja' ? '🍳 ' : '';
-                        return `<button type="button" onclick="setRecipeTypeTagFilter('${t.replace(/'/g, "\'")}')" class="px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${isAct ? 'bg-sky-500 text-slate-950 font-bold shadow-sm' : 'bg-slate-900/90 text-slate-300 border border-slate-800 hover:border-slate-600'}">${icon}${t} (${cnt})</button>`;
+                        return `<button type="button" onclick="setRecipeTypeTagFilter('${t.replace(/'/g, "\\'")}')" class="px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${isAct ? 'bg-sky-500 text-slate-950 font-bold shadow-sm' : 'bg-slate-900/90 text-slate-300 border border-slate-800 hover:border-slate-600'}">${icon}${t} (${cnt})</button>`;
                     })
                 ].join('');
             }
