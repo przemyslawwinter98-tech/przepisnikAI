@@ -351,18 +351,24 @@
 
                 <!-- ================= ZAKŁADKA 1: PRZEPISY & SPOŁECZNOŚĆ ================= -->
                 <section id="tab-recipes" class="space-y-6">
-                    <div class="flex flex-col lg:flex-row gap-3 justify-between">
-                        <div class="relative flex-1">
-                            <svg class="w-5 h-5 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-                            <input type="text" id="recipe-search" oninput="renderRecipes()" placeholder="Szukaj dania, składnika lub autora (np. fasola, kurczak, Kowalscy)..." class="w-full pl-11 pr-4 py-3 rounded-xl bg-[#1e293b] border border-slate-700/80 text-sm text-white placeholder-slate-400 focus:outline-none focus:border-emerald-500 transition-colors">
+                    <div class="space-y-2.5">
+                        <div class="flex flex-col lg:flex-row gap-3 justify-between">
+                            <div class="relative flex-1">
+                                <svg class="w-5 h-5 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                                <input type="text" id="recipe-search" oninput="renderRecipes()" placeholder="Szukaj dania, składnika, tagu lub autora (np. fasola, deser, makaron)..." class="w-full pl-11 pr-4 py-3 rounded-xl bg-[#1e293b] border border-slate-700/80 text-sm text-white placeholder-slate-400 focus:outline-none focus:border-emerald-500 transition-colors">
+                            </div>
+                            <div class="flex gap-2 overflow-x-auto no-scrollbar pb-1 -mx-4 px-4 sm:mx-0 sm:px-0">
+                                <button onclick="setRecipeFilter('all')" data-filter="all" class="filter-chip px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap bg-emerald-500 text-slate-950 transition-all">Wszystkie</button>
+                                <button onclick="setRecipeFilter('pantry')" data-filter="pantry" class="filter-chip px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap bg-[#1e293b] text-slate-300 border border-slate-700 hover:border-emerald-500/50 transition-all">🥫 Z tego co mam</button>
+                                <button onclick="setRecipeFilter('community')" data-filter="community" class="filter-chip px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap bg-[#1e293b] text-slate-300 border border-slate-700 hover:border-indigo-500/50 transition-all">🌍 Od innych kuchni (<span id="chip-community-count">0</span>)</button>
+                                <button onclick="setRecipeFilter('cheap')" data-filter="cheap" class="filter-chip px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap bg-[#1e293b] text-slate-300 border border-slate-700 hover:border-emerald-500/50 transition-all">💸 Najtańsze</button>
+                                <button onclick="setRecipeFilter('rated')" data-filter="rated" class="filter-chip px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap bg-[#1e293b] text-slate-300 border border-slate-700 hover:border-amber-500/50 transition-all">⭐ Najwyżej oceniane</button>
+                                <button onclick="setRecipeFilter('by_type')" data-filter="by_type" class="filter-chip px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap bg-[#1e293b] text-slate-300 border border-slate-700 hover:border-sky-500/50 transition-all">📑 Sortuj wg typu</button>
+                            </div>
                         </div>
-                        <div class="flex gap-2 overflow-x-auto no-scrollbar pb-1 -mx-4 px-4 sm:mx-0 sm:px-0">
-                            <button onclick="setRecipeFilter('all')" data-filter="all" class="filter-chip px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap bg-emerald-500 text-slate-950 transition-all">Wszystkie</button>
-                            <button onclick="setRecipeFilter('pantry')" data-filter="pantry" class="filter-chip px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap bg-[#1e293b] text-slate-300 border border-slate-700 hover:border-emerald-500/50 transition-all">🥫 Z tego co mam</button>
-                            <button onclick="setRecipeFilter('community')" data-filter="community" class="filter-chip px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap bg-[#1e293b] text-slate-300 border border-slate-700 hover:border-indigo-500/50 transition-all">🌍 Od innych kuchni (<span id="chip-community-count">0</span>)</button>
-                            <button onclick="setRecipeFilter('cheap')" data-filter="cheap" class="filter-chip px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap bg-[#1e293b] text-slate-300 border border-slate-700 hover:border-emerald-500/50 transition-all">💸 Najtańsze obiady</button>
-                            <button onclick="setRecipeFilter('rated')" data-filter="rated" class="filter-chip px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap bg-[#1e293b] text-slate-300 border border-slate-700 hover:border-amber-500/50 transition-all">⭐ Najwyżej oceniane</button>
-                        </div>
+
+                        <!-- Kompaktowy pasek typów i tagów przepisów -->
+                        <div id="recipe-type-tag-bar" class="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1 -mx-4 px-4 sm:mx-0 sm:px-0"></div>
                     </div>
 
                     <div id="recipes-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"></div>
@@ -454,7 +460,7 @@
                         </div>
 
                         <form onsubmit="addManualPantryItem(event)" class="grid grid-cols-1 sm:grid-cols-12 gap-2.5 pt-3 border-t border-slate-800">
-                            <input type="text" id="pantry-add-name" required placeholder="Produkt (np. piers z kurczaka, mleko, ryz)..." class="sm:col-span-5 px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500">
+                            <input type="text" id="pantry-add-name" required placeholder="Produkt (np. piers z kurczaka, mleko, ryz)..." class="sm:col-span-3 px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500">
                             <input type="number" step="0.1" min="0" id="pantry-add-qty" value="1" required placeholder="Ilość" class="sm:col-span-2 px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-sm text-white text-center font-mono focus:outline-none focus:border-emerald-500">
                             <select id="pantry-add-unit" class="sm:col-span-2 px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-sm text-slate-200 focus:outline-none focus:border-emerald-500">
                                 <option value="szt.">szt.</option>
@@ -464,6 +470,17 @@
                                 <option value="l">l</option>
                                 <option value="opak.">opak.</option>
                                 <option value="puszka">puszka</option>
+                            </select>
+                            <select id="pantry-add-cat" title="Dział w spiżarni" class="sm:col-span-2 px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-sm text-slate-200 focus:outline-none focus:border-emerald-500">
+                                <option value="auto">Dział: Automatycznie</option>
+                                <option value="Warzywa i owoce">Warzywa i owoce</option>
+                                <option value="Mięso i świeże">Mięso i świeże</option>
+                                <option value="Lodówka i mrożonki">Lodówka i mrożonki</option>
+                                <option value="Konserwy i słoiki">Konserwy i słoiki</option>
+                                <option value="Suche i makarony">Suche i makarony</option>
+                                <option value="Przyprawy i dodatki">Przyprawy i dodatki</option>
+                                <option value="Przekąski i słodycze">Przekąski i słodycze</option>
+                                <option value="Inne">Inne</option>
                             </select>
                             <select id="pantry-add-loc" class="sm:col-span-2 px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-sm text-slate-200 focus:outline-none focus:border-emerald-500">
                                 <option value="Lodówka">🧊 Lodówka</option>
@@ -735,12 +752,16 @@
                     <form onsubmit="handleAddManualShoppingItem(event)" class="flex flex-col sm:flex-row gap-2.5 bg-[#1e293b] p-4 rounded-2xl border border-slate-800">
                         <input type="text" id="new-shop-name" required placeholder="Co trzeba dokupić? (np. Świeży chleb, Pierś z kurczaka 500g)" class="flex-1 px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500">
                         <select id="new-shop-cat" class="px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-sm text-slate-200 focus:outline-none focus:border-emerald-500">
-                            <option value="Warzywa i owoce">Warzywa i owoce</option>
-                            <option value="Mięso i świeże">Mięso i świeże</option>
-                            <option value="Konserwy i słoiki">Konserwy i słoiki</option>
-                            <option value="Suche i makarony">Suche i makarony</option>
-                            <option value="Lodówka i mrożonki">Lodówka i mrożonki</option>
-                            <option value="Przyprawy i dodatki">Przyprawy i dodatki</option>
+                            <option value="Warzywa i owoce">🥦 Warzywa i owoce</option>
+                            <option value="Mięso i świeże">🥩 Mięso i świeże</option>
+                            <option value="Konserwy i słoiki">🥫 Konserwy i słoiki</option>
+                            <option value="Suche i makarony">🍝 Suche i makarony</option>
+                            <option value="Lodówka i mrożonki">🧊 Lodówka i mrożonki</option>
+                            <option value="Przyprawy i dodatki">🧂 Przyprawy i dodatki</option>
+                            <option value="Przekąski, słodycze i fit">🍫 Przekąski, słodycze i fit</option>
+                            <option value="Chemia i dom">🧻 Chemia i dom (papier, worki, baterie)</option>
+                            <option value="Kosmetyki i higiena">🧴 Kosmetyki i higiena</option>
+                            <option value="Inne niespożywcze">📦 Inne niespożywcze</option>
                         </select>
                         <input type="number" step="0.01" id="new-shop-price" placeholder="Cena (zł)" class="w-full sm:w-28 px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500">
                         <button type="submit" class="px-5 py-2.5 rounded-xl bg-slate-700 hover:bg-slate-600 text-white font-semibold text-sm transition-colors">
@@ -985,6 +1006,11 @@
                     <textarea id="ai-recipe-prompt" rows="5" placeholder="Wpisz pomysł na danie (np. 'Zapiekanka makaronowa z tuńczykiem') lub wklej skopiowany tekst przepisu..." class="w-full p-4 rounded-xl bg-slate-950 border border-slate-700 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500"></textarea>
                 </div>
 
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1.5">Tagi przepisu (opcjonalnie — AI dobierze je też automatycznie)</label>
+                    <div id="ai-recipe-tags-selector" class="flex flex-wrap gap-1.5"></div>
+                </div>
+
                 <label class="flex items-center gap-2.5 p-3 rounded-xl bg-indigo-950/35 border border-indigo-500/40 cursor-pointer select-none">
                     <input type="checkbox" id="ai-recipe-share-public" class="rounded text-indigo-500 focus:ring-0">
                     <span class="text-xs sm:text-sm font-semibold text-indigo-200">🌍 Udostępnij ten przepis również innym kuchniom (jako <strong class="share-author-preview text-white"></strong>)</span>
@@ -1002,15 +1028,25 @@
                         <input type="text" id="man-title" required placeholder="np. Ryż z kurczakiem curry" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-sm text-white">
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold text-slate-400 mb-1">Kategoria</label>
+                        <label class="block text-xs font-semibold text-slate-400 mb-1">Główny typ / kategoria</label>
                         <select id="man-category" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-sm text-white">
                             <option value="Obiad jednogarnkowy">Obiad jednogarnkowy</option>
+                            <option value="Danie główne">Danie główne</option>
                             <option value="Makarony">Makarony</option>
                             <option value="Ryż i kasze">Ryż i kasze</option>
                             <option value="Zupy">Zupy</option>
                             <option value="Śniadanie / Kolacja">Śniadanie / Kolacja</option>
+                            <option value="Desery">Desery</option>
+                            <option value="Przekąski / Sałatki">Przekąski / Sałatki</option>
+                            <option value="Wypieki i słodkości">Wypieki i słodkości</option>
+                            <option value="Napoje / Koktajle">Napoje / Koktajle</option>
                         </select>
                     </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1.5">Tagi przepisu (możesz zaznaczyć wiele naraz, np. Makarony + Obiad jednogarnkowy + Danie główne)</label>
+                    <div id="man-recipe-tags-selector" class="flex flex-wrap gap-1.5 mb-2"></div>
+                    <input type="text" id="man-custom-tags" placeholder="Własne tagi po przecinku (opcjonalnie, np. Na szybko, Fit, Bez laktozy)..." class="w-full px-3.5 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white placeholder-slate-500">
                 </div>
                 <div class="grid grid-cols-2 gap-3">
                     <div>
@@ -1154,16 +1190,26 @@
                         <input type="text" id="edit-rec-title" required class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-sm text-white focus:outline-none focus:border-emerald-500">
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold text-slate-400 mb-1">Kategoria</label>
+                        <label class="block text-xs font-semibold text-slate-400 mb-1">Główny typ / kategoria</label>
                         <select id="edit-rec-category" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-sm text-white focus:outline-none focus:border-emerald-500">
                             <option value="Obiad jednogarnkowy">Obiad jednogarnkowy</option>
+                            <option value="Danie główne">Danie główne</option>
                             <option value="Makarony">Makarony</option>
                             <option value="Ryż i kasze">Ryż i kasze</option>
                             <option value="Zupy">Zupy</option>
                             <option value="Śniadanie / Kolacja">Śniadanie / Kolacja</option>
+                            <option value="Desery">Desery</option>
+                            <option value="Przekąski / Sałatki">Przekąski / Sałatki</option>
+                            <option value="Wypieki i słodkości">Wypieki i słodkości</option>
+                            <option value="Napoje / Koktajle">Napoje / Koktajle</option>
                             <option value="Inne">Inne</option>
                         </select>
                     </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1.5">Tagi przepisu (wybierz dowolną liczbę tagów)</label>
+                    <div id="edit-recipe-tags-selector" class="flex flex-wrap gap-1.5 mb-2"></div>
+                    <input type="text" id="edit-custom-tags" placeholder="Dodatkowe własne tagi po przecinku..." class="w-full px-3.5 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white placeholder-slate-500">
                 </div>
                 <div class="grid grid-cols-2 gap-3">
                     <div>
@@ -1253,6 +1299,7 @@
             activePlannerDay: 'mon',
             reviews: [],
             currentFilter: 'all',
+            currentRecipeCategoryTagFilter: 'all',
             verifyStoreFilter: 'all',
             verifyCategoryFilter: 'all',
             verifyDateFilter: 'all',
@@ -2435,30 +2482,178 @@
             return ascii.replace(/\s+/g, '_');
         };
 
-        window.getPantryEntry = (key, allowZero = false) => {
-            const pantry = window.appState.pantry || {};
-            let raw = pantry[key];
+        const BROAD_INGREDIENT_GROUPS = [
+            {
+                id: 'mrozone_owoce',
+                groupTriggers: ['mrozone owoce', 'mrozonych owocow', 'owoce mrozone', 'mieszanka owocow'],
+                memberPatterns: [
+                    'mrozone owoce', 'mrozone wisnie', 'mrozone maliny', 'mrozone truskawki',
+                    'mrozone jagody', 'mrozone borowki', 'mrozone porzeczki', 'mrozone sliwki',
+                    'mrozone jablka', 'mrozone mango', 'owoce lesne', 'wisnie', 'maliny',
+                    'truskawki', 'jagody', 'borowki', 'owoce mrozone'
+                ],
+                excludePatterns: ['sok', 'dzem', 'jogurt', 'kisiel', 'galaretka', 'herbata']
+            },
+            {
+                id: 'mrozona_mieszanka_warzyw',
+                groupTriggers: ['mrozona mieszanka warzyw', 'mrozone warzywa', 'warzywa na patelnie', 'mieszanka warzywna'],
+                memberPatterns: [
+                    'mrozona mieszanka warzyw', 'mrozone warzywa', 'warzywa na patelnie',
+                    'mieszanka chinska', 'mieszanka meksykanska', 'bukiet jarzyn', 'wloszczyzna',
+                    'warzywa z patelni', 'mrozony brokul', 'mrozony kalafior', 'mrozony szpinak'
+                ],
+                excludePatterns: ['zupa', 'bulion']
+            },
+            {
+                id: 'makaron',
+                groupTriggers: ['makaron'],
+                memberPatterns: [
+                    'makaron', 'penne', 'spaghetti', 'swiderki', 'fusilli', 'tagliatelle',
+                    'farfalle', 'kokardki', 'rurki', 'nitki', 'lasagne', 'gnocchi', 'kolanka', 'muszelki'
+                ],
+                excludePatterns: ['zupa', 'blyskawiczn', 'sos']
+            },
+            {
+                id: 'kasza',
+                groupTriggers: ['kasza', 'kasza peczak / gryczana'],
+                memberPatterns: [
+                    'kasza', 'peczak', 'kasza peczak', 'kasza gryczana', 'kasza jaglana',
+                    'kasza jeczmienna', 'kuskus', 'bulgur', 'komosa ryzowa', 'quinoa'
+                ],
+                excludePatterns: ['kaszka dla dzieci', 'mleczno']
+            },
+            {
+                id: 'ryz',
+                groupTriggers: ['ryz'],
+                memberPatterns: [
+                    'ryz', 'ryz bialy', 'ryz basmati', 'ryz jasminowy', 'ryz brazowy', 'ryz parboiled', 'ryz arborio'
+                ],
+                excludePatterns: ['wafle', 'mleczn', 'preparowan']
+            },
+            {
+                id: 'ser_zolty',
+                groupTriggers: ['ser zolty'],
+                memberPatterns: [
+                    'ser zolty', 'gouda', 'edam', 'edamski', 'ementaler', 'ser morski', 'cheddar', 'tilsiter', 'salami ser'
+                ],
+                excludePatterns: ['twarog', 'wiejski', 'topion', 'plesniow', 'feta', 'mascarpone']
+            },
+            {
+                id: 'jogurt_naturalny',
+                groupTriggers: ['jogurt naturalny'],
+                memberPatterns: ['jogurt naturalny', 'jogurt grecki', 'skyr naturalny', 'jogurt gesty'],
+                excludePatterns: ['owocow', 'pitny', 'deser']
+            },
+            {
+                id: 'fasola',
+                groupTriggers: ['fasola'],
+                memberPatterns: ['czerwona fasola', 'biala fasola', 'fasola czerwona', 'fasola biala', 'fasola czarna', 'fasola pinto'],
+                excludePatterns: ['po bretonsku', 'szparagowa']
+            }
+        ];
 
-            if (raw === undefined || raw === null || raw === false) {
-                const canonTarget = window.normalizeKey(key);
-                for (const [k, v] of Object.entries(pantry)) {
-                    const canonK = window.normalizeKey(k);
-                    if ((canonK === canonTarget || (canonTarget.length >= 4 && (canonK.includes(canonTarget) || canonTarget.includes(canonK)))) && v !== undefined && v !== null && v !== false) {
-                        raw = v;
-                        break;
+        function matchesBroadGroupMember(asciiItemName, groupObj) {
+            if (!asciiItemName || !groupObj) return false;
+            if (groupObj.excludePatterns && groupObj.excludePatterns.some(ex => asciiItemName.includes(ex))) {
+                return false;
+            }
+            return groupObj.memberPatterns.some(mp =>
+                asciiItemName === mp ||
+                asciiItemName.includes(mp) ||
+                mp.includes(asciiItemName)
+            );
+        }
+
+        window.resolveIngredientPantryMatch = (ingName, allowZero = false) => {
+            const pantry = window.appState.pantry || {};
+            const pricebook = window.appState.pricebook || {};
+            const directKey = window.normalizeKey(ingName);
+            const asciiReq = window.stripDiacritics(ingName);
+
+            // 1. Dokładne dopasowanie klucza w spiżarni
+            if (pantry[directKey] !== undefined && pantry[directKey] !== null && pantry[directKey] !== false) {
+                const raw = pantry[directKey];
+                const entry = raw === true
+                    ? { qty: 1, unit: 'szt.', location: 'Spiżarnia' }
+                    : { qty: Number(raw.qty) || 0, unit: raw.unit || 'szt.', location: raw.location || 'Spiżarnia' };
+                if (allowZero || entry.qty > 0) {
+                    return {
+                        matchedKey: directKey,
+                        matchedName: pricebook[directKey]?.name || ingName,
+                        entry,
+                        isGroupSubstitute: false
+                    };
+                }
+            }
+
+            // 2. Dopasowanie częściowe po kluczu kanonicznym
+            for (const [k, raw] of Object.entries(pantry)) {
+                if (raw === undefined || raw === null || raw === false) continue;
+                const canonK = window.normalizeKey(k);
+                if (canonK === directKey || (directKey.length >= 4 && (canonK.includes(directKey) || directKey.includes(canonK)))) {
+                    const entry = raw === true
+                        ? { qty: 1, unit: 'szt.', location: 'Spiżarnia' }
+                        : { qty: Number(raw.qty) || 0, unit: raw.unit || 'szt.', location: raw.location || 'Spiżarnia' };
+                    if (allowZero || entry.qty > 0) {
+                        return {
+                            matchedKey: k,
+                            matchedName: pricebook[k]?.name || k,
+                            entry,
+                            isGroupSubstitute: k !== directKey
+                        };
                     }
                 }
             }
 
-            if (raw === undefined || raw === null || raw === false) return null;
-            if (raw === true) return { qty: 1, unit: 'szt.', location: 'Spiżarnia' };
-            if (typeof raw === 'object') {
-                const q = Number(raw.qty);
-                if (isNaN(q)) return null;
-                if (!allowZero && q <= 0) return null;
-                return { qty: q, unit: raw.unit || 'szt.', location: raw.location || 'Spiżarnia' };
+            // 3. Szersza grupa składników (np. "Mrożone owoce" -> "Mrożone wiśnie", "Maliny", "Jabłka" itd.)
+            const matchedGroup = BROAD_INGREDIENT_GROUPS.find(g =>
+                g.id === directKey || g.groupTriggers.some(tr => asciiReq.includes(tr))
+            );
+            if (matchedGroup) {
+                // Najpierw szukamy pozycji z dodatnią ilością w spiżarni
+                for (const [k, raw] of Object.entries(pantry)) {
+                    if (raw === undefined || raw === null || raw === false) continue;
+                    const entry = raw === true
+                        ? { qty: 1, unit: 'szt.', location: 'Spiżarnia' }
+                        : { qty: Number(raw.qty) || 0, unit: raw.unit || 'szt.', location: raw.location || 'Spiżarnia' };
+                    if (entry.qty <= 0) continue;
+                    const displayLabel = pricebook[k]?.name || k.replace(/_/g, ' ');
+                    const asciiCand = window.stripDiacritics(displayLabel);
+                    if (matchesBroadGroupMember(asciiCand, matchedGroup)) {
+                        return {
+                            matchedKey: k,
+                            matchedName: displayLabel,
+                            entry,
+                            isGroupSubstitute: true
+                        };
+                    }
+                }
+                if (allowZero) {
+                    for (const [k, raw] of Object.entries(pantry)) {
+                        if (raw === undefined || raw === null || raw === false) continue;
+                        const entry = raw === true
+                            ? { qty: 1, unit: 'szt.', location: 'Spiżarnia' }
+                            : { qty: Number(raw.qty) || 0, unit: raw.unit || 'szt.', location: raw.location || 'Spiżarnia' };
+                        const displayLabel = pricebook[k]?.name || k.replace(/_/g, ' ');
+                        const asciiCand = window.stripDiacritics(displayLabel);
+                        if (matchesBroadGroupMember(asciiCand, matchedGroup)) {
+                            return {
+                                matchedKey: k,
+                                matchedName: displayLabel,
+                                entry,
+                                isGroupSubstitute: true
+                            };
+                        }
+                    }
+                }
             }
+
             return null;
+        };
+
+        window.getPantryEntry = (key, allowZero = false) => {
+            const resolved = window.resolveIngredientPantryMatch(key, allowZero);
+            return resolved ? resolved.entry : null;
         };
 
         function localSpellFixAndKeywords(rawInput) {
@@ -2734,22 +2929,23 @@
 
             recipe.ingredients.forEach(ing => {
                 if (window.isIgnoredStapleOrMicro(ing)) return;
-                const key = window.normalizeKey(ing.name);
-                const current = window.getPantryEntry(key, false);
-                if (!current) return;
+                const resolved = window.resolveIngredientPantryMatch(ing.name, false);
+                if (!resolved || !resolved.entry) return;
+                const targetKey = resolved.matchedKey;
+                const current = resolved.entry;
 
-                const req = parseQuantityString(ing.amount, key);
-                const have = parseQuantityString(`${current.qty} ${current.unit}`, key);
-                const ratio = computeRatioBetweenAmounts(req, have, key);
+                const req = parseQuantityString(ing.amount, targetKey);
+                const have = parseQuantityString(`${current.qty} ${current.unit}`, targetKey);
+                const ratio = computeRatioBetweenAmounts(req, have, targetKey);
 
                 if (ratio !== null && !isNaN(ratio)) {
                     const consumedInCurrentUnit = current.qty * ratio;
                     const nextQty = Math.max(0, Number((current.qty - consumedInCurrentUnit).toFixed(2)));
-                    window.appState.pantry[key].qty = nextQty;
+                    window.appState.pantry[targetKey].qty = nextQty;
                     deductedCount++;
                 } else {
                     const nextQty = Math.max(0, Number((current.qty - 1).toFixed(2)));
-                    window.appState.pantry[key].qty = nextQty;
+                    window.appState.pantry[targetKey].qty = nextQty;
                     deductedCount++;
                 }
             });
@@ -2763,12 +2959,14 @@
             const nameInput = document.getElementById('pantry-add-name');
             const qtyInput = document.getElementById('pantry-add-qty');
             const unitInput = document.getElementById('pantry-add-unit');
+            const catInput = document.getElementById('pantry-add-cat');
             const locInput = document.getElementById('pantry-add-loc');
 
             const rawName = nameInput.value.trim();
             const parsedQty = parseFloat(qtyInput.value);
             const qty = isNaN(parsedQty) ? 1 : Math.max(0, parsedQty);
             const unit = unitInput.value;
+            const chosenCat = catInput ? catInput.value : 'auto';
             const location = locInput.value;
             if (!rawName) return;
 
@@ -2791,17 +2989,23 @@
             }
 
             const key = window.normalizeKey(fixed.fixedName);
+            const resolvedCategory = chosenCat && chosenCat !== 'auto'
+                ? chosenCat
+                : (location === 'Lodówka' ? 'Lodówka i mrożonki' : (fixed.category || 'Inne'));
+
             if (!window.appState.pricebook[key]) {
                 window.appState.pricebook[key] = {
                     name: fixed.fixedName,
                     unit: key === 'jajka' ? '10 szt.' : (fixed.unit || "1 szt."),
-                    category: location === 'Lodówka' ? 'Lodówka i mrożonki' : (fixed.category || 'Spiżarnia'),
+                    category: resolvedCategory,
                     price: 5.00,
                     basePrice: 5.00,
                     promoPrice: 5.00,
                     isPromo: false,
                     store: "Cennik"
                 };
+            } else if (chosenCat && chosenCat !== 'auto') {
+                window.appState.pricebook[key].category = chosenCat;
             }
 
             const existing = window.getPantryEntry(key, true);
@@ -2843,6 +3047,27 @@
             const current = window.getPantryEntry(key, true) || { qty: 0, unit: 'szt.', location: 'Spiżarnia' };
             window.appState.pantry[key] = { ...current, [field]: value };
             await saveKitchenChanges();
+        };
+
+        window.changePantryCategory = async (key, newCategory) => {
+            if (!newCategory) return;
+            if (!window.appState.pricebook[key]) {
+                window.appState.pricebook[key] = {
+                    name: key.replace(/_/g, ' ').replace(/^./, c => c.toUpperCase()),
+                    unit: key === 'jajka' ? '10 szt.' : '1 szt.',
+                    category: newCategory,
+                    price: 5.00,
+                    basePrice: 5.00,
+                    promoPrice: 5.00,
+                    isPromo: false,
+                    store: "Cennik"
+                };
+            } else {
+                window.appState.pricebook[key].category = newCategory;
+            }
+            window.appState.deletedPricebookKeys = (window.appState.deletedPricebookKeys || []).filter(k => k !== key);
+            await saveKitchenChanges();
+            showToast(`Przeniesiono <strong>${window.appState.pricebook[key].name}</strong> do działu: <strong>${newCategory}</strong>`);
         };
 
         window.togglePantryItem = async (key) => {
@@ -3174,6 +3399,12 @@
                                         </select>
                                         <button onclick="deletePantryProductCompletely('${item.key}')" title="Usuń trwale produkt (nie będzie nawet jako 0)" class="px-1.5 py-0.5 rounded bg-slate-900 hover:bg-red-950/70 text-slate-400 hover:text-red-400 border border-slate-800 text-xs font-bold">✕</button>
                                     </div>
+                                </div>
+                                <div class="flex items-center justify-between gap-1.5">
+                                    <span class="text-[10px] text-slate-400">Dział:</span>
+                                    <select onchange="changePantryCategory('${item.key}', this.value)" class="flex-1 px-2 py-0.5 rounded bg-slate-900/90 border border-slate-800 text-[11px] text-slate-300 focus:outline-none focus:border-emerald-500">
+                                        ${['Warzywa i owoce', 'Mięso i świeże', 'Lodówka i mrożonki', 'Konserwy i słoiki', 'Suche i makarony', 'Przyprawy i dodatki', 'Przekąski i słodycze', 'Inne'].map(cOpt => `<option value="${cOpt}" ${(item.category || 'Inne') === cOpt ? 'selected' : ''}>${cOpt}</option>`).join('')}
+                                    </select>
                                 </div>
                                 <div class="flex items-center justify-between gap-1.5 bg-slate-950/80 p-1 rounded-lg border border-slate-800">
                                     <button onclick="adjustPantryQuantity('${item.key}', -1)" class="w-7 h-7 rounded bg-slate-800 hover:bg-red-950/70 text-slate-200 hover:text-red-300 font-bold text-sm flex items-center justify-center">−</button>
@@ -4241,20 +4472,22 @@ BARDZO WAŻNE ZASADY:
                     ownedCount++;
                     return;
                 }
-                const key = window.normalizeKey(ing.name);
-                const pbItem = window.appState.pricebook[key];
+                const resolvedMatch = window.resolveIngredientPantryMatch(ing.name, false);
+                const effectiveKey = resolvedMatch ? resolvedMatch.matchedKey : window.normalizeKey(ing.name);
+                const pbItem = window.appState.pricebook[effectiveKey] || window.appState.pricebook[window.normalizeKey(ing.name)];
                 const activeP = calculateIngredientCostFromPricebook(ing, pbItem);
                 currentTotal += activeP;
 
-                const pantryEntry = window.getPantryEntry(key, false);
+                const pantryEntry = resolvedMatch ? resolvedMatch.entry : null;
                 if (!pantryEntry) {
                     missingIngredients.push({ ...ing, activePrice: activeP, reason: 'brak w spiżarni (stan: 0)' });
                 } else {
-                    const req = parseQuantityString(ing.amount, key);
-                    const have = parseQuantityString(`${pantryEntry.qty} ${pantryEntry.unit}`, key);
-                    const ratio = computeRatioBetweenAmounts(req, have, key);
+                    const req = parseQuantityString(ing.amount, effectiveKey);
+                    const have = parseQuantityString(`${pantryEntry.qty} ${pantryEntry.unit}`, effectiveKey);
+                    const ratio = computeRatioBetweenAmounts(req, have, effectiveKey);
+                    const subLabel = resolvedMatch.isGroupSubstitute ? ` (${resolvedMatch.matchedName})` : '';
                     if (ratio !== null && ratio > 1.02) {
-                        missingIngredients.push({ ...ing, activePrice: activeP, reason: `masz ${pantryEntry.qty} ${pantryEntry.unit}, potrzeba ${ing.amount}` });
+                        missingIngredients.push({ ...ing, activePrice: activeP, reason: `masz ${pantryEntry.qty} ${pantryEntry.unit}${subLabel}, potrzeba ${ing.amount}` });
                     } else {
                         ownedCount++;
                     }
@@ -4281,6 +4514,87 @@ BARDZO WAŻNE ZASADY:
             };
         }
 
+        const PRESET_RECIPE_TAGS = [
+            "Danie główne",
+            "Obiad jednogarnkowy",
+            "Makarony",
+            "Ryż i kasze",
+            "Zupy",
+            "Śniadanie / Kolacja",
+            "Desery",
+            "Przekąski / Sałatki",
+            "Wypieki i słodkości",
+            "Napoje / Koktajle",
+            "Na szybko",
+            "Wege"
+        ];
+
+        window.getRecipeAllTags = (recipe) => {
+            const set = new Set();
+            if (recipe && recipe.category) set.add(String(recipe.category).trim());
+            if (recipe && Array.isArray(recipe.tags)) {
+                recipe.tags.forEach(t => {
+                    const clean = String(t || '').trim();
+                    if (clean) set.add(clean);
+                });
+            }
+            return Array.from(set);
+        };
+
+        window.renderRecipeTagSelectorPills = (containerId, selectedTags = []) => {
+            const el = document.getElementById(containerId);
+            if (!el) return;
+            const normSelected = new Set((selectedTags || []).map(t => window.stripDiacritics(t)));
+            const allOptions = Array.from(new Set([...PRESET_RECIPE_TAGS, ...(selectedTags || [])]));
+
+            el.innerHTML = allOptions.map(tag => {
+                const isChecked = normSelected.has(window.stripDiacritics(tag));
+                return `
+                <button type="button" data-tag-val="${tag}" onclick="toggleRecipeTagPill(this)" class="recipe-tag-pill px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all ${isChecked ? 'bg-emerald-500/25 text-emerald-300 border-emerald-500/50' : 'bg-slate-900 text-slate-400 border-slate-700 hover:border-slate-500'}">
+                    ${isChecked ? '✓ ' : '+ '}${tag}
+                </button>
+                `;
+            }).join('');
+        };
+
+        window.toggleRecipeTagPill = (btn) => {
+            const val = btn.dataset.tagVal;
+            const isActive = btn.classList.contains('bg-emerald-500/25');
+            if (isActive) {
+                btn.className = 'recipe-tag-pill px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all bg-slate-900 text-slate-400 border-slate-700 hover:border-slate-500';
+                btn.textContent = `+ ${val}`;
+            } else {
+                btn.className = 'recipe-tag-pill px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all bg-emerald-500/25 text-emerald-300 border-emerald-500/50';
+                btn.textContent = `✓ ${val}`;
+            }
+        };
+
+        window.collectSelectedTagsFromContainer = (containerId, customInputId = null, primaryCategory = '') => {
+            const tags = new Set();
+            if (primaryCategory) tags.add(primaryCategory.trim());
+            const container = document.getElementById(containerId);
+            if (container) {
+                container.querySelectorAll('.recipe-tag-pill.bg-emerald-500\/25').forEach(btn => {
+                    if (btn.dataset.tagVal) tags.add(btn.dataset.tagVal.trim());
+                });
+            }
+            if (customInputId) {
+                const customVal = (document.getElementById(customInputId)?.value || '').trim();
+                if (customVal) {
+                    customVal.split(',').forEach(part => {
+                        const clean = part.trim();
+                        if (clean) tags.add(clean.charAt(0).toUpperCase() + clean.slice(1));
+                    });
+                }
+            }
+            return Array.from(tags);
+        };
+
+        window.setRecipeTypeTagFilter = (tagVal) => {
+            window.appState.currentRecipeCategoryTagFilter = tagVal;
+            renderRecipes();
+        };
+
         window.setRecipeFilter = (filter) => {
             window.appState.currentFilter = filter;
             document.querySelectorAll('.filter-chip').forEach(btn => {
@@ -4294,8 +4608,10 @@ BARDZO WAŻNE ZASADY:
 
         window.renderRecipes = () => {
             const grid = document.getElementById('recipes-grid');
+            const tagBar = document.getElementById('recipe-type-tag-bar');
             const query = document.getElementById('recipe-search').value.toLowerCase().trim();
             const filter = window.appState.currentFilter;
+            const activeTypeTag = window.appState.currentRecipeCategoryTagFilter || 'all';
 
             const localRecs = (window.appState.recipes || []).map(r => ({
                 ...r,
@@ -4314,13 +4630,45 @@ BARDZO WAŻNE ZASADY:
                 ? otherCommunityRecs
                 : [...localRecs, ...otherCommunityRecs];
 
+            // Zbierz wszystkie używane typy/tagi do paska filtrowania
+            if (tagBar) {
+                const tagCounts = {};
+                combined.forEach(r => {
+                    window.getRecipeAllTags(r).forEach(t => {
+                        tagCounts[t] = (tagCounts[t] || 0) + 1;
+                    });
+                });
+                const orderedTags = [
+                    ...PRESET_RECIPE_TAGS.filter(t => tagCounts[t] > 0 || t === 'Desery'),
+                    ...Object.keys(tagCounts).filter(t => !PRESET_RECIPE_TAGS.includes(t))
+                ];
+
+                tagBar.innerHTML = [
+                    `<button type="button" onclick="setRecipeTypeTagFilter('all')" class="px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${activeTypeTag === 'all' ? 'bg-sky-500 text-slate-950 font-bold' : 'bg-slate-900/90 text-slate-400 border border-slate-800 hover:text-slate-200'}">Wszystkie typy (${combined.length})</button>`,
+                    ...orderedTags.map(t => {
+                        const isAct = window.stripDiacritics(activeTypeTag) === window.stripDiacritics(t);
+                        const cnt = tagCounts[t] || 0;
+                        const icon = t === 'Desery' ? '🍰 ' : t === 'Zupy' ? '🍲 ' : t === 'Makarony' ? '🍝 ' : t === 'Śniadanie / Kolacja' ? '🍳 ' : '';
+                        return `<button type="button" onclick="setRecipeTypeTagFilter('${t.replace(/'/g, "\'")}')" class="px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${isAct ? 'bg-sky-500 text-slate-950 font-bold shadow-sm' : 'bg-slate-900/90 text-slate-300 border border-slate-800 hover:border-slate-600'}">${icon}${t} (${cnt})</button>`;
+                    })
+                ].join('');
+            }
+
             let enriched = combined.map(r => ({ recipe: r, metrics: calculateRecipeMetrics(r) }));
+
+            if (activeTypeTag !== 'all') {
+                const normTargetTag = window.stripDiacritics(activeTypeTag);
+                enriched = enriched.filter(({ recipe }) =>
+                    window.getRecipeAllTags(recipe).some(t => window.stripDiacritics(t) === normTargetTag)
+                );
+            }
 
             if (query) {
                 enriched = enriched.filter(({ recipe }) =>
                     recipe.title.toLowerCase().includes(query) ||
                     (recipe.sharedBy || '').toLowerCase().includes(query) ||
                     (recipe.originalAuthor || '').toLowerCase().includes(query) ||
+                    window.getRecipeAllTags(recipe).some(t => t.toLowerCase().includes(query)) ||
                     (recipe.ingredients || []).some(i => i.name.toLowerCase().includes(query))
                 );
             }
@@ -4328,6 +4676,11 @@ BARDZO WAŻNE ZASADY:
             else if (filter === 'rated') enriched = enriched.filter(({ metrics }) => metrics.avgRating !== null);
 
             enriched.sort((a, b) => {
+                if (filter === 'by_type') {
+                    const catCmp = String(a.recipe.category || 'Inne').localeCompare(String(b.recipe.category || 'Inne'), 'pl');
+                    if (catCmp !== 0) return catCmp;
+                    return a.recipe.title.localeCompare(b.recipe.title, 'pl');
+                }
                 if (filter === 'rated') return (Number(b.metrics.avgRating) || 0) - (Number(a.metrics.avgRating) || 0);
                 if (filter === 'cheap') return a.metrics.currentTotal - b.metrics.currentTotal;
                 return a.metrics.missingIngredients.length - b.metrics.missingIngredients.length;
@@ -4343,6 +4696,8 @@ BARDZO WAŻNE ZASADY:
             grid.innerHTML = enriched.map(({ recipe, metrics }) => {
                 const isPublic = !!recipe.isPublicCommunity;
                 const isAlreadySharedByMe = !isPublic && (window.appState.publicRecipes || []).some(p => p.publicId === recipe.sharedPublicDocId);
+                const allTags = window.getRecipeAllTags(recipe);
+                const extraTags = allTags.filter(t => t !== (recipe.category || 'Obiad'));
                 const authorTag = isPublic
                     ? `<span class="px-2.5 py-0.5 rounded-md bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 text-[11px] font-bold">🌍 Od: ${recipe.sharedBy || 'Inna kuchnia'}</span>`
                     : isAlreadySharedByMe
@@ -4355,7 +4710,8 @@ BARDZO WAŻNE ZASADY:
                 <div class="bg-[#1e293b] rounded-2xl border ${isPublic ? 'border-indigo-500/40' : metrics.isReadyFromPantry ? 'border-teal-500/40' : 'border-slate-800'} p-5 flex flex-col justify-between transition-all hover:border-slate-600">
                     <div>
                         <div class="flex flex-wrap items-center gap-1.5 mb-3">
-                            <span class="px-2.5 py-0.5 rounded-md bg-slate-800 text-slate-300 text-[11px] font-medium">${recipe.category || 'Obiad'}</span>
+                            <span class="px-2.5 py-0.5 rounded-md bg-slate-800 text-slate-200 text-[11px] font-semibold">${recipe.category || 'Obiad'}</span>
+                            ${extraTags.map(t => `<span class="px-2 py-0.5 rounded-md bg-sky-500/15 text-sky-300 border border-sky-500/25 text-[10px] font-semibold">#${t}</span>`).join('')}
                             ${authorTag}
                             ${metrics.isReadyFromPantry ? `<span class="px-2.5 py-0.5 rounded-md bg-teal-500/20 text-teal-300 text-[11px] font-bold">✅ Masz 100% w domu</span>` : ''}
                             ${metrics.avgRating ? `<span class="px-2.5 py-0.5 rounded-md bg-amber-500/20 text-amber-400 text-[11px] font-bold">⭐ ${metrics.avgRating}</span>` : ''}
@@ -4422,6 +4778,7 @@ BARDZO WAŻNE ZASADY:
                 <div class="pr-8">
                     <div class="flex flex-wrap items-center gap-2">
                         <span class="px-2.5 py-1 rounded-md bg-emerald-500/15 text-emerald-400 text-xs font-bold">${recipe.category || 'Obiad'}</span>
+                        ${window.getRecipeAllTags(recipe).filter(t => t !== (recipe.category || 'Obiad')).map(t => `<span class="px-2 py-0.5 rounded-md bg-sky-500/15 text-sky-300 border border-sky-500/30 text-xs font-semibold">#${t}</span>`).join('')}
                         ${isPublic
                             ? `<span class="px-2.5 py-1 rounded-md bg-indigo-500/20 text-indigo-300 text-xs font-bold">🌍 Udostępniony przez: ${recipe.sharedBy || 'Inna kuchnia'}</span>`
                             : isSharedByMe
@@ -4457,20 +4814,24 @@ BARDZO WAŻNE ZASADY:
                                 </div>
                                 `;
                             }
-                            const key = window.normalizeKey(ing.name);
-                            const pantryEntry = window.getPantryEntry(key, true);
+                            const resolvedMatch = window.resolveIngredientPantryMatch(ing.name, true);
+                            const key = resolvedMatch ? resolvedMatch.matchedKey : window.normalizeKey(ing.name);
+                            const pantryEntry = resolvedMatch ? resolvedMatch.entry : null;
                             const hasPositive = pantryEntry && pantryEntry.qty > 0;
                             const isMissingThis = metrics.missingIngredients.some(m => m.name === ing.name);
                             const inPantry = hasPositive && !isMissingThis;
-                            const pb = window.appState.pricebook[key];
+                            const pb = window.appState.pricebook[key] || window.appState.pricebook[window.normalizeKey(ing.name)];
                             const portionPrice = calculateIngredientCostFromPricebook(ing, pb);
+                            const subBadge = (resolvedMatch && resolvedMatch.isGroupSubstitute && hasPositive)
+                                ? `<span class="text-[11px] px-2 py-0.5 rounded bg-sky-500/20 text-sky-300 font-semibold">🔄 W domu: ${resolvedMatch.matchedName} (${pantryEntry.qty} ${pantryEntry.unit})</span>`
+                                : (pantryEntry ? `<span class="text-[11px] px-2 py-0.5 rounded ${inPantry ? 'bg-emerald-500/20 text-emerald-300' : hasPositive ? 'bg-amber-500/20 text-amber-300' : 'bg-red-500/20 text-red-300'} font-mono">W domu: ${pantryEntry.qty} ${pantryEntry.unit}</span>` : '');
                             return `
                             <div onclick="togglePantryItem('${key}')" class="flex items-center justify-between p-2.5 rounded-xl border cursor-pointer transition-all ${inPantry ? 'bg-emerald-950/30 border-emerald-500/40' : hasPositive ? 'bg-amber-950/25 border-amber-500/40' : 'bg-slate-900/80 border-slate-800 hover:border-slate-700'}">
                                 <div class="flex items-center gap-2.5 flex-wrap">
                                     <span class="w-5 h-5 rounded-md flex items-center justify-center text-xs ${inPantry ? 'bg-emerald-500 text-slate-950 font-bold' : hasPositive ? 'bg-amber-500 text-slate-950 font-bold' : 'bg-slate-800 text-slate-500'}">${inPantry ? '✓' : hasPositive ? '!' : ''}</span>
                                     <span class="text-sm font-medium ${inPantry ? 'text-emerald-200' : 'text-slate-200'}">${ing.name}</span>
                                     <span class="text-xs text-slate-400">(${ing.amount})</span>
-                                    ${pantryEntry ? `<span class="text-[11px] px-2 py-0.5 rounded ${inPantry ? 'bg-emerald-500/20 text-emerald-300' : hasPositive ? 'bg-amber-500/20 text-amber-300' : 'bg-red-500/20 text-red-300'} font-mono">W domu: ${pantryEntry.qty} ${pantryEntry.unit}</span>` : ''}
+                                    ${subBadge}
                                 </div>
                                 <div class="text-right shrink-0">
                                     <span class="text-xs font-bold text-slate-300">${portionPrice.toFixed(2)} zł</span>
@@ -4677,7 +5038,7 @@ BARDZO WAŻNE ZASADY:
 
                 const payload = {
                     contents: [{ parts: [{ text: promptText }] }],
-                    systemInstruction: { parts: [{ text: "Jesteś polskim szefem kuchni. Wyciągnij lub stwórz ustrukturyzowany przepis po polsku na podstawie podanego tekstu/strony z realistycznymi cenami składników w zł. Używaj podstawowych polskich nazw składników (np. 'Jajka', 'Cebula', 'Ryż', 'Pierś z kurczaka'). Dla WSZYSTKICH przypraw, ziół, marynat, sosów w łyżkach, wody oraz tłuszczów do smażenia wpisuj zawsze cenę 0." }] },
+                    systemInstruction: { parts: [{ text: "Jesteś polskim szefem kuchni. Wyciągnij lub stwórz ustrukturyzowany przepis po polsku na podstawie podanego tekstu/strony z realistycznymi cenami składników w zł. Dobierz kategorię (np. 'Obiad jednogarnkowy', 'Danie główne', 'Makarony', 'Ryż i kasze', 'Zupy', 'Śniadanie / Kolacja', 'Desery', 'Przekąski / Sałatki') oraz tablicę wielu pasujących tagów w polu 'tags' (np. ['Makarony', 'Obiad jednogarnkowy', 'Danie główne']). Używaj podstawowych polskich nazw składników (np. 'Jajka', 'Cebula', 'Ryż', 'Pierś z kurczaka'). Dla WSZYSTKICH przypraw, ziół, marynat, sosów w łyżkach, wody oraz tłuszczów do smażenia wpisuj zawsze cenę 0." }] },
                     generationConfig: {
                         responseMimeType: "application/json",
                         responseSchema: {
@@ -4685,6 +5046,7 @@ BARDZO WAŻNE ZASADY:
                             properties: {
                                 title: { type: "STRING" },
                                 category: { type: "STRING" },
+                                tags: { type: "ARRAY", items: { type: "STRING" } },
                                 time: { type: "NUMBER" },
                                 portions: { type: "NUMBER" },
                                 ingredients: {
@@ -4716,7 +5078,10 @@ BARDZO WAŻNE ZASADY:
                 const jsonStr = result.candidates?.[0]?.content?.parts?.[0]?.text;
                 if (!jsonStr) throw new Error("Brak danych z AI");
 
-                const newRecipe = { id: 'rec_' + Date.now(), ...JSON.parse(jsonStr) };
+                const aiParsed = JSON.parse(jsonStr);
+                const manualSelectedAiTags = collectSelectedTagsFromContainer('ai-recipe-tags-selector', null, aiParsed.category);
+                const mergedAiTags = Array.from(new Set([...(Array.isArray(aiParsed.tags) ? aiParsed.tags : []), ...manualSelectedAiTags]));
+                const newRecipe = { id: 'rec_' + Date.now(), ...aiParsed, tags: mergedAiTags };
                 await persistNewRecipe(newRecipe, sharePublic);
                 document.getElementById('ai-recipe-prompt').value = '';
                 document.getElementById('ai-recipe-share-public').checked = false;
@@ -4754,7 +5119,8 @@ BARDZO WAŻNE ZASADY:
                 return { name: parts[0] || 'Składnik', amount: parts[1] || '1 porcja', price: parseFloat(parts[2]) || 3.00, cat: 'Inne' };
             });
 
-            const newRec = { id: 'rec_' + Date.now(), title, category, time, portions, ingredients, steps };
+            const tags = collectSelectedTagsFromContainer('man-recipe-tags-selector', 'man-custom-tags', category);
+            const newRec = { id: 'rec_' + Date.now(), title, category, tags, time, portions, ingredients, steps };
             await persistNewRecipe(newRec, sharePublic);
             e.target.reset();
             closeModal('modal-add-recipe');
@@ -4838,6 +5204,10 @@ BARDZO WAŻNE ZASADY:
             } else {
                 catSel.value = 'Inne';
             }
+            const existingTags = window.getRecipeAllTags(recipe);
+            renderRecipeTagSelectorPills('edit-recipe-tags-selector', existingTags);
+            const customEditEl = document.getElementById('edit-custom-tags');
+            if (customEditEl) customEditEl.value = '';
             document.getElementById('edit-rec-time').value = recipe.time || 25;
             document.getElementById('edit-rec-portions').value = recipe.portions || 4;
 
@@ -4880,8 +5250,10 @@ BARDZO WAŻNE ZASADY:
                 };
             });
 
+            const updatedTags = collectSelectedTagsFromContainer('edit-recipe-tags-selector', 'edit-custom-tags', category);
             recipe.title = title;
             recipe.category = category;
+            recipe.tags = updatedTags;
             recipe.time = time;
             recipe.portions = portions;
             recipe.ingredients = ingredients;
@@ -4898,6 +5270,7 @@ BARDZO WAŻNE ZASADY:
                     await setDoc(doc(db, "publiczne_przepisy", publicDocId), {
                         title,
                         category,
+                        tags: updatedTags,
                         time,
                         portions,
                         ingredients,
@@ -5679,6 +6052,10 @@ BARDZO WAŻNE ZASADY:
 
         window.openAddRecipeModal = () => {
             syncKitchenLabelsUI();
+            renderRecipeTagSelectorPills('ai-recipe-tags-selector', []);
+            renderRecipeTagSelectorPills('man-recipe-tags-selector', ['Obiad jednogarnkowy']);
+            const customMan = document.getElementById('man-custom-tags');
+            if (customMan) customMan.value = '';
             document.getElementById('modal-add-recipe').classList.remove('hidden');
         };
         window.openKitchenModal = () => {
