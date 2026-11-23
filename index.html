@@ -2389,6 +2389,210 @@
             "promocja", "gazetka", "rodzinne", "klasyczne", "tradycyjne", "wiejskie"
         ];
 
+                const POLISH_GENITIVE_TO_NOMINATIVE = [
+            // Mięso i wędliny
+            [/^wolowiny\b/i, "Wołowina"],
+            [/^miesa mielonego wolowego\b/i, "Mięso mielone wołowe"],
+            [/^miesa mielonego wieprzowego\b/i, "Mięso mielone wieprzowe"],
+            [/^miesa mielonego drobiowego\b/i, "Mięso mielone drobiowe"],
+            [/^miesa mielonego\b/i, "Mięso mielone"],
+            [/^miesa\b/i, "Mięso"],
+            [/^wieprzowiny\b/i, "Wieprzowina"],
+            [/^cieleciny\b/i, "Cielęcina"],
+            [/^piersi z kurczaka\b/i, "Pierś z kurczaka"],
+            [/^piersi kurczaka\b/i, "Pierś z kurczaka"],
+            [/^filetu z piersi kurczaka\b/i, "Pierś z kurczaka"],
+            [/^fileta z piersi kurczaka\b/i, "Pierś z kurczaka"],
+            [/^filetu z kurczaka\b/i, "Pierś z kurczaka"],
+            [/^kurczaka\b/i, "Kurczak"],
+            [/^piersi z indyka\b/i, "Pierś z indyka"],
+            [/^filetu z indyka\b/i, "Pierś z indyka"],
+            [/^indyka\b/i, "Indyk"],
+            [/^schabu\b/i, "Schab"],
+            [/^karkowki\b/i, "Karkówka"],
+            [/^lopatki wieprzowej\b/i, "Łopatka wieprzowa"],
+            [/^lopatki\b/i, "Łopatka"],
+            [/^szynki\b/i, "Szynka"],
+            [/^poledwicy\b/i, "Polędwica"],
+            [/^poledwiczki\b/i, "Polędwiczka"],
+            [/^kielbasy slaskiej\b/i, "Kiełbasa śląska"],
+            [/^kielbasy\b/i, "Kiełbasa"],
+            [/^boczku wedzonego\b/i, "Wędzony boczek"],
+            [/^boczku\b/i, "Boczek"],
+            [/^parowek\b/i, "Parówki"],
+            [/^kabanosow\b/i, "Kabanosy"],
+            // Ryby
+            [/^lososia\b/i, "Łosoś"],
+            [/^filetu z lososia\b/i, "Łosoś filet"],
+            [/^dorsza\b/i, "Dorsz"],
+            [/^tunczyka w puszce\b/i, "Tuńczyk w puszce"],
+            [/^tunczyka\b/i, "Tuńczyk w puszce"],
+            [/^sledzia\b/i, "Śledź"],
+            [/^sledzi\b/i, "Śledzie"],
+            [/^makreli\b/i, "Makrela"],
+            [/^krewetek\b/i, "Krewetki"],
+            // Nabiał i jaja
+            [/^masla orzechowego\b/i, "Masło orzechowe"],
+            [/^masla klarowanego\b/i, "Masło klarowane"],
+            [/^masla\b/i, "Masło"],
+            [/^mleczka kokosowego\b/i, "Mleczko kokosowe"],
+            [/^mleka\b/i, "Mleko"],
+            [/^smietany\b/i, "Śmietana"],
+            [/^smietanki\b/i, "Śmietanka"],
+            [/^jogurtu naturalnego\b/i, "Jogurt naturalny"],
+            [/^jogurtu greckiego\b/i, "Jogurt grecki"],
+            [/^jogurtu\b/i, "Jogurt"],
+            [/^kefiru\b/i, "Kefir"],
+            [/^maslanki\b/i, "Maślanka"],
+            [/^twarogu\b/i, "Twaróg"],
+            [/^serka wiejskiego lekkiego\b/i, "Serek wiejski lekki"],
+            [/^serka wiejskiego\b/i, "Serek wiejski"],
+            [/^serka homogenizowanego\b/i, "Serek homogenizowany"],
+            [/^serka\b/i, "Serek"],
+            [/^sera zoltego\b/i, "Ser żółty"],
+            [/^sera startego\b/i, "Ser żółty"],
+            [/^sera mozzarella\b/i, "Mozzarella"],
+            [/^mozzarelli\b/i, "Mozzarella"],
+            [/^parmezanu\b/i, "Parmezan"],
+            [/^sera feta\b/i, "Feta"],
+            [/^fety\b/i, "Feta"],
+            [/^sera\b/i, "Ser"],
+            [/^jajek\b/i, "Jajka"],
+            [/^jaj\b/i, "Jajka"],
+            // Warzywa, owoce i grzyby
+            [/^cebuli czerwonej\b/i, "Cebula czerwona"],
+            [/^cebuli\b/i, "Cebula"],
+            [/^czosnku\b/i, "Czosnek"],
+            [/^ziemniakow\b/i, "Ziemniaki"],
+            [/^batatow\b/i, "Bataty"],
+            [/^marchwi\b/i, "Marchew"],
+            [/^marchewki\b/i, "Marchew"],
+            [/^pietruszki\b/i, "Pietruszka"],
+            [/^selera\b/i, "Seler"],
+            [/^pora\b/i, "Por"],
+            [/^kapusty kiszonej\b/i, "Kapusta kiszona"],
+            [/^kapusty pekinskiej\b/i, "Kapusta pekińska"],
+            [/^kapusty bialej\b/i, "Kapusta biała"],
+            [/^kapusty\b/i, "Kapusta"],
+            [/^brokula\b/i, "Brokuł"],
+            [/^brokulow\b/i, "Brokuły"],
+            [/^kalafiora\b/i, "Kalafior"],
+            [/^cukinii\b/i, "Cukinia"],
+            [/^baklazana\b/i, "Bakłażan"],
+            [/^szpinaku\b/i, "Szpinak"],
+            [/^salaty\b/i, "Sałata"],
+            [/^ogorka kiszonego\b/i, "Ogórek kiszony"],
+            [/^ogorkow kiszonych\b/i, "Ogórki kiszone"],
+            [/^ogorka\b/i, "Ogórek"],
+            [/^ogorkow\b/i, "Ogórki"],
+            [/^papryki czerwonej\b/i, "Papryka czerwona"],
+            [/^papryki zoltej\b/i, "Papryka żółta"],
+            [/^papryki zielonej\b/i, "Papryka zielona"],
+            [/^papryki\b/i, "Papryka"],
+            [/^pomidorow krojonych\b/i, "Pomidory krojone"],
+            [/^pomidorow w puszce\b/i, "Pomidory krojone"],
+            [/^pomidorow koktajlowych\b/i, "Pomidory koktajlowe"],
+            [/^pomidorow malinowych\b/i, "Pomidory malinowe"],
+            [/^pomidorow\b/i, "Pomidory"],
+            [/^pomidora\b/i, "Pomidor"],
+            [/^pieczarek\b/i, "Pieczarki"],
+            [/^grzybow\b/i, "Grzyby"],
+            [/^dyni\b/i, "Dynia"],
+            [/^groszku mrozonego\b/i, "Mrożony groszek"],
+            [/^mrozonego groszku\b/i, "Mrożony groszek"],
+            [/^groszku konserwowego\b/i, "Groszek konserwowy"],
+            [/^groszku\b/i, "Groszek"],
+            [/^kukurydzy konserwowej\b/i, "Kukurydza konserwowa"],
+            [/^kukurydzy z puszki\b/i, "Kukurydza konserwowa"],
+            [/^kukurydzy\b/i, "Kukurydza konserwowa"],
+            [/^fasoli czerwonej\b/i, "Czerwona fasola"],
+            [/^czerwonej fasoli\b/i, "Czerwona fasola"],
+            [/^fasoli bialej\b/i, "Biała fasola"],
+            [/^bialej fasoli\b/i, "Biała fasola"],
+            [/^fasolki szparagowej\b/i, "Fasolka szparagowa"],
+            [/^fasoli\b/i, "Fasola"],
+            [/^ciecierzycy\b/i, "Ciecierzyca"],
+            [/^soczewicy\b/i, "Soczewica"],
+            [/^mrozonych owocow\b/i, "Mrożone owoce"],
+            [/^owocow mrozonych\b/i, "Mrożone owoce"],
+            [/^mrozonej mieszanki warzyw\b/i, "Mrożona mieszanka warzyw"],
+            [/^mrozonych warzyw\b/i, "Mrożone warzywa"],
+            [/^jablek\b/i, "Jabłka"],
+            [/^jablka\b/i, "Jabłko"],
+            [/^bananow\b/i, "Banany"],
+            [/^banana\b/i, "Banan"],
+            [/^cytryny\b/i, "Cytryna"],
+            [/^pomaranczy\b/i, "Pomarańcza"],
+            [/^truskawek\b/i, "Truskawki"],
+            [/^malin\b/i, "Maliny"],
+            [/^borowek\b/i, "Borówki"],
+            [/^wisni\b/i, "Wiśnie"],
+            [/^ananasa w puszce\b/i, "Ananas w puszce"],
+            [/^ananasa\b/i, "Ananas"],
+            // Konserwy, przetwory, tłuszcze, sypkie, pieczywo
+            [/^koncentratu pomidorowego\b/i, "Koncentrat pomidorowy"],
+            [/^koncentratu\b/i, "Koncentrat pomidorowy"],
+            [/^passaty pomidorowej\b/i, "Passata pomidorowa"],
+            [/^passaty\b/i, "Passata pomidorowa"],
+            [/^przecieru pomidorowego\b/i, "Przecier pomidorowy"],
+            [/^oliwy z oliwek\b/i, "Oliwa z oliwek"],
+            [/^delikatnej oliwy\b/i, "Oliwa z oliwek"],
+            [/^oliwy\b/i, "Oliwa z oliwek"],
+            [/^oleju rzepakowego\b/i, "Olej rzepakowy"],
+            [/^oleju slonecznikowego\b/i, "Olej słonecznikowy"],
+            [/^oleju\b/i, "Olej"],
+            [/^sosu sojowego\b/i, "Sos sojowy"],
+            [/^bulionu warzywnego\b/i, "Bulion warzywny"],
+            [/^bulionu drobiowego\b/i, "Bulion drobiowy"],
+            [/^bulionu\b/i, "Bulion"],
+            [/^wody lub bulionu\b/i, "Bulion"],
+            [/^wody\b/i, "Woda"],
+            [/^ryzu bialego\b/i, "Ryż biały"],
+            [/^ryzu basmati\b/i, "Ryż basmati"],
+            [/^ryzu jasminowego\b/i, "Ryż jaśminowy"],
+            [/^ryzu\b/i, "Ryż"],
+            [/^makaronu penne\b/i, "Makaron penne"],
+            [/^makaronu spaghetti\b/i, "Makaron spaghetti"],
+            [/^makaronu\b/i, "Makaron"],
+            [/^kaszy peczak\b/i, "Kasza pęczak"],
+            [/^kaszy gryczanej\b/i, "Kasza gryczana"],
+            [/^kaszy jaglanej\b/i, "Kasza jaglana"],
+            [/^kaszy\b/i, "Kasza"],
+            [/^maki pszennej\b/i, "Mąka pszenna"],
+            [/^maki ziemniaczanej\b/i, "Mąka ziemniaczana"],
+            [/^maki\b/i, "Mąka pszenna"],
+            [/^platkow owsianych gorskich\b/i, "Płatki owsiane górskie"],
+            [/^platkow owsianych\b/i, "Płatki owsiane"],
+            [/^chleba swiezego\b/i, "Chleb świeży"],
+            [/^chleba\b/i, "Chleb świeży"],
+            [/^bulek\b/i, "Bułki"],
+            [/^bulki\b/i, "Bułka"],
+            [/^cukru\b/i, "Cukier"],
+            [/^soli\b/i, "Sól"],
+            [/^pieprzu\b/i, "Pieprz"],
+            [/^miodu\b/i, "Miód"],
+            [/^dzemu\b/i, "Dżem"],
+            [/^majonezu\b/i, "Majonez"],
+            [/^ketchupu\b/i, "Ketchup"],
+            [/^musztardy\b/i, "Musztarda"],
+            [/^octu\b/i, "Ocet"],
+            [/^drozdzy\b/i, "Drożdże"]
+        ];
+
+        window.toPolishNominativeFoodName = (rawStr) => {
+            let s = String(rawStr || '').trim();
+            if (!s) return 'Składnik';
+            // Usuń dopiski typu "z puszki" na końcu tylko dla warzyw puszkowanych, jeśli słownik ma kanoniczną nazwę
+            s = s.replace(/\s+/g, ' ').trim();
+            const ascii = window.stripDiacritics(s);
+            for (const [rx, nominative] of POLISH_GENITIVE_TO_NOMINATIVE) {
+                if (rx.test(ascii)) {
+                    return nominative;
+                }
+            }
+            return s.charAt(0).toUpperCase() + s.slice(1);
+        };
+
         window.cleanGenericFoodName = (rawStr) => {
             let s = String(rawStr || '').trim();
             if (!s) return 'Produkt';
@@ -2449,7 +2653,7 @@
             if (ascii.includes('makaron')) return 'Makaron';
 
             if (!s) return rawStr.trim();
-            return s.charAt(0).toUpperCase() + s.slice(1);
+            return window.toPolishNominativeFoodName(s);
         };
 
         window.normalizeKey = (str) => {
@@ -2766,8 +2970,11 @@
                     ? '10 szt.'
                     : (item.unit || (base[canonicalKey] ? base[canonicalKey].unit : "1 szt."));
 
+                const fixedPbName = canonicalKey === 'jajka'
+                    ? 'Jajka'
+                    : window.toPolishNominativeFoodName(item.name || (base[canonicalKey] ? base[canonicalKey].name : rawKey));
                 merged[canonicalKey] = {
-                    name: canonicalKey === 'jajka' ? 'Jajka' : (item.name || (base[canonicalKey] ? base[canonicalKey].name : rawKey)),
+                    name: fixedPbName,
                     unit: enforcedUnit,
                     category: item.category || (base[canonicalKey] ? base[canonicalKey].category : "Inne"),
                     price: Number(activePrice.toFixed(2)),
@@ -5238,23 +5445,23 @@ ${JSON.stringify(chunk)}`;
                 if (dashSplit.length === 2) {
                     const left = dashSplit[0].trim();
                     const right = dashSplit[1].trim();
-                    // Jeśli lewa strona zaczyna się od ilości (np. "1 duża cebula"), użyj jej lub prawej gramatury
                     const leftAmt = left.match(/^(\d+(?:[.,]\d+)?\s*(?:g|kg|ml|l|szt\.?|łyżk[ia]?|łyżeczk[ia]?|szklank[ia]?|puszk[ia]?|ząbk[iów]?|opak\.?))/i);
                     if (leftAmt) {
-                        const cleanName = left.replace(leftAmt[0], '').replace(/^(duża|duży|duże|średnia|średni|średnie|mała|mały|małe)\s+/i, '').trim();
-                        return `${cleanName || left} | ${/\d+\s*(g|kg|ml|l)/i.test(right) ? right : leftAmt[1]} | 3.50`;
+                        const rawName = left.replace(leftAmt[0], '').replace(/^(duża|duży|duże|średnia|średni|średnie|mała|mały|małe)\s+/i, '').trim();
+                        const nomName = window.toPolishNominativeFoodName(rawName || left);
+                        return `${nomName} | ${/\d+\s*(g|kg|ml|l)/i.test(right) ? right : leftAmt[1]} | 3.50`;
                     }
                     if (/\d/.test(right)) {
-                        return `${left} | ${right} | 3.50`;
+                        return `${window.toPolishNominativeFoodName(left)} | ${right} | 3.50`;
                     }
                 }
                 const amountMatch = noParens.match(/(\d+(?:[.,]\d+)?\s*(?:g|kg|ml|l|szt\.?|łyżk[ia]?|łyżeczk[ia]?|szklank[ia]?|puszk[ia]?|ząbk[iów]?|opak\.?))/i);
                 if (amountMatch) {
                     const amount = amountMatch[1].trim();
-                    const name = noParens.replace(amountMatch[0], '').replace(/^[-–•:,\s]+|[-–•:,\s]+$/g, '').trim() || noParens;
-                    return `${name} | ${amount} | 3.50`;
+                    const rawName = noParens.replace(amountMatch[0], '').replace(/^[-–•:,\s]+|[-–•:,\s]+$/g, '').trim() || noParens;
+                    return `${window.toPolishNominativeFoodName(rawName)} | ${amount} | 3.50`;
                 }
-                return `${noParens} | 1 porcja | 3.50`;
+                return `${window.toPolishNominativeFoodName(noParens)} | 1 porcja | 3.50`;
             });
 
             const formattedSteps = stepLines.slice(0, 18);
@@ -5374,6 +5581,12 @@ ${JSON.stringify(chunk)}`;
                 if (!jsonStr) throw new Error("Brak danych z AI");
 
                 const aiParsed = JSON.parse(jsonStr);
+                if (Array.isArray(aiParsed.ingredients)) {
+                    aiParsed.ingredients = aiParsed.ingredients.map(i => ({
+                        ...i,
+                        name: window.toPolishNominativeFoodName(i.name || 'Składnik')
+                    }));
+                }
                 const manualSelectedAiTags = collectSelectedTagsFromContainer('ai-recipe-tags-selector', null, aiParsed.category);
                 const mergedAiTags = Array.from(new Set([...(Array.isArray(aiParsed.tags) ? aiParsed.tags : []), ...manualSelectedAiTags]));
                 const newRecipe = { id: 'rec_' + Date.now(), ...aiParsed, tags: mergedAiTags };
@@ -5419,7 +5632,7 @@ ${JSON.stringify(chunk)}`;
 
                 const ingredients = rawIngs.map(line => {
                     const parts = line.split('|').map(s => s.trim());
-                    return { name: parts[0] || 'Składnik', amount: parts[1] || '1 porcja', price: parseFloat((parts[2] || '3.00').replace(',', '.')) || 3.00, cat: 'Inne' };
+                    return { name: window.toPolishNominativeFoodName(parts[0] || 'Składnik'), amount: parts[1] || '1 porcja', price: parseFloat((parts[2] || '3.00').replace(',', '.')) || 3.00, cat: 'Inne' };
                 });
 
                 const tags = collectSelectedTagsFromContainer('man-recipe-tags-selector', 'man-custom-tags', category);
@@ -5550,7 +5763,7 @@ ${JSON.stringify(chunk)}`;
             const ingredients = rawIngs.map(line => {
                 const parts = line.split('|').map(s => s.trim());
                 return {
-                    name: parts[0] || 'Składnik',
+                    name: window.toPolishNominativeFoodName(parts[0] || 'Składnik'),
                     amount: parts[1] || '1 porcja',
                     price: parseFloat((parts[2] || '3.00').replace(',', '.')) || 3.00,
                     cat: 'Inne'
