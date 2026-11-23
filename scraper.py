@@ -128,22 +128,23 @@ NON_FOOD_AND_UI_NOISE = [
     "zestaw kosmetykow", "zestaw prezentowy", "zestaw str8", "zestaw axe", "zestaw nivea", "zestaw dove",
     "proszek do prania", "plyn do", "kapsulki do", "domestos", "wybielacz", "odplamiacz",
     "gabka", "zmywak", "folia aluminiowa", "papier do pieczenia", "worki na smieci",
-    # Zwierzęta, dzieci (niespożywcze)
+    # Zwierzęta, dzieci, książki, zabawki, dom, elektronika
     "karma dla", "zwirek", "pieluchy", "pampers", "smoczek", "butelka dla",
-    # Odzież, dom, ogród, narzędzia, elektronika
+    "ksiazka", "ksiazeczka", "kolorowank", "bajk", "historyjk", "katalog", "czasopismo", "gazeta",
     "koszulka", "t-shirt", "spodnie", "skarpetk", "majtki", "biustonosz", "kurtka", "buty",
     "kapcie", "klapki", "pizama", "sukienka", "bluza", "sweter", "legginsy", "rajstopy",
-    "posciel", "przescieradlo", "koc ", "poduszka", "recznik kapielowy", "dywanik",
+    "posciel", "przescieradlo", "koc ", "poduszka", "recznik kapielowy", "dywanik", "obrus", "bieznik", "firank", "zaslon",
     "patelnia", "garnek", "zestaw garnkow", "pojemnik", "szczotka", "mop ", "wiadro",
     "wiertarka", "wkretarka", "szlifierka", "mlotek", "klucz ", "baterie", "zarowka",
-    "lampka", "latarka", "kabel", "ladowarka", "sluchawki", "doniczka", "ziemia ogrodowa",
-    "kosiarka", "sekator", "zabawka", "klocki", "lalka", "pluszak", "gra planszowa",
-    "znicz", "wklad do znicza", "kwiaty", "bukiet", "roslina", "storczyk", "tulipan",
+    "lampka", "latarka", "kabel", "ladowarka", "sluchawki", "glosnik", "powerbank", "smartwatch",
+    "doniczka", "ziemia ogrodowa", "kosiarka", "sekator", "zabawka", "klocki", "lalka", "pluszak", "gra planszowa",
+    "znicz", "wklad do znicza", "kwiaty", "bukiet", "roslina", "storczyk", "tulipan", "aranzacja w szkle", "dekoracj",
     "dyfuzor", "odswiezacz", "swieca", "swieczk", "olejek zapachowy", "zapach do",
-    # Słodycze, ciastka, herbaty, praliny, chipsy, energetyki, napoje
+    # Słodycze, ciasta, ciastka, herbaty, kawy, praliny, chipsy, energetyki, napoje
     "czekolad", "bombonierk", "pralin", "lindor", "raffaello", "ferrero", "merci", "toblerone",
     "baton", "wafel", "wafelk", "prince polo", "grzeski", "kitkat", "snickers", "mars", "twix",
-    "ciastk", "ciasteczk", "herbatnik", "biszkopt", "markiz", "piernik", "delicj", "jezyki",
+    "ciastk", "ciasteczk", "ciasto", "sernik", "szarlotk", "makowiec", "keks", "babka",
+    "herbatnik", "biszkopt", "markiz", "piernik", "delicj", "jezyki",
     "cukierk", "zelk", "lizak", "karmelk", "krowk", "chalw", "sezamk", "piank", "marshmallow",
     "ptasie mleczko", "nutella", "krem czekoladowy", "krem orzechowy",
     "dekoracji cukrow", "dekoracje cukrow", "posypka cukrow", "lukier", "masa cukrow",
@@ -165,9 +166,46 @@ NON_FOOD_AND_UI_NOISE = [
     "godziny otwarcia", "znajdz sklep", "lista zakupow", "cena regularna", "najtansza cena z 30 dni"
 ]
 
+# BIAŁA LISTA KULINARNA: produkt spoza CORE_CULINARY_ITEMS przejdzie TYLKO wtedy, gdy zawiera słowo prawdziwego jedzenia!
+POSITIVE_FOOD_KEYWORDS = re.compile(
+    r"\b("
+    # Mięso i wędliny
+    r"kurczak\w*|indyk\w*|wieprzow\w*|wolow\w*|cielec\w*|kaczk\w*|ges\w*|krolik\w*|"
+    r"schab\w*|karkowk\w*|lopatk\w*|szynk\w*|poledwic\w*|boczek|boczku|golonk\w*|zeberk\w*|"
+    r"mielon\w*|gulasz\w*|udk\w*|skrzydelk\w*|podudzi\w*|filet\w*|piers\w*|mieso|miesa|"
+    r"kielbas\w*|parowk\w*|kabanos\w*|salami|pasztet\w*|kaszank\w*|baleron\w*|karkow\w*|"
+    # Ryby i owoce morza
+    r"losos\w*|dorsz\w*|tunczyk\w*|sledz\w*|pstrag\w*|makrel\w*|mintaj\w*|morszczuk\w*|"
+    r"halibut\w*|sandacz\w*|karp\w*|tilapi\w*|krewetk\w*|kalmar\w*|ryb\w*|"
+    # Nabiał i jaja
+    r"mleko|mleka|maslo|masla|ser|sera|sery|serem|gouda|edam\w*|ementaler\w*|morski|mozzarell\w*|"
+    r"twarog\w*|serek|serki|jogurt\w*|smietan\w*|kefir\w*|maslank\w*|jaj\w*|feta|camembert|brie|parmezan\w*|ricotta|mascarpone|"
+    # Pieczywo
+    r"chleb\w*|bulk\w*|bagietk\w*|tortill\w*|pieczyw\w*|kajzerk\w*|graham\w*|tostow\w*|"
+    # Warzywa
+    r"pomidor\w*|ogor\w*|papryk\w*|cebul\w*|czosn\w*|ziemniak\w*|marchew\w*|pietruszk\w*|"
+    r"seler\w*|kapust\w*|brokul\w*|kalafior\w*|cukini\w*|baklazan\w*|szpinak\w*|salat\w*|"
+    r"rzodkiew\w*|burak\w*|por|pora|pory|pieczark\w*|grzyb\w*|dyni\w*|awokado|fasolk\w*|groszek|szparag\w*|kukurydz\w*|"
+    # Owoce
+    r"jablk\w*|banan\w*|cytryn\w*|pomarancz\w*|mandarynk\w*|grejpfrut\w*|borowk\w*|"
+    r"malin\w*|truskawk\w*|winogron\w*|gruszk\w*|sliwk\w*|brzoskwini\w*|nektarynk\w*|"
+    r"ananas\w*|mango|kiwi|arbuz\w*|melon\w*|wisni\w*|czeresni\w*|jagod\w*|porzeczk\w*|zurawin\w*|rodzynk\w*|daktyl\w*|"
+    # Produkty sypkie, makarony, kasze, mąki
+    r"ryz\w*|makaron\w*|spaghetti|penne|swiderk\w*|fusilli|tagliatelle|lasagne|kasz\w*|"
+    r"mak[ai]|maka|platki owsiane|platki jaglane|otr[eę]b\w*|soczewic\w*|ciecierzyc\w*|groch\w*|fasol\w*|"
+    # Konserwy, przetwory, tłuszcze, przyprawy, dodatki kuchenne
+    r"passat\w*|przecier\w*|koncentrat\w*|oliw\w*|olej\w*|smalec|maslo orzechowe|"
+    r"sos\w*|pesto|ketchup\w*|majonez\w*|musztard\w*|chrzan\w*|ocet|bulion\w*|"
+    r"miod|miodu|dzem\w*|powidl\w*|konfitur\w*|przypraw\w*|sol|pieprz|cukier|drozdze|"
+    # Gotowe dania obiadowe / mrożonki
+    r"pierog\w*|krokiet\w*|nalesnik\w*|pyz\w*|kopytk\w*|kluski|frytk\w*|pizza|lazani\w*|hummus\w*|tofu"
+    r")\b",
+    re.I,
+)
+
 PORTAL_PREFIX_RE = re.compile(
     r"^(?:zobacz\s+(?:aktualn[aąe]|archiwaln[aąe]|najnowsz[aąe]|od\s+dzi[sś]|ju[zż]\s+od\s+jutr[ao]|jutro|w\s+sklepie|ofert[eę])?\s*|"
-    r"aktualn[aąe]\s+|archiwaln[aąe]\s+|od\s+dzi[sś]\s+|ju[zż]\s+w\s+sprzeda[zż]y\s+|oferta\s+)",
+    r"ju[zż]\s+za\s+\d+\s+dni\s+|aktualn[aąe]\s+|archiwaln[aąe]\s+|od\s+dzi[sś]\s+|ju[zż]\s+w\s+sprzeda[zż]y\s+|oferta\s+)",
     re.I,
 )
 
@@ -333,25 +371,37 @@ def extract_validity_dates(text: str) -> tuple[Optional[str], Optional[str]]:
     return None, None
 
 
-def is_promotion_active(valid_to: Optional[str]) -> bool:
-    if not valid_to:
-        return True
-    try:
-        return datetime.strptime(valid_to, "%Y-%m-%d").date() >= datetime.now().date()
-    except ValueError:
-        return True
+def is_promotion_active(valid_to: Optional[str], valid_from: Optional[str] = None) -> bool:
+    today = datetime.now().date()
+    if valid_to:
+        try:
+            if datetime.strptime(valid_to, "%Y-%m-%d").date() < today:
+                return False
+        except ValueError:
+            pass
+    # Odrzuć gazetki z dalekiej przyszłości (np. startujące za 7-10 dni)
+    if valid_from:
+        try:
+            days_until_start = (datetime.strptime(valid_from, "%Y-%m-%d").date() - today).days
+            if days_until_start > 2:
+                return False
+        except ValueError:
+            pass
+    return True
 
 
 def classify_any_food_offer(raw_title: str, price_val: float) -> Optional[tuple[str, str, str, bool]]:
     """
-    Akceptuje wszystkie sensowne promocje spożywcze (z wykluczeniem słodyczy, alkoholu i archiwalnych gazetek,
-    ale z zachowaniem chipsów i energetyków).
+    Akceptuje WYŁĄCZNIE realne produkty spożywcze / składniki kulinarne:
+    1) odrzuca oferty archiwalne oraz zapowiedzi 'już za X dni'
+    2) odrzuca czarną listę (chemia, elektronika, książki, zabawki, słodycze, ciasta, kawa/herbata, napoje, alkohol)
+    3) wymaga dopasowania do CORE_CULINARY_ITEMS lub białej listy słów spożywczych POSITIVE_FOOD_KEYWORDS
     """
     if price_val < 0.50 or price_val > 120.00:
         return None
 
     raw_norm = normalize_ascii(raw_title)
-    if "archiwaln" in raw_norm:
+    if "archiwaln" in raw_norm or re.search(r"\bjuz\s+za\s+\d+\s+dni\b", raw_norm):
         return None
 
     clean_title = clean_generic_offer_name(raw_title)
@@ -365,7 +415,7 @@ def classify_any_food_offer(raw_title: str, price_val: float) -> Optional[tuple[
     if re.search(r"\bwino\b", norm):
         return None
 
-    # 1. Jeśli oferta pasuje do jednego z podstawowych składników kulinarnych — daj jej czystą kanoniczną nazwę
+    # 1. Podstawowe składniki kulinarne
     for canon_key, (clean_label, cat_name, must_kws, excl_kws, min_p, max_p) in CORE_CULINARY_ITEMS.items():
         if min_p <= price_val <= max_p and not any(ex in norm for ex in excl_kws):
             if any(kw in norm for kw in must_kws):
@@ -373,7 +423,10 @@ def classify_any_food_offer(raw_title: str, price_val: float) -> Optional[tuple[
                     return "serek_wiejski_lekki", "Serek wiejski lekki", cat_name, True
                 return canon_key, clean_label, cat_name, True
 
-    # 2. Każda inna dozwolona oferta z gazetki przechodzi dalej
+    # 2. Pozostałe oferty przechodzą TYLKO jeśli zawierają rozpoznane słowo spożywcze
+    if not POSITIVE_FOOD_KEYWORDS.search(norm):
+        return None
+
     cat_name = guess_food_category(norm)
     slug = re.sub(r"[^a-z0-9]+", "_", norm).strip("_")[:48]
     if not slug:
@@ -396,7 +449,7 @@ def parse_offers(html: str, store_name: str, source_url: str) -> list[dict]:
 
     page_valid_from, page_valid_to = extract_validity_dates(page_header_text)
 
-    if not is_promotion_active(page_valid_to):
+    if not is_promotion_active(page_valid_to, page_valid_from):
         return []
 
     def try_add(raw_prod: str, price_val: float, raw_text: str, v_from: Optional[str], v_to: Optional[str]):
@@ -440,7 +493,7 @@ def parse_offers(html: str, store_name: str, source_url: str) -> list[dict]:
             j_from, j_to = extract_validity_dates(snippet)
             v_from = j_from or page_valid_from
             v_to = j_to or page_valid_to
-            if not is_promotion_active(v_to):
+            if not is_promotion_active(v_to, v_from):
                 continue
             clean_p = strip_portal_prefixes(raw_prod)
             try_add(raw_prod, price_val, f"{clean_p} — {price_val:.2f} zł", v_from, v_to)
@@ -459,7 +512,7 @@ def parse_offers(html: str, store_name: str, source_url: str) -> list[dict]:
             c_from, c_to = extract_validity_dates(f"{alt_txt} {parent_txt[:220]}")
             v_from = c_from or page_valid_from
             v_to = c_to or page_valid_to
-            if not is_promotion_active(v_to):
+            if not is_promotion_active(v_to, v_from):
                 continue
             try_add(raw_prod, price_val, alt_txt, v_from, v_to)
 
@@ -477,7 +530,7 @@ def parse_offers(html: str, store_name: str, source_url: str) -> list[dict]:
         card_from, card_to = extract_validity_dates(text)
         v_from = card_from or page_valid_from
         v_to = card_to or page_valid_to
-        if not is_promotion_active(v_to):
+        if not is_promotion_active(v_to, v_from):
             continue
         clean_p = strip_portal_prefixes(raw_prod)
         try_add(raw_prod, price_val, f"{clean_p} — {price_val:.2f} zł", v_from, v_to)
