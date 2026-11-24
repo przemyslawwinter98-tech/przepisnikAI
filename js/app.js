@@ -85,7 +85,18 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebas
             "sos_sojowy": { name: "Sos sojowy", unit: "1 but.", price: 7.50, category: "Przyprawy i dodatki" },
             "tunczyk": { name: "Tuńczyk w puszce", unit: "1 puszka", price: 5.50, category: "Konserwy i słoiki" },
             "wedzony_boczek": { name: "Wędzony boczek", unit: "1 kg", price: 32.00, category: "Mięso i świeże" },
-            "ziemniaki": { name: "Ziemniaki", unit: "1 kg", price: 2.80, category: "Mięso i świeże" }
+            "ziemniaki": { name: "Ziemniaki", unit: "1 kg", price: 2.80, category: "Warzywa i owoce" },
+            "wolowina": { name: "Wołowina", unit: "1 kg", price: 36.00, category: "Mięso i świeże" },
+            "wieprzowina": { name: "Wieprzowina", unit: "1 kg", price: 22.00, category: "Mięso i świeże" },
+            "marchew": { name: "Marchew", unit: "1 kg", price: 3.50, category: "Warzywa i owoce" },
+            "pietruszka": { name: "Pietruszka", unit: "1 kg", price: 6.50, category: "Warzywa i owoce" },
+            "seler": { name: "Seler", unit: "1 kg", price: 5.50, category: "Warzywa i owoce" },
+            "por": { name: "Por", unit: "1 szt.", price: 3.00, category: "Warzywa i owoce" },
+            "papryka": { name: "Papryka", unit: "1 kg", price: 12.00, category: "Warzywa i owoce" },
+            "pomidory": { name: "Pomidory", unit: "1 kg", price: 9.00, category: "Warzywa i owoce" },
+            "pieczarki": { name: "Pieczarki", unit: "500 g", price: 6.50, category: "Warzywa i owoce" },
+            "oliwa_z_oliwek": { name: "Oliwa z oliwek", unit: "1 l", price: 28.00, category: "Przyprawy i dodatki" },
+            "olej": { name: "Olej rzepakowy", unit: "1 l", price: 8.50, category: "Przyprawy i dodatki" }
         };
 
         const STARTER_RECIPES = [
@@ -1425,7 +1436,8 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebas
             if (ascii.includes('cebul')) return 'cebula';
             if (ascii.includes('czosnk') || ascii.includes('czosnek')) return 'czosnek';
             if (ascii.includes('ziemniak')) return 'ziemniaki';
-            if (ascii.includes('pomidor') && !ascii.includes('krojon') && !ascii.includes('puszk') && !ascii.includes('passat') && !ascii.includes('koncentrat')) return 'pomidory';
+            if (ascii.includes('pomidor') && (ascii.includes('krojon') || ascii.includes('puszk') || ascii.includes('pelati'))) return 'pomidory_krojone';
+            if (ascii.includes('pomidor') && !ascii.includes('passat') && !ascii.includes('koncentrat') && !ascii.includes('suszon')) return 'pomidory';
             if (ascii.includes('tunczyk')) return 'tunczyk';
             if (ascii.includes('piers') && ascii.includes('kurczak') || ascii === 'kurczak') return 'piers_z_kurczaka';
             if (ascii.includes('mielon')) return 'mieso_mielone';
@@ -1916,7 +1928,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebas
             smietana: { tbspPerPack: 13, gramsPerPack: 200, gramsPerTbsp: 15 },
             jogurt_naturalny: { tbspPerPack: 13, gramsPerPack: 200, gramsPerTbsp: 15 },
             mleczko_kokosowe: { tbspPerPack: 26, mlPerPack: 400, gramsPerTbsp: 15 },
-            passata_pomidorowa: { tbspPerPack: 46, gramsPerPack: 700, gramsPerTbsp: 15 },
+            passata_pomidorowa: { tbspPerPack: 46, gramsPerPack: 700, gramsPerPiece: 700, gramsPerTbsp: 15 },
             oliwa: { tbspPerPack: 33, mlPerPack: 500, gramsPerTbsp: 14 },
             olej: { tbspPerPack: 66, mlPerPack: 1000, gramsPerTbsp: 14 },
 
@@ -1948,7 +1960,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebas
         function parseQuantityString(str, canonKey = '') {
             if (!str) return { val: 1, baseUnit: 'szt.', rawUnit: 'szt.' };
             const clean = window.stripDiacritics(String(str)).replace(',', '.');
-            const match = clean.match(/(\d+(?:\.\d+)?)\s*(lyzeczk[ia]?|lyzeczek|lyzk[ia]?|lyzek|szklank[ia]?|szklanek|garsc[ia]?|garsci|kromk[ia]?|zabk[iow]?|zabek|plastr[yow]?|plaster|kostk[ia]?|puszk[ia]?|opak\.?|sloik[ia]?|sztuk[ia]?|szt\.?|but\.?|dag|kg|ml|g|l)(?![a-z])/);
+            const match = clean.match(/(\d+(?:\.\d+)?)\s*(lyzeczk[ia]?|lyzeczek|lyzk[ia]?|lyzek|szklank[ia]?|szklanek|garsc[ia]?|garsci|kromk[ia]?|zabk[iow]?|zabek|plastr[yow]?|plaster|kostk[ia]?|puszk[ia]?|puszek|opakowani[aeu]?|opak\.?|sloik[ia]?|sloikow|sztuk[ia]?|szt\.?|butelk[ia]?|butelek|but\.?|dag|kg|ml|g|l)(?![a-z])/);
             if (!match) return { val: 1, baseUnit: 'szt.', rawUnit: 'szt.' };
 
             let val = parseFloat(match[1]);
@@ -2051,6 +2063,11 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebas
             if (reqParsed.baseUnit === 'szt.' && packParsed.baseUnit === 'g' && eq.gramsPerPiece) {
                 return (reqParsed.val * eq.gramsPerPiece) / packParsed.val;
             }
+            // Przepis w but./słoik/puszka/opak., a cennik w g/ml (np. "3 butelki" passaty przy cenniku "700 g")
+            if (packUnits.includes(reqParsed.baseUnit) && (packParsed.baseUnit === 'g' || packParsed.baseUnit === 'ml')) {
+                const packSize = eq.gramsPerPiece || eq.gramsPerPack || eq.mlPerPack || packParsed.val;
+                return (reqParsed.val * packSize) / packParsed.val;
+            }
             // Przepis w g (np. 50 g masła, 250 g chleba), a cennik/spiżarnia w szt./słoik
             if (reqParsed.baseUnit === 'g' && packUnits.includes(packParsed.baseUnit)) {
                 const gPerPiece = eq.gramsPerPiece || eq.gramsPerLoaf || eq.gramsPerBulb || eq.gramsPerPack;
@@ -2065,12 +2082,12 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebas
             if ((reqParsed.baseUnit === 'ml' && packParsed.baseUnit === 'g') || (reqParsed.baseUnit === 'g' && packParsed.baseUnit === 'ml')) {
                 return reqParsed.val / packParsed.val;
             }
-            // Puszka (400 ml / 240 g) vs ml/g
+            // Puszka (standardowa puszka 400 g / 400 ml) vs ml/g
             if (reqParsed.baseUnit === 'ml' && packParsed.baseUnit === 'puszka') {
                 return reqParsed.val / (packParsed.val * 400);
             }
             if (reqParsed.baseUnit === 'g' && packParsed.baseUnit === 'puszka') {
-                return reqParsed.val / (packParsed.val * 240);
+                return reqParsed.val / (packParsed.val * 400);
             }
             return null;
         }
@@ -2118,6 +2135,19 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebas
             const canonKey = window.normalizeKey(ing.name);
             const req = parseQuantityString(ing.amount, canonKey);
             const pack = parseQuantityString(pbItem.unit || '1 szt.', canonKey);
+
+            // Bulion w płynie (np. "4 szklanki" lub "1 l" lub "500 ml"): 1 litr gotowego bulionu to ok. 2 łyżki koncentratu ze słoika (1/6 słoika) lub 2 kostki!
+            if (canonKey.includes('bulion')) {
+                let litersOfBroth = 0;
+                if (req.baseUnit === 'ml') litersOfBroth = req.val / 1000;
+                else if (req.baseUnit === 'tbsp') litersOfBroth = (req.val * 15) / 1000; // 4 szklanki = 66.67 tbsp = 1.0 litr
+                if (litersOfBroth > 0) {
+                    const jarPb = window.appState.pricebook['bulion_w_sloiku'] || pbItem;
+                    const jarPrice = Number(jarPb?.price ?? 6.50);
+                    // 1 litr bulionu zużywa 1/6 słoika (ok. 1.08 zł)
+                    return Number(((litersOfBroth / 6) * jarPrice).toFixed(2));
+                }
+            }
 
             if (req.baseUnit === 'tbsp' && ['szt.', 'słoik', 'but.', 'opak.', 'puszka'].includes(pack.baseUnit)) {
                 const eq = getCulinaryEquivalents(canonKey);
@@ -4473,6 +4503,13 @@ ${JSON.stringify(chunk)}`;
                 }
             }
 
+            const stripLeadingQtyAndAdjectives = (txt) => {
+                return txt
+                    .replace(/^\d+(?:[.,]\d+)?\s*(?:g|kg|ml|l|szt\.?|łyżk[ia]?|łyżek|łyżeczk[ia]?|łyżeczek|szklank[ia]?|szklanek|puszk[ia]?|puszek|butelk[ia]?|butelek|słoik[ia]?|słoików|ząbk[iów]?|ząbek|opak\.?)?\s*/i, '')
+                    .replace(/^(?:duża|duży|duże|średnia|średni|średnie|mała|mały|małe|świeża|świeży|świeże|delikatnej|delikatna|delikatny)\s+/gi, '')
+                    .trim();
+            };
+
             const formattedIngredients = (ingLines.length > 0 ? ingLines : ["Składnik główny | 1 porcja | 5.00"]).slice(0, 30).map(item => {
                 // Usuń nawiasy opisowe np. "(waga z zalewą)", "(można pominąć)" z nazwy składnika
                 const noParens = item.replace(/\([^)]*\)/g, '').replace(/\s+/g, ' ').trim();
@@ -4481,23 +4518,31 @@ ${JSON.stringify(chunk)}`;
                 if (dashSplit.length === 2) {
                     const left = dashSplit[0].trim();
                     const right = dashSplit[1].trim();
-                    const leftAmt = left.match(/^(\d+(?:[.,]\d+)?\s*(?:g|kg|ml|l|szt\.?|łyżk[ia]?|łyżeczk[ia]?|szklank[ia]?|puszk[ia]?|ząbk[iów]?|opak\.?))/i);
-                    if (leftAmt) {
-                        const rawName = left.replace(leftAmt[0], '').replace(/^(duża|duży|duże|średnia|średni|średnie|mała|mały|małe)\s+/i, '').trim();
-                        const nomName = window.toPolishNominativeFoodName(rawName || left);
-                        return `${nomName} | ${/\d+\s*(g|kg|ml|l)/i.test(right) ? right : leftAmt[1]} | 3.50`;
-                    }
+                    const leftLeadingNum = left.match(/^(\d+(?:[.,]\d+)?)/);
+                    const cleanedLeftName = stripLeadingQtyAndAdjectives(left) || left;
+                    const nomName = window.toPolishNominativeFoodName(cleanedLeftName);
                     if (/\d/.test(right)) {
-                        return `${window.toPolishNominativeFoodName(left)} | ${right} | 3.50`;
+                        return `${nomName} | ${right} | 3.50`;
+                    }
+                    if (leftLeadingNum) {
+                        return `${nomName} | ${leftLeadingNum[1]} szt. | 3.50`;
                     }
                 }
-                const amountMatch = noParens.match(/(\d+(?:[.,]\d+)?\s*(?:g|kg|ml|l|szt\.?|łyżk[ia]?|łyżeczk[ia]?|szklank[ia]?|puszk[ia]?|ząbk[iów]?|opak\.?))/i);
+                const amountMatch = noParens.match(/(\d+(?:[.,]\d+)?\s*(?:łyżeczk[ia]?|łyżeczek|łyżk[ia]?|łyżek|szklank[ia]?|szklanek|puszk[ia]?|puszek|ząbk[iów]?|ząbek|opak\.?|szt\.?|dag|kg|ml|g|l)(?![a-ząćęłńóśźż]))/i);
                 if (amountMatch) {
                     const amount = amountMatch[1].trim();
-                    const rawName = noParens.replace(amountMatch[0], '').replace(/^[-–•:,\s]+|[-–•:,\s]+$/g, '').trim() || noParens;
+                    const rawName = stripLeadingQtyAndAdjectives(
+                        noParens.replace(amountMatch[0], '').replace(/^[-–•:,\s]+|[-–•:,\s]+$/g, '').trim()
+                    ) || noParens;
                     return `${window.toPolishNominativeFoodName(rawName)} | ${amount} | 3.50`;
                 }
-                return `${window.toPolishNominativeFoodName(noParens)} | 1 porcja | 3.50`;
+                const leadingCountMatch = noParens.match(/^(\d+(?:[.,]\d+)?)\s+(.+)$/);
+                if (leadingCountMatch) {
+                    const cnt = leadingCountMatch[1];
+                    const cleanName = stripLeadingQtyAndAdjectives(leadingCountMatch[2]);
+                    return `${window.toPolishNominativeFoodName(cleanName)} | ${cnt} szt. | 3.50`;
+                }
+                return `${window.toPolishNominativeFoodName(stripLeadingQtyAndAdjectives(noParens))} | 1 porcja | 3.50`;
             });
 
             const formattedSteps = stepLines.slice(0, 18);
@@ -6460,6 +6505,47 @@ Nie dodawaj składników, których nie ma na powyższej liście! Zwróć JSON:
                 showToast(`✨ Ułożono i zapisano przepis z Twoich zapasów: <strong>${newRec.title}</strong>!`);
             } catch (err) {
                 showToast(`Nie udało się wygenerować przepisu (${err.message}).`, "error");
+            }
+        };
+
+
+        window.shareShoppingListNative = async () => {
+            const unchecked = (window.appState.shopping || []).filter(s => !s.checked);
+            if (unchecked.length === 0) {
+                showToast("Lista zakupów jest pusta!", "warning");
+                return;
+            }
+            const grouped = {};
+            unchecked.forEach(item => {
+                const cat = item.category || 'Inne';
+                if (!grouped[cat]) grouped[cat] = [];
+                grouped[cat].push(item);
+            });
+            const lines = [`🛒 Lista zakupów (${window.appState.kitchenLabel || 'Kuchnia'}):`, ''];
+            Object.entries(grouped).forEach(([cat, items]) => {
+                lines.push(`▪ ${cat}:`);
+                items.forEach(i => {
+                    const storeInfo = i.promoStore ? ` [${i.promoStore}]` : '';
+                    const priceInfo = i.price > 0 ? ` (~${Number(i.price).toFixed(2)} zł)` : '';
+                    lines.push(`  - ${i.name}${storeInfo}${priceInfo}`);
+                });
+            });
+            const shareText = lines.join('\n');
+
+            if (navigator.share) {
+                try {
+                    await navigator.share({ title: 'Lista zakupów', text: shareText });
+                    return;
+                } catch (err) {
+                    if (err.name === 'AbortError') return;
+                }
+            }
+            try {
+                await navigator.clipboard.writeText(shareText);
+                showToast("📋 Skopiowano listę zakupów do schowka! Możesz wkleić ją w SMS lub WhatsApp.");
+            } catch (_) {
+                const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+                window.location.href = `sms:${isIOS ? '&' : '?'}body=${encodeURIComponent(shareText)}`;
             }
         };
 
