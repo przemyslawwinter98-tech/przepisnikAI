@@ -740,32 +740,41 @@ def filter_pending_with_gemini(pending_dict: dict, api_key: str) -> dict:
             '[{"key": "...", "cleanName": "Krótka czysta nazwa po polsku", "category": "Mięso i świeże|Lodówka i mrożonki|Warzywa i owoce|Konserwy i słoiki|Suche i makarony|Przyprawy i dodatki"}]\n\n'
             f"Lista: {json.dumps(chunk, ensure_ascii=False)}"
         )
-        try:
-            resp = requests.post(
-                f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={api_key}",
-                json={
-                    "contents": [{"parts": [{"text": prompt}]}],
-                    "generationConfig": {"responseMimeType": "application/json"},
-                },
-                timeout=35,
-            )
-            if resp.status_code == 200:
-                raw_txt = resp.json().get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "[]")
-                raw_txt = re.sub(r"^```(?:json)?\s*|\s*```$", "", raw_txt.strip())
-                parsed = json.loads(raw_txt)
-                if isinstance(parsed, list):
-                    for row in parsed:
-                        k = row.get("key")
-                        if k in pending_dict:
-                            kept_keys.add(k)
-                            if row.get("cleanName"):
-                                cleaned_names[k] = row["cleanName"]
-                            if row.get("category"):
-                                cleaned_cats[k] = row["category"]
-            else:
-                return pending_dict
-        except Exception as exc:
-            print(f"[AI Filter] Pominięto krok AI ({exc}), używam filtra regułowego.", flush=True)
+        chunk_ok = False
+        for model_name in ["gemini-3.8-flash", "gemini-3.8-flash-lite", "gemini-2.5-flash"]:
+            try:
+                resp = requests.post(
+                    f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={api_key}",
+                    json={
+                        "contents": [{"parts": [{"text": prompt}]}],
+                        "generationConfig": {"responseMimeType": "application/json"},
+                    },
+                    timeout=35,
+                )
+                if resp.status_code == 200:
+                    raw_txt = resp.json().get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "[]")
+                    raw_txt = re.sub(r"^```(?:json)?\s*|\s*```$", "", raw_txt.strip())
+                    parsed = json.loads(raw_txt)
+                    if isinstance(parsed, list):
+                        for row in parsed:
+                            k = row.get("key")
+                            if k in pending_dict:
+                                kept_keys.add(k)
+                                if row.get("cleanName"):
+                                    cleaned_names[k] = row["cleanName"]
+                                if row.get("category"):
+                                    cleaned_cats[k] = row["category"]
+                    chunk_ok = True
+                    break
+                elif resp.status_code in (429, 503):
+                    time.sleep(0.8)
+                    continue
+                else:
+                    continue
+            except Exception:
+                continue
+        if not chunk_ok:
+            print("[AI Filter] Wszystkie modele AI przeciążone, używam filtra regułowego.", flush=True)
             return pending_dict
 
     if not kept_keys:
