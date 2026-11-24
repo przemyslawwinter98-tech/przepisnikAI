@@ -1948,7 +1948,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebas
         function parseQuantityString(str, canonKey = '') {
             if (!str) return { val: 1, baseUnit: 'szt.', rawUnit: 'szt.' };
             const clean = window.stripDiacritics(String(str)).replace(',', '.');
-            const match = clean.match(/(\d+(?:\.\d+)?)\s*(kg|g|dag|l|ml|szt\.?|sztuk[ia]?|puszk[ia]?|opak\.?|sloik[ia]?|kromk[ia]?|zabk[iow]?|zabek|plastr[yow]?|plaster|kostk[ia]?|but\.?|lyzeczk[ia]?|lyzeczek|lyzk[ia]?|lyzek|szklank[ia]?|szklanek|garsc[ia]?|garsci)?/);
+            const match = clean.match(/(\d+(?:\.\d+)?)\s*(lyzeczk[ia]?|lyzeczek|lyzk[ia]?|lyzek|szklank[ia]?|szklanek|garsc[ia]?|garsci|kromk[ia]?|zabk[iow]?|zabek|plastr[yow]?|plaster|kostk[ia]?|puszk[ia]?|opak\.?|sloik[ia]?|sztuk[ia]?|szt\.?|but\.?|dag|kg|ml|g|l)(?![a-z])/);
             if (!match) return { val: 1, baseUnit: 'szt.', rawUnit: 'szt.' };
 
             let val = parseFloat(match[1]);
@@ -2118,6 +2118,13 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebas
             const canonKey = window.normalizeKey(ing.name);
             const req = parseQuantityString(ing.amount, canonKey);
             const pack = parseQuantityString(pbItem.unit || '1 szt.', canonKey);
+
+            if (req.baseUnit === 'tbsp' && ['szt.', 'słoik', 'but.', 'opak.', 'puszka'].includes(pack.baseUnit)) {
+                const eq = getCulinaryEquivalents(canonKey);
+                const tbspPerPack = eq.tbspPerPack || 15;
+                const fraction = req.val / (pack.val * tbspPerPack);
+                return Number((fraction * unitPrice).toFixed(2));
+            }
 
             const ratio = computeRatioBetweenAmounts(req, pack, canonKey);
             if (ratio !== null && !isNaN(ratio) && ratio > 0) {
