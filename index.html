@@ -7385,8 +7385,7 @@ Kuchnia: ${window.appState.kitchenLabel} (${window.appState.kitchenCode})`;
                     `;
                 }
 
-                const formattedAnswer = String(parsed.answer || '').replace(/
-/g, '<br>');
+                const formattedAnswer = String(parsed.answer || '').replace(/\n/g, '<br>');
                 responseBox.innerHTML = `
                     ${bugBannerHtml}
                     <div class="p-4 rounded-xl bg-slate-950/90 border border-slate-800 text-sm text-slate-200 leading-relaxed">
