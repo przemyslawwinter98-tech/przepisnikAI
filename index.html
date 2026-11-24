@@ -470,6 +470,7 @@
                                 <option value="l">l</option>
                                 <option value="opak.">opak.</option>
                                 <option value="puszka">puszka</option>
+                                <option value="słoik">słoik</option>
                             </select>
                             <select id="pantry-add-cat" title="Dział w spiżarni" class="sm:col-span-2 px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-sm text-slate-200 focus:outline-none focus:border-emerald-500">
                                 <option value="auto">Dział: Automatycznie</option>
@@ -1322,6 +1323,7 @@
             "ananas_w_puszce": { name: "Ananas w puszce", unit: "1 puszka", price: 5.50, category: "Konserwy i słoiki" },
             "biala_fasola": { name: "Biała fasola", unit: "1 puszka", price: 3.40, category: "Konserwy i słoiki" },
             "bulion_kostka": { name: "Bulion kostka", unit: "1 szt.", price: 0.50, category: "Przyprawy i dodatki" },
+            "bulion_w_sloiku": { name: "Bulion w słoiku", unit: "1 słoik", price: 6.50, category: "Przyprawy i dodatki" },
             "cebula": { name: "Cebula", unit: "1 kg", price: 3.50, category: "Mięso i świeże" },
             "chleb_swiezy": { name: "Chleb świeży", unit: "1 szt.", price: 4.50, category: "Mięso i świeże" },
             "czerwona_fasola": { name: "Czerwona fasola", unit: "1 puszka", price: 3.20, category: "Konserwy i słoiki" },
@@ -2994,12 +2996,15 @@
             const normAmt = window.stripDiacritics(ing.amount || '');
             const normCat = window.stripDiacritics(ing.cat || '');
 
-            // 0. Jeśli kategoria w przepisie to przyprawy, ale NIE jest to czosnek, masło orzechowe, oliwa w dużej ilości czy sos sojowy w dużej ilości
+            // 0. Jeśli kategoria w przepisie to przyprawy, ale NIE jest to czosnek, masło orzechowe, sos sojowy, bulion w słoiku/kostce, koncentrat, miód, majonez, musztarda, pesto
             const key = window.normalizeKey(ing.name || '');
             const pbItem = window.appState?.pricebook?.[key];
+            const isCountedJarOrSauce = (
+                ['czosnek', 'maslo_orzechowe', 'sos_sojowy', 'bulion_kostka', 'bulion_w_sloiku', 'bulion_sloik', 'bulion', 'koncentrat_pomidorowy', 'miod', 'dzem', 'powidla', 'majonez', 'musztarda', 'chrzan', 'pesto', 'ketchup', 'smietana', 'jogurt_naturalny', 'mleczko_kokosowe', 'maka_pszenna', 'maka_ziemniaczana', 'platki_owsiane_gorskie', 'ryz', 'kasza_peczak'].includes(key) ||
+                key.includes('bulion') || key.includes('maslo_orzech') || key.includes('koncentrat') || key.includes('sos_soj') || key.includes('miod') || key.includes('pesto')
+            );
             if (pbItem && window.stripDiacritics(pbItem.category || '') === 'przyprawy i dodatki') {
-                // Czosnek, masło orzechowe, sos sojowy, bulion w kostce liczymy jeśli są w pełnych sztukach/słoikach; pozostałe przyprawy pomijamy
-                if (!['czosnek', 'maslo_orzechowe', 'sos_sojowy', 'bulion_kostka'].includes(key)) return true;
+                if (!isCountedJarOrSauce) return true;
             }
 
             // 1. Szeroka lista przypraw, ziół, marynat, proszków i podstaw kuchennych
@@ -3028,18 +3033,20 @@
                 }
             }
 
-            // 2. Mikro-ilości w przepisach (łyżka, łyżeczka, szczypta, odrobina, kropla, do smaku, ząbek)
+            // 2. Mikro-ilości w przepisach: dla słoików/sosów (np. bulion w słoiku, masło orzechowe, koncentrat, miód, sos sojowy) przeliczamy łyżki/łyżeczki dokładnie z ceny słoika!
+            if (isCountedJarOrSauce && /\b(lyzk|lyzeczk|szklank|garsc)\b/.test(normAmt)) return false;
             if (/\b(lyzk|lyzeczk|szczypt|odrobin|kropl|do smaku|wg uznania|garsc)\b/.test(normAmt)) return true;
 
             return false;
         };
 
-        // ================= PARSER ILOŚCI + EKWIWALENTY KULINARNE (CHLEB, CZOSNEK, WARZYWA) =================
+        // ================= PARSER ILOŚCI + EKWIWALENTY KULINARNE (ŁYŻKI, SŁOIKI, CHLEB, CZOSNEK, WARZYWA) =================
         const CULINARY_EQUIVALENTS = {
-            chleb_swiezy: { slicesPerLoaf: 16, gramsPerLoaf: 500 },
-            chleb: { slicesPerLoaf: 16, gramsPerLoaf: 500 },
+            // Pieczywo i warzywa
+            chleb_swiezy: { slicesPerLoaf: 16, gramsPerLoaf: 500, gramsPerTbsp: 10 },
+            chleb: { slicesPerLoaf: 16, gramsPerLoaf: 500, gramsPerTbsp: 10 },
             bulka: { gramsPerPiece: 65 },
-            czosnek: { clovesPerBulb: 10, gramsPerBulb: 50 },
+            czosnek: { clovesPerBulb: 10, gramsPerBulb: 50, gramsPerTbsp: 12 },
             cebula: { gramsPerPiece: 130 },
             ziemniaki: { gramsPerPiece: 150 },
             pomidory: { gramsPerPiece: 140 },
@@ -3048,20 +3055,67 @@
             jablko: { gramsPerPiece: 160 },
             cytryna: { gramsPerPiece: 100 },
             piers_z_kurczaka: { gramsPerPiece: 220 },
-            maslo: { gramsPerPiece: 200 },
-            ser_zolty: { gramsPerSlice: 20 },
-            szynka: { gramsPerSlice: 20 }
+            maslo: { gramsPerPiece: 200, gramsPerTbsp: 15 },
+            ser_zolty: { gramsPerSlice: 20, gramsPerTbsp: 10 },
+            szynka: { gramsPerSlice: 20 },
+
+            // Słoiki, buliony, pasty, sosy w butelkach (przeliczniki na 1 łyżkę stołową = 15 ml)
+            bulion_w_sloiku: { tbspPerPack: 12, gramsPerPack: 180, gramsPerTbsp: 15 },
+            bulion_sloik: { tbspPerPack: 12, gramsPerPack: 180, gramsPerTbsp: 15 },
+            bulion: { tbspPerPack: 12, gramsPerPack: 180, gramsPerTbsp: 15 },
+            bulion_kostka: { gramsPerPiece: 10, gramsPerTbsp: 10 },
+            maslo_orzechowe: { tbspPerPack: 20, gramsPerPack: 400, gramsPerTbsp: 20 },
+            koncentrat_pomidorowy: { tbspPerPack: 10, gramsPerPack: 200, gramsPerTbsp: 20 },
+            sos_sojowy: { tbspPerPack: 13, mlPerPack: 200, gramsPerTbsp: 15 },
+            miod: { tbspPerPack: 18, gramsPerPack: 370, gramsPerTbsp: 20 },
+            dzem: { tbspPerPack: 18, gramsPerPack: 350, gramsPerTbsp: 20 },
+            powidla: { tbspPerPack: 18, gramsPerPack: 350, gramsPerTbsp: 20 },
+            majonez: { tbspPerPack: 15, gramsPerPack: 270, gramsPerTbsp: 18 },
+            musztarda: { tbspPerPack: 12, gramsPerPack: 210, gramsPerTbsp: 18 },
+            chrzan: { tbspPerPack: 11, gramsPerPack: 200, gramsPerTbsp: 18 },
+            pesto: { tbspPerPack: 10, gramsPerPack: 190, gramsPerTbsp: 19 },
+            ketchup: { tbspPerPack: 25, gramsPerPack: 450, gramsPerTbsp: 18 },
+            smietana: { tbspPerPack: 13, gramsPerPack: 200, gramsPerTbsp: 15 },
+            jogurt_naturalny: { tbspPerPack: 13, gramsPerPack: 200, gramsPerTbsp: 15 },
+            mleczko_kokosowe: { tbspPerPack: 26, mlPerPack: 400, gramsPerTbsp: 15 },
+            passata_pomidorowa: { tbspPerPack: 46, gramsPerPack: 700, gramsPerTbsp: 15 },
+            oliwa: { tbspPerPack: 33, mlPerPack: 500, gramsPerTbsp: 14 },
+            olej: { tbspPerPack: 66, mlPerPack: 1000, gramsPerTbsp: 14 },
+
+            // Produkty sypkie (łyżka / szklanka)
+            maka_pszenna: { tbspPerPack: 83, gramsPerPack: 1000, gramsPerTbsp: 12, gramsPerCup: 160 },
+            maka_ziemniaczana: { tbspPerPack: 33, gramsPerPack: 500, gramsPerTbsp: 15, gramsPerCup: 180 },
+            platki_owsiane_gorskie: { tbspPerPack: 50, gramsPerPack: 500, gramsPerTbsp: 10, gramsPerCup: 110 },
+            ryz: { tbspPerPack: 65, gramsPerPack: 1000, gramsPerTbsp: 15, gramsPerCup: 190 },
+            kasza_peczak: { tbspPerPack: 26, gramsPerPack: 400, gramsPerTbsp: 15, gramsPerCup: 180 },
+            cukier: { tbspPerPack: 66, gramsPerPack: 1000, gramsPerTbsp: 15, gramsPerCup: 220 }
         };
+
+        function getCulinaryEquivalents(canonKey) {
+            if (!canonKey) return {};
+            if (CULINARY_EQUIVALENTS[canonKey]) return CULINARY_EQUIVALENTS[canonKey];
+            if (canonKey.includes('bulion') && !canonKey.includes('kostk')) return CULINARY_EQUIVALENTS.bulion_w_sloiku;
+            if (canonKey.includes('maslo_orzech')) return CULINARY_EQUIVALENTS.maslo_orzechowe;
+            if (canonKey.includes('koncentrat')) return CULINARY_EQUIVALENTS.koncentrat_pomidorowy;
+            if (canonKey.includes('sos_soj') || canonKey.includes('worcester') || canonKey.includes('sos_rybn')) return CULINARY_EQUIVALENTS.sos_sojowy;
+            if (canonKey.includes('miod')) return CULINARY_EQUIVALENTS.miod;
+            if (canonKey.includes('dzem') || canonKey.includes('konfitur')) return CULINARY_EQUIVALENTS.dzem;
+            if (canonKey.includes('majonez')) return CULINARY_EQUIVALENTS.majonez;
+            if (canonKey.includes('musztard')) return CULINARY_EQUIVALENTS.musztarda;
+            if (canonKey.includes('pesto')) return CULINARY_EQUIVALENTS.pesto;
+            if (canonKey.includes('maka')) return CULINARY_EQUIVALENTS.maka_pszenna;
+            return {};
+        }
 
         function parseQuantityString(str, canonKey = '') {
             if (!str) return { val: 1, baseUnit: 'szt.', rawUnit: 'szt.' };
             const clean = window.stripDiacritics(String(str)).replace(',', '.');
-            const match = clean.match(/(\d+(?:\.\d+)?)\s*(kg|g|dag|l|ml|szt\.?|sztuk[ia]?|puszk[ia]?|opak\.?|sloik[ia]?|kromk[ia]?|zabk[iow]?|zabek|plastr[yow]?|plaster|kostk[ia]?|but\.?)?/);
+            const match = clean.match(/(\d+(?:\.\d+)?)\s*(kg|g|dag|l|ml|szt\.?|sztuk[ia]?|puszk[ia]?|opak\.?|sloik[ia]?|kromk[ia]?|zabk[iow]?|zabek|plastr[yow]?|plaster|kostk[ia]?|but\.?|lyzeczk[ia]?|lyzeczek|lyzk[ia]?|lyzek|szklank[ia]?|szklanek|garsc[ia]?|garsci)?/);
             if (!match) return { val: 1, baseUnit: 'szt.', rawUnit: 'szt.' };
 
             let val = parseFloat(match[1]);
             let unit = (match[2] || 'szt').replace(/\.$/, '');
-            const eq = CULINARY_EQUIVALENTS[canonKey] || {};
+            const eq = getCulinaryEquivalents(canonKey);
 
             if (unit === 'kg') return { val: val * 1000, baseUnit: 'g', rawUnit: 'kg' };
             if (unit === 'dag') return { val: val * 10, baseUnit: 'g', rawUnit: 'dag' };
@@ -3071,6 +3125,24 @@
             if (unit.startsWith('puszk')) return { val: val, baseUnit: 'puszka', rawUnit: 'puszka' };
             if (unit.startsWith('opak')) return { val: val, baseUnit: 'opak.', rawUnit: 'opak.' };
             if (unit.startsWith('sloik')) return { val: val, baseUnit: 'słoik', rawUnit: 'słoik' };
+            if (unit.startsWith('but')) return { val: val, baseUnit: 'but.', rawUnit: 'but.' };
+
+            // Łyżeczki (1 łyżeczka = 1/3 łyżki stołowej = 5 ml)
+            if (unit.startsWith('lyzecz')) {
+                return { val: val / 3, baseUnit: 'tbsp', rawUnit: 'łyżeczka' };
+            }
+            // Łyżki stołowe (1 łyżka = 15 ml)
+            if (unit.startsWith('lyz')) {
+                return { val: val, baseUnit: 'tbsp', rawUnit: 'łyżka' };
+            }
+            // Szklanka (250 ml = ok. 16.6 łyżki)
+            if (unit.startsWith('szklan')) {
+                return { val: val * (250 / 15), baseUnit: 'tbsp', rawUnit: 'szklanka' };
+            }
+            // Garść (ok. 30 g ≈ 2.5 łyżki)
+            if (unit.startsWith('garsc')) {
+                return { val: val * 2.5, baseUnit: 'tbsp', rawUnit: 'garść' };
+            }
 
             // Kromki -> ułamek bochenka (16 kromek = 1 bochenek)
             if (unit.startsWith('kromk')) {
@@ -3096,20 +3168,60 @@
 
         function computeRatioBetweenAmounts(reqParsed, packParsed, canonKey = '') {
             if (!packParsed || packParsed.val <= 0) return 1;
-            const eq = CULINARY_EQUIVALENTS[canonKey] || {};
+            const eq = getCulinaryEquivalents(canonKey);
+            const packUnits = ['szt.', 'słoik', 'but.', 'opak.', 'puszka'];
 
-            // Ten sam wymiar (np. g i g, szt. i szt., puszka i puszka)
+            // Ten sam wymiar (np. g i g, szt. i szt., tbsp i tbsp)
             if (reqParsed.baseUnit === packParsed.baseUnit) {
                 return reqParsed.val / packParsed.val;
             }
+
+            // Przepis na łyżki / łyżeczki / szklanki (tbsp)
+            if (reqParsed.baseUnit === 'tbsp') {
+                // Cennik lub spiżarnia w opakowaniach (1 słoik, 1 but., 1 szt., 1 opak.)
+                if (packUnits.includes(packParsed.baseUnit)) {
+                    const tbspPerPack = eq.tbspPerPack || 15;
+                    return reqParsed.val / (packParsed.val * tbspPerPack);
+                }
+                // Cennik lub spiżarnia w gramach (np. 400 g, 1 kg)
+                if (packParsed.baseUnit === 'g') {
+                    const gramsPerTbsp = eq.gramsPerTbsp || 15;
+                    return (reqParsed.val * gramsPerTbsp) / packParsed.val;
+                }
+                // Cennik lub spiżarnia w mililitrach (np. 200 ml, 1 l)
+                if (packParsed.baseUnit === 'ml') {
+                    return (reqParsed.val * 15) / packParsed.val;
+                }
+            }
+
+            // Spiżarnia w łyżkach, a przepis w g/ml/opakowaniu
+            if (packParsed.baseUnit === 'tbsp') {
+                if (packUnits.includes(reqParsed.baseUnit)) {
+                    const tbspPerPack = eq.tbspPerPack || 15;
+                    return (reqParsed.val * tbspPerPack) / packParsed.val;
+                }
+                if (reqParsed.baseUnit === 'g') {
+                    const gramsPerTbsp = eq.gramsPerTbsp || 15;
+                    return (reqParsed.val / gramsPerTbsp) / packParsed.val;
+                }
+                if (reqParsed.baseUnit === 'ml') {
+                    return (reqParsed.val / 15) / packParsed.val;
+                }
+            }
+
             // Przepis w szt. (np. 1 cebula, 4 ziemniaki), a cennik/spiżarnia w g/kg
             if (reqParsed.baseUnit === 'szt.' && packParsed.baseUnit === 'g' && eq.gramsPerPiece) {
                 return (reqParsed.val * eq.gramsPerPiece) / packParsed.val;
             }
-            // Przepis w g (np. 50 g masła, 250 g chleba), a cennik/spiżarnia w szt.
-            if (reqParsed.baseUnit === 'g' && packParsed.baseUnit === 'szt.') {
-                const gPerPiece = eq.gramsPerPiece || eq.gramsPerLoaf || eq.gramsPerBulb;
+            // Przepis w g (np. 50 g masła, 250 g chleba), a cennik/spiżarnia w szt./słoik
+            if (reqParsed.baseUnit === 'g' && packUnits.includes(packParsed.baseUnit)) {
+                const gPerPiece = eq.gramsPerPiece || eq.gramsPerLoaf || eq.gramsPerBulb || eq.gramsPerPack;
                 if (gPerPiece) return reqParsed.val / (packParsed.val * gPerPiece);
+            }
+            // Przepis w ml (np. 50 ml sosu sojowego), a cennik w but./słoik
+            if (reqParsed.baseUnit === 'ml' && packUnits.includes(packParsed.baseUnit)) {
+                const mlPerPiece = eq.mlPerPack || eq.gramsPerPack;
+                if (mlPerPiece) return reqParsed.val / (packParsed.val * mlPerPiece);
             }
             // Passata / mleczko kokosowe: 1 ml ≈ 1 g
             if ((reqParsed.baseUnit === 'ml' && packParsed.baseUnit === 'g') || (reqParsed.baseUnit === 'g' && packParsed.baseUnit === 'ml')) {
@@ -3628,7 +3740,7 @@
                                     <div class="flex items-center gap-1">
                                         <input type="number" step="0.1" min="0" value="${entry.qty}" onchange="setPantryQuantityDirect('${item.key}', this.value)" class="w-14 bg-transparent text-center text-xs font-mono font-bold ${isZero ? 'text-red-400' : 'text-white'} focus:outline-none">
                                         <select onchange="changePantryUnitOrLocation('${item.key}', 'unit', this.value)" class="bg-slate-900 text-[11px] ${isZero ? 'text-slate-400' : 'text-emerald-400'} font-semibold rounded px-1 py-0.5 border border-slate-800">
-                                            ${['szt.', 'g', 'kg', 'ml', 'l', 'opak.', 'puszka'].map(u => `<option value="${u}" ${entry.unit === u ? 'selected' : ''}>${u}</option>`).join('')}
+                                            ${['szt.', 'g', 'kg', 'ml', 'l', 'opak.', 'puszka', 'słoik'].map(u => `<option value="${u}" ${entry.unit === u ? 'selected' : ''}>${u}</option>`).join('')}
                                         </select>
                                     </div>
                                     <button onclick="adjustPantryQuantity('${item.key}', 1)" class="w-7 h-7 rounded bg-slate-800 hover:bg-emerald-900/70 text-slate-200 hover:text-emerald-300 font-bold text-sm flex items-center justify-center">+</button>
