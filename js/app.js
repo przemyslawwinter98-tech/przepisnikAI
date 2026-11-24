@@ -1,0 +1,6484 @@
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, deleteField, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCSlQffBV5eqmHMATGx3cys9nwOCw9HxAo",
+            authDomain: "recipe-bot-8de4f.firebaseapp.com",
+            projectId: "recipe-bot-8de4f",
+            storageBucket: "recipe-bot-8de4f.firebasestorage.app",
+            messagingSenderId: "206500984496",
+            appId: "1:206500984496:web:744f93e9c5f473fb182d75"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        window.appState = {
+            kitchenCode: localStorage.getItem('kodKuchni') || '',
+            kitchenLabel: 'Wspólna Kuchnia',
+            geminiApiKey: localStorage.getItem('kuchnia_gemini_key') || '',
+            githubToken: localStorage.getItem('kuchnia_github_pat') || '',
+            githubRepo: localStorage.getItem('kuchnia_github_repo') || 'przemyslawwinter/przepisnikAI',
+            githubWorkflow: localStorage.getItem('kuchnia_github_wf') || 'scraper.yml',
+            recipes: [],
+            publicRecipes: [],
+            pricebook: {},
+            deletedPricebookKeys: [],
+            trackedProducts: [],
+            pendingScraper: {},
+            scraperUpdatedAt: null,
+            scannedReceiptItems: [],
+            pantry: {},
+            freezer: [],
+            shopping: [],
+            shoppingHistory: [],
+            mealPlan: {},
+            activePlannerDay: 'mon',
+            reviews: [],
+            currentFilter: 'all',
+            currentRecipeCategoryTagFilter: 'all',
+            verifyStoreFilter: 'all',
+            verifyCategoryFilter: 'all',
+            verifyDateFilter: 'all',
+            verifyCustomDateFrom: '',
+            verifyCustomDateTo: '',
+            unsubKitchen: null,
+            unsubPublicRecipes: null,
+            unsubAdminList: null,
+            unsubAdminFeedback: null,
+            unsubMyFeedback: null,
+            adminKitchens: [],
+            adminFeedbacks: [],
+            myFeedbacks: []
+        };
+
+        const DEFAULT_PRICEBOOK_UNITS = {
+            "ananas_w_puszce": { name: "Ananas w puszce", unit: "1 puszka", price: 5.50, category: "Konserwy i słoiki" },
+            "biala_fasola": { name: "Biała fasola", unit: "1 puszka", price: 3.40, category: "Konserwy i słoiki" },
+            "bulion_kostka": { name: "Bulion kostka", unit: "1 szt.", price: 0.50, category: "Przyprawy i dodatki" },
+            "bulion_w_sloiku": { name: "Bulion w słoiku", unit: "1 słoik", price: 6.50, category: "Przyprawy i dodatki" },
+            "cebula": { name: "Cebula", unit: "1 kg", price: 3.50, category: "Mięso i świeże" },
+            "chleb_swiezy": { name: "Chleb świeży", unit: "1 szt.", price: 4.50, category: "Mięso i świeże" },
+            "czerwona_fasola": { name: "Czerwona fasola", unit: "1 puszka", price: 3.20, category: "Konserwy i słoiki" },
+            "czosnek": { name: "Czosnek", unit: "1 szt.", price: 1.80, category: "Przyprawy i dodatki" },
+            "jajka": { name: "Jajka", unit: "10 szt.", price: 10.00, category: "Lodówka i mrożonki" },
+            "kasza_peczak": { name: "Kasza pęczak", unit: "400 g", price: 3.50, category: "Suche i makarony" },
+            "kielbasa_slaska": { name: "Kiełbasa śląska", unit: "1 kg", price: 24.00, category: "Mięso i świeże" },
+            "koncentrat_pomidorowy": { name: "Koncentrat pomidorowy", unit: "1 słoik", price: 3.80, category: "Konserwy i słoiki" },
+            "kukurydza_konserwowa": { name: "Kukurydza konserwowa", unit: "1 puszka", price: 3.50, category: "Konserwy i słoiki" },
+            "makaron": { name: "Makaron", unit: "500 g", price: 4.50, category: "Suche i makarony" },
+            "maslo_orzechowe": { name: "Masło orzechowe", unit: "1 słoik", price: 12.90, category: "Przyprawy i dodatki" },
+            "maka_pszenna": { name: "Mąka pszenna", unit: "1 kg", price: 3.20, category: "Suche i makarony" },
+            "mieso_mielone": { name: "Mięso mielone", unit: "500 g", price: 11.50, category: "Mięso i świeże" },
+            "mleczko_kokosowe": { name: "Mleczko kokosowe", unit: "1 puszka", price: 5.50, category: "Konserwy i słoiki" },
+            "mrozona_mieszanka_warzyw": { name: "Mrożona mieszanka warzyw", unit: "450 g", price: 5.20, category: "Lodówka i mrożonki" },
+            "mrozone_owoce": { name: "Mrożone owoce", unit: "300 g", price: 6.00, category: "Lodówka i mrożonki" },
+            "mrozony_groszek": { name: "Mrożony groszek", unit: "450 g", price: 5.50, category: "Lodówka i mrożonki" },
+            "passata_pomidorowa": { name: "Passata pomidorowa", unit: "700 g", price: 4.90, category: "Konserwy i słoiki" },
+            "piers_z_kurczaka": { name: "Pierś z kurczaka", unit: "1 kg", price: 24.90, category: "Mięso i świeże" },
+            "platki_owsiane_gorskie": { name: "Płatki owsiane górskie", unit: "500 g", price: 4.20, category: "Suche i makarony" },
+            "pomidory_krojone": { name: "Pomidory krojone", unit: "1 puszka", price: 3.80, category: "Konserwy i słoiki" },
+            "ryz": { name: "Ryż", unit: "1 kg", price: 6.50, category: "Suche i makarony" },
+            "ser_zolty": { name: "Ser żółty", unit: "1 kg", price: 29.00, category: "Lodówka i mrożonki" },
+            "sos_sojowy": { name: "Sos sojowy", unit: "1 but.", price: 7.50, category: "Przyprawy i dodatki" },
+            "tunczyk": { name: "Tuńczyk w puszce", unit: "1 puszka", price: 5.50, category: "Konserwy i słoiki" },
+            "wedzony_boczek": { name: "Wędzony boczek", unit: "1 kg", price: 32.00, category: "Mięso i świeże" },
+            "ziemniaki": { name: "Ziemniaki", unit: "1 kg", price: 2.80, category: "Mięso i świeże" }
+        };
+
+        const STARTER_RECIPES = [
+            {
+                id: "rec_1",
+                title: "Chili con carne",
+                category: "Obiad jednogarnkowy",
+                time: 35,
+                portions: 6,
+                ingredients: [
+                    { name: "Mięso mielone", amount: "500 g", price: 11.50, cat: "Mięso i świeże" },
+                    { name: "Czerwona fasola", amount: "2 puszki", price: 6.40, cat: "Konserwy i słoiki" },
+                    { name: "Kukurydza konserwowa", amount: "1 puszka", price: 3.50, cat: "Konserwy i słoiki" },
+                    { name: "Pomidory krojone", amount: "1 puszka", price: 3.80, cat: "Konserwy i słoiki" },
+                    { name: "Koncentrat pomidorowy", amount: "2 łyżki", price: 1.20, cat: "Konserwy i słoiki" },
+                    { name: "Ryż", amount: "300 g", price: 2.10, cat: "Suche i makarony" },
+                    { name: "Ser żółty", amount: "100 g", price: 3.20, cat: "Lodówka i mrożonki" },
+                    { name: "Cebula", amount: "1 szt.", price: 0.80, cat: "Mięso i świeże" },
+                    { name: "Czosnek", amount: "2 ząbki", price: 0.50, cat: "Przyprawy i dodatki" }
+                ],
+                steps: [
+                    "Podsmaż posiekaną cebulę i czosnek na oleju, dodaj mięso mielone i smaż aż się zarumieni.",
+                    "Dodaj kmin rzymski, paprykę słodką i ostrą, koncentrat pomidorowy oraz krojone pomidory z puszki.",
+                    "Duś pod przykryciem 15 minut, dorzuć odsączoną czerwoną fasolę i kukurydzę. Gotuj jeszcze 5 minut.",
+                    "Podawaj z ugotowanym ryżem i posyp startym serem żółtym."
+                ]
+            },
+            {
+                id: "rec_2",
+                title: "Fasolka po bretońsku na szybko",
+                category: "Obiad jednogarnkowy",
+                time: 20,
+                portions: 4,
+                ingredients: [
+                    { name: "Biała fasola", amount: "2 puszki", price: 6.80, cat: "Konserwy i słoiki" },
+                    { name: "Passata pomidorowa", amount: "500 ml", price: 4.20, cat: "Konserwy i słoiki" },
+                    { name: "Kiełbasa śląska", amount: "250 g", price: 6.50, cat: "Mięso i świeże" },
+                    { name: "Koncentrat pomidorowy", amount: "1 łyżka", price: 0.80, cat: "Konserwy i słoiki" },
+                    { name: "Cebula", amount: "1 szt.", price: 0.80, cat: "Mięso i świeże" },
+                    { name: "Czosnek", amount: "2 ząbki", price: 0.50, cat: "Przyprawy i dodatki" },
+                    { name: "Chleb świeży", amount: "4 kromki", price: 2.00, cat: "Mięso i świeże" }
+                ],
+                steps: [
+                    "Pokrój kiełbasę w półplasterki i wytop na patelni razem z posiekaną cebulą.",
+                    "Wlej passatę pomidorową, dodaj koncentrat, czosnek, majeranek, liść laurowy i ziele angielskie.",
+                    "Wrzuć białą fasolę (z połową zalewy dla zagęszczenia) i duś 10 minut. Podawaj ze świeżym chlebem."
+                ]
+            },
+            {
+                id: "rec_3",
+                title: "Curry z kurczakiem i mrożonymi warzywami",
+                category: "Ryż i kasze",
+                time: 25,
+                portions: 4,
+                ingredients: [
+                    { name: "Pierś z kurczaka", amount: "500 g", price: 12.50, cat: "Mięso i świeże" },
+                    { name: "Mleczko kokosowe", amount: "400 ml", price: 5.50, cat: "Konserwy i słoiki" },
+                    { name: "Mrożona mieszanka warzyw", amount: "450 g", price: 5.20, cat: "Lodówka i mrożonki" },
+                    { name: "Ryż", amount: "300 g", price: 2.10, cat: "Suche i makarony" },
+                    { name: "Sos sojowy", amount: "2 łyżki", price: 0.90, cat: "Przyprawy i dodatki" }
+                ],
+                steps: [
+                    "Pokrój pierś z kurczaka w kostkę, oprósz przyprawą curry, solą i podsmaż na rozgrzanym oleju.",
+                    "Wrzuć zamrożoną mieszankę warzyw prosto z paczki i smaż przez 5 minut.",
+                    "Wlej mleczko kokosowe i sos sojowy, duś ok. 10 minut aż sos zgęstnieje. Podawaj z ryżem."
+                ]
+            },
+            {
+                id: "rec_4",
+                title: "Makaron z tuńczykiem w sosie pomidorowym",
+                category: "Makarony",
+                time: 15,
+                portions: 4,
+                ingredients: [
+                    { name: "Makaron", amount: "400 g", price: 3.80, cat: "Suche i makarony" },
+                    { name: "Tuńczyk w puszce", amount: "2 puszki", price: 11.00, cat: "Konserwy i słoiki" },
+                    { name: "Passata pomidorowa", amount: "500 ml", price: 4.20, cat: "Konserwy i słoiki" },
+                    { name: "Mrożony groszek", amount: "150 g", price: 2.20, cat: "Lodówka i mrożonki" },
+                    { name: "Ser żółty", amount: "80 g", price: 2.60, cat: "Lodówka i mrożonki" },
+                    { name: "Czosnek", amount: "2 ząbki", price: 0.50, cat: "Przyprawy i dodatki" }
+                ],
+                steps: [
+                    "Ugotuj makaron al dente w osolonej wodzie.",
+                    "Na patelni podgrzej passatę z czosnkiem i oregano, wrzuć mrożony groszek i gotuj 4 minuty.",
+                    "Dodaj odsączonego tuńczyka i wymieszaj z makaronem. Posyp startym serem."
+                ]
+            },
+            {
+                id: "rec_5",
+                title: "Leczo z fasolą i kiełbasą",
+                category: "Obiad jednogarnkowy",
+                time: 30,
+                portions: 5,
+                ingredients: [
+                    { name: "Pomidory krojone", amount: "2 puszki", price: 7.60, cat: "Konserwy i słoiki" },
+                    { name: "Biała fasola", amount: "1 puszka", price: 3.40, cat: "Konserwy i słoiki" },
+                    { name: "Mrożona mieszanka warzyw", amount: "450 g", price: 5.20, cat: "Lodówka i mrożonki" },
+                    { name: "Kiełbasa śląska", amount: "250 g", price: 6.50, cat: "Mięso i świeże" },
+                    { name: "Cebula", amount: "1 szt.", price: 0.80, cat: "Mięso i świeże" },
+                    { name: "Ryż", amount: "250 g", price: 1.80, cat: "Suche i makarony" }
+                ],
+                steps: [
+                    "Podsmaż pokrojoną kiełbasę z cebulą w dużym garnku.",
+                    "Dodaj mrożone warzywa, krojone pomidory, paprykę wędzoną oraz odcedzoną białą fasolę.",
+                    "Duś pod przykryciem 15 minut i podawaj z ryżem lub pieczywem."
+                ]
+            },
+            {
+                id: "rec_6",
+                title: "Szakszuka z fasolą i jajkami",
+                category: "Śniadanie / Kolacja",
+                time: 15,
+                portions: 2,
+                ingredients: [
+                    { name: "Jajka", amount: "4 szt.", price: 4.00, cat: "Lodówka i mrożonki" },
+                    { name: "Pomidory krojone", amount: "1 puszka", price: 3.80, cat: "Konserwy i słoiki" },
+                    { name: "Czerwona fasola", amount: "0.5 puszki", price: 1.60, cat: "Konserwy i słoiki" },
+                    { name: "Ser żółty", amount: "50 g", price: 1.60, cat: "Lodówka i mrożonki" },
+                    { name: "Chleb świeży", amount: "4 kromki", price: 2.00, cat: "Mięso i świeże" }
+                ],
+                steps: [
+                    "Na patelni podgrzej pomidory z puszki z czerwoną fasolą, czosnkiem, kminem rzymskim i szczyptą ostrej papryki.",
+                    "Zrób 4 wgłębienia łyżką, wbij w nie jajka, posyp serem i przykryj pokrywką na 5 minut aż białko się zetnie.",
+                    "Zjadaj prosto z patelni maczając świeży chleb."
+                ]
+            },
+            {
+                id: "rec_7",
+                title: "Sycąca owsianka z masłem orzechowym i owocami",
+                category: "Śniadanie / Kolacja",
+                time: 10,
+                portions: 2,
+                ingredients: [
+                    { name: "Płatki owsiane górskie", amount: "150 g", price: 1.50, cat: "Suche i makarony" },
+                    { name: "Masło orzechowe", amount: "2 łyżki", price: 2.20, cat: "Przyprawy i dodatki" },
+                    { name: "Mrożone owoce", amount: "150 g", price: 3.00, cat: "Lodówka i mrożonki" }
+                ],
+                steps: [
+                    "Zagotuj płatki owsiane na wodzie lub mleku (ok. 5 minut na małym ogniu).",
+                    "Pod koniec gotowania dorzuć mrożone maliny lub truskawki, żeby puściły sok.",
+                    "Przełóż do misek i na wierzchu rozpuść po solidnej łyżce masła orzechowego."
+                ]
+            },
+            {
+                id: "rec_8",
+                title: "Smażony ryż po azjatycku (Egg Fried Rice)",
+                category: "Ryż i kasze",
+                time: 15,
+                portions: 3,
+                ingredients: [
+                    { name: "Ryż", amount: "300 g", price: 2.10, cat: "Suche i makarony" },
+                    { name: "Jajka", amount: "3 szt.", price: 3.00, cat: "Lodówka i mrożonki" },
+                    { name: "Mrożony groszek", amount: "150 g", price: 2.20, cat: "Lodówka i mrożonki" },
+                    { name: "Kukurydza konserwowa", amount: "0.5 puszki", price: 1.75, cat: "Konserwy i słoiki" },
+                    { name: "Sos sojowy", amount: "3 łyżki", price: 1.35, cat: "Przyprawy i dodatki" },
+                    { name: "Czosnek", amount: "2 ząbki", price: 0.50, cat: "Przyprawy i dodatki" }
+                ],
+                steps: [
+                    "Ugotuj ryż na sypko (najlepiej sprawdzi się schłodzony ryż z poprzedniego dnia).",
+                    "Na dużym ogniu podsmaż czosnek, groszek i kukurydzę. Przesuń na bok patelni i wbij jajka, szybko mieszając.",
+                    "Dodaj ryż, polej sosem sojowym i smaż wszystko razem przez 3–4 minuty."
+                ]
+            },
+            {
+                id: "rec_9",
+                title: "Kaszotto z warzywami i serem",
+                category: "Ryż i kasze",
+                time: 30,
+                portions: 4,
+                ingredients: [
+                    { name: "Kasza pęczak", amount: "300 g", price: 2.60, cat: "Suche i makarony" },
+                    { name: "Bulion kostka", amount: "2 szt.", price: 1.00, cat: "Przyprawy i dodatki" },
+                    { name: "Mrożona mieszanka warzyw", amount: "400 g", price: 4.60, cat: "Lodówka i mrożonki" },
+                    { name: "Ser żółty", amount: "100 g", price: 3.20, cat: "Lodówka i mrożonki" },
+                    { name: "Czosnek", amount: "2 ząbki", price: 0.50, cat: "Przyprawy i dodatki" }
+                ],
+                steps: [
+                    "Podsmaż suchą kaszę pęczak z czosnkiem na łyżce oleju przez 2 minuty.",
+                    "Wlej gorący bulion i gotuj pod przykryciem ok. 15 minut. Dorzuć mrożone warzywa i gotuj kolejne 7 minut.",
+                    "Zdejmij z ognia, wmieszaj starty ser żółty, który zrobi kremowy sos."
+                ]
+            },
+            {
+                id: "rec_10",
+                title: "Ryż z kurczakiem w sosie słodko-kwaśnym",
+                category: "Ryż i kasze",
+                time: 25,
+                portions: 4,
+                ingredients: [
+                    { name: "Pierś z kurczaka", amount: "450 g", price: 11.25, cat: "Mięso i świeże" },
+                    { name: "Ryż", amount: "300 g", price: 2.10, cat: "Suche i makarony" },
+                    { name: "Pomidory krojone", amount: "1 puszka", price: 3.80, cat: "Konserwy i słoiki" },
+                    { name: "Ananas w puszce", amount: "1 puszka", price: 5.50, cat: "Konserwy i słoiki" },
+                    { name: "Kukurydza konserwowa", amount: "0.5 puszki", price: 1.75, cat: "Konserwy i słoiki" },
+                    { name: "Sos sojowy", amount: "2 łyżki", price: 0.90, cat: "Przyprawy i dodatki" }
+                ],
+                steps: [
+                    "Pokrój kurczaka w kostkę i usmaż na patelni.",
+                    "Dodaj krojone pomidory, pokrojonego ananasa wraz z połową zalewy, kukurydzę oraz sos sojowy.",
+                    "Duś 10 minut i podawaj z ryżem."
+                ]
+            },
+            {
+                id: "rec_11",
+                title: "Makaron Carbonara w wersji budżetowej",
+                category: "Makarony",
+                time: 20,
+                portions: 4,
+                ingredients: [
+                    { name: "Makaron", amount: "400 g", price: 3.80, cat: "Suche i makarony" },
+                    { name: "Wędzony boczek", amount: "150 g", price: 5.50, cat: "Mięso i świeże" },
+                    { name: "Jajka", amount: "3 szt.", price: 3.00, cat: "Lodówka i mrożonki" },
+                    { name: "Ser żółty", amount: "100 g", price: 3.20, cat: "Lodówka i mrożonki" },
+                    { name: "Mrożony groszek", amount: "100 g", price: 1.50, cat: "Lodówka i mrożonki" }
+                ],
+                steps: [
+                    "Wstaw makaron do gotowania (na 3 minuty przed końcem dorzuć do wody mrożony groszek).",
+                    "Wytop pokrojony w kostkę boczek na patelni. W miseczce roztrzep jajka ze startym serem i pieprzem.",
+                    "Odcedź makaron (zostaw pół szklanki wody), wrzuć na patelnię z boczkiem (zdejmij z ognia!), wlej masę jajeczną i wymieszaj."
+                ]
+            },
+            {
+                id: "rec_12",
+                title: "Klasyczne Spaghetti Bolognese",
+                category: "Makarony",
+                time: 35,
+                portions: 5,
+                ingredients: [
+                    { name: "Makaron", amount: "500 g", price: 4.50, cat: "Suche i makarony" },
+                    { name: "Mięso mielone", amount: "500 g", price: 11.50, cat: "Mięso i świeże" },
+                    { name: "Passata pomidorowa", amount: "500 ml", price: 4.20, cat: "Konserwy i słoiki" },
+                    { name: "Koncentrat pomidorowy", amount: "2 łyżki", price: 1.20, cat: "Konserwy i słoiki" },
+                    { name: "Cebula", amount: "1 szt.", price: 0.80, cat: "Mięso i świeże" },
+                    { name: "Czosnek", amount: "2 ząbki", price: 0.50, cat: "Przyprawy i dodatki" },
+                    { name: "Ser żółty", amount: "80 g", price: 2.60, cat: "Lodówka i mrożonki" }
+                ],
+                steps: [
+                    "Podsmaż cebulę, czosnek i mięso mielone na patelni.",
+                    "Wlej passatę pomidorową, dodaj koncentrat, bazylię i oregano. Duś na małym ogniu 20 minut.",
+                    "Podawaj z ugotowanym makaronem i startym serem."
+                ]
+            },
+            {
+                id: "rec_13",
+                title: "Placki ziemniaczane z gulaszem z fasoli",
+                category: "Obiad jednogarnkowy",
+                time: 40,
+                portions: 4,
+                ingredients: [
+                    { name: "Ziemniaki", amount: "1 kg", price: 2.80, cat: "Mięso i świeże" },
+                    { name: "Mąka pszenna", amount: "3 łyżki", price: 0.40, cat: "Suche i makarony" },
+                    { name: "Jajka", amount: "1 szt.", price: 1.00, cat: "Lodówka i mrożonki" },
+                    { name: "Czerwona fasola", amount: "1 puszka", price: 3.20, cat: "Konserwy i słoiki" },
+                    { name: "Passata pomidorowa", amount: "350 ml", price: 3.00, cat: "Konserwy i słoiki" },
+                    { name: "Cebula", amount: "1 szt.", price: 0.80, cat: "Mięso i świeże" }
+                ],
+                steps: [
+                    "Zetrzyj ziemniaki i cebulę na drobnych oczkach, odciśnij wodę, dodaj jajko, mąkę, sól i pieprz. Usmaż placki.",
+                    "W rondelku podgrzej passatę z czerwoną fasolą, czosnkiem i majerankiem na szybki gulasz.",
+                    "Polej gorące placki sosem fasolowym."
+                ]
+            },
+            {
+                id: "rec_14",
+                title: "Gęsta zupa meksykańska",
+                category: "Zupy",
+                time: 30,
+                portions: 6,
+                ingredients: [
+                    { name: "Mięso mielone", amount: "400 g", price: 9.20, cat: "Mięso i świeże" },
+                    { name: "Czerwona fasola", amount: "1 puszka", price: 3.20, cat: "Konserwy i słoiki" },
+                    { name: "Kukurydza konserwowa", amount: "1 puszka", price: 3.50, cat: "Konserwy i słoiki" },
+                    { name: "Pomidory krojone", amount: "1 puszka", price: 3.80, cat: "Konserwy i słoiki" },
+                    { name: "Bulion kostka", amount: "2 szt.", price: 1.00, cat: "Przyprawy i dodatki" },
+                    { name: "Ser żółty", amount: "80 g", price: 2.60, cat: "Lodówka i mrożonki" }
+                ],
+                steps: [
+                    "Podsmaż mięso mielone z kminem rzymskim i ostrą papryką w dużym garnku.",
+                    "Zalej litrem bulionu, dodaj krojone pomidory, fasolę i kukurydzę.",
+                    "Gotuj 15 minut. Podawaj w głębokich miskach ze startym serem na wierzchu."
+                ]
+            },
+            {
+                id: "rec_15",
+                title: "Gęsta zupa krem z pomidorów i białej fasoli",
+                category: "Zupy",
+                time: 20,
+                portions: 4,
+                ingredients: [
+                    { name: "Biała fasola", amount: "2 puszki", price: 6.80, cat: "Konserwy i słoiki" },
+                    { name: "Passata pomidorowa", amount: "700 ml", price: 5.80, cat: "Konserwy i słoiki" },
+                    { name: "Bulion kostka", amount: "1 szt.", price: 0.50, cat: "Przyprawy i dodatki" },
+                    { name: "Czosnek", amount: "2 ząbki", price: 0.50, cat: "Przyprawy i dodatki" },
+                    { name: "Chleb świeży", amount: "4 kromki", price: 2.00, cat: "Mięso i świeże" }
+                ],
+                steps: [
+                    "W garnku zagotuj passatę pomidorową z 400 ml bulionu, czosnkiem, bazylią i odcedzoną białą fasolą.",
+                    "Gotuj 10 minut, a następnie zblenduj na aksamitny krem (fasola zagęszcza zupę bez śmietany!).",
+                    "Podawaj z grzankami z chleba podsmażonymi na suchej patelni."
+                ]
+            }
+        ];
+
+        const DEFAULT_TRACKED = [
+            { id: "tr_1", name: "Pierś z kurczaka", query: "filet z piersi kurczaka", keywords: ["piers z kurczaka", "filet z kurczaka", "kurczak"], maxPrice: 16.00 },
+            { id: "tr_2", name: "Mięso mielone", query: "mięso mielone 500g", keywords: ["mieso mielone", "mielone"], maxPrice: 10.50 },
+            { id: "tr_3", name: "Passata pomidorowa", query: "passata pomidorowa", keywords: ["passata", "przecier pomidorowy"], maxPrice: 3.90 },
+            { id: "tr_4", name: "Tuńczyk w puszce", query: "tuńczyk w sosie własnym puszka", keywords: ["tunczyk"], maxPrice: 5.20 },
+            { id: "tr_5", name: "Czerwona fasola", query: "fasola czerwona puszka", keywords: ["fasola czerwona", "czerwona fasola"], maxPrice: 2.90 },
+            { id: "tr_6", name: "Kukurydza konserwowa", query: "kukurydza konserwowa puszka", keywords: ["kukurydza"], maxPrice: 3.20 }
+        ];
+
+        // ================= ZARZĄDZANIE WIDOKAMI (POWITALNY / APLIKACJA / ADMIN) =================
+        function showOnlyTopView(viewId) {
+            ['view-welcome', 'view-app', 'view-admin'].forEach(id => {
+                document.getElementById(id).classList.toggle('hidden', id !== viewId);
+            });
+        }
+
+        function generateReadableKitchenCode(length = 6) {
+            const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+            let out = '';
+            for (let i = 0; i < length; i++) {
+                out += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return out;
+        }
+
+        function syncKitchenLabelsUI() {
+            const label = window.appState.kitchenLabel || "Wspólna Kuchnia";
+            const dEl = document.getElementById('desktop-kitchen-label');
+            const mEl = document.getElementById('mobile-kitchen-label');
+            const iEl = document.getElementById('input-kitchen-label');
+            if (dEl) dEl.textContent = label;
+            if (mEl) mEl.textContent = label;
+            if (iEl && document.activeElement !== iEl) iEl.value = label;
+            document.querySelectorAll('.share-author-preview').forEach(el => {
+                el.textContent = label;
+            });
+        }
+
+        window.showToast = (message, type = 'success') => {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            const colors = type === 'success'
+                ? 'bg-emerald-950/95 border-emerald-500/50 text-emerald-200'
+                : type === 'warning'
+                ? 'bg-amber-950/95 border-amber-500/50 text-amber-200'
+                : 'bg-red-950/95 border-red-500/50 text-red-200';
+            toast.className = `pointer-events-auto p-3.5 rounded-xl border shadow-xl backdrop-blur-md text-sm font-medium transition-all duration-300 ${colors}`;
+            toast.innerHTML = message;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.classList.add('opacity-0', '-translate-y-2');
+                setTimeout(() => toast.remove(), 300);
+            }, 3800);
+        };
+
+        // ================= MULTI-TENANCY: DOŁĄCZANIE / TWORZENIE / WYLOGOWANIE =================
+        window.handleJoinKitchen = async (e) => {
+            e.preventDefault();
+            const rawCode = document.getElementById('welcome-join-code').value.trim().toUpperCase();
+            if (!rawCode) return;
+
+            const btn = document.getElementById('btn-join-kitchen');
+            const origText = btn.textContent;
+            btn.disabled = true;
+            btn.textContent = "Sprawdzam kod...";
+
+            try {
+                const kitchenRef = doc(db, "kuchnie", rawCode);
+                const snap = await getDoc(kitchenRef);
+
+                if (!snap.exists()) {
+                    showToast(`Nie znaleziono kuchni o kodzie <strong>${rawCode}</strong>. Sprawdź literówki lub utwórz nową.`, "error");
+                    return;
+                }
+
+                const data = snap.data();
+                if (data.active === false) {
+                    showToast(`Dostęp do kuchni <strong>${rawCode}</strong> został zablokowany przez administratora.`, "error");
+                    return;
+                }
+
+                localStorage.setItem('kodKuchni', rawCode);
+                window.appState.kitchenCode = rawCode;
+                connectToActiveKitchen(rawCode);
+                showToast(`Połączono z kuchnią <strong>${rawCode}</strong>!`);
+            } catch (err) {
+                console.error("Błąd weryfikacji kodu kuchni:", err);
+                showToast("Błąd połączenia z bazą danych. Sprawdź reguły Firestore.", "error");
+            } finally {
+                btn.disabled = false;
+                btn.textContent = origText;
+            }
+        };
+
+        window.handleCreateNewKitchen = async () => {
+            const labelInput = document.getElementById('welcome-new-label');
+            const customLabel = labelInput.value.trim() || "Wspólna Kuchnia";
+            const btn = document.getElementById('btn-create-kitchen');
+            const origText = btn.textContent;
+            btn.disabled = true;
+            btn.textContent = "Tworzę kuchnię...";
+
+            try {
+                let newCode = generateReadableKitchenCode(6);
+                let ref = doc(db, "kuchnie", newCode);
+                let existingSnap = await getDoc(ref);
+                while (existingSnap.exists()) {
+                    newCode = generateReadableKitchenCode(6);
+                    ref = doc(db, "kuchnie", newCode);
+                    existingSnap = await getDoc(ref);
+                }
+
+                await setDoc(ref, {
+                    code: newCode,
+                    label: customLabel,
+                    active: true,
+                    createdAt: new Date().toISOString(),
+                    recipes: STARTER_RECIPES,
+                    pricebook: buildInitialPricebook(),
+                    trackedProducts: DEFAULT_TRACKED,
+                    pantry: {
+                        "ryz": { qty: 1, unit: "kg", location: "Spiżarnia" },
+                        "czerwona_fasola": { qty: 2, unit: "puszka", location: "Spiżarnia" },
+                        "passata_pomidorowa": { qty: 1, unit: "szt.", location: "Spiżarnia" },
+                        "jajka": { qty: 10, unit: "szt.", location: "Lodówka" },
+                        "ser_zolty": { qty: 300, unit: "g", location: "Lodówka" }
+                    },
+                    freezer: [],
+                    shopping: [],
+                    shoppingHistory: [],
+                    reviews: [],
+                    pendingScraper: {},
+                    geminiApiKey: ""
+                });
+
+                localStorage.setItem('kodKuchni', newCode);
+                window.appState.kitchenCode = newCode;
+                labelInput.value = '';
+                connectToActiveKitchen(newCode);
+                showToast(`Utworzono nową kuchnię! Twój kod dostępu to: <strong class="font-mono text-base">${newCode}</strong>`);
+                setTimeout(() => startOnboardingTour(0), 450);
+            } catch (err) {
+                console.error("Błąd tworzenia kuchni:", err);
+                showToast("Nie udało się utworzyć kuchni. Sprawdź Firestore Security Rules.", "error");
+            } finally {
+                btn.disabled = false;
+                btn.textContent = origText;
+            }
+        };
+
+        window.logoutFromKitchen = () => {
+            if (window.appState.unsubKitchen) {
+                window.appState.unsubKitchen();
+                window.appState.unsubKitchen = null;
+            }
+            if (window.appState.unsubPublicRecipes) {
+                window.appState.unsubPublicRecipes();
+                window.appState.unsubPublicRecipes = null;
+            }
+            if (window.appState.unsubMyFeedback) {
+                window.appState.unsubMyFeedback();
+                window.appState.unsubMyFeedback = null;
+            }
+            localStorage.removeItem('kodKuchni');
+            window.appState.kitchenCode = '';
+            document.getElementById('welcome-join-code').value = '';
+            showOnlyTopView('view-welcome');
+            showToast("Wylogowano z kuchni. Możesz wpisać inny kod lub utworzyć nową.");
+        };
+
+        window.copyKitchenCode = async () => {
+            const code = window.appState.kitchenCode;
+            if (!code) return;
+            try {
+                await navigator.clipboard.writeText(code);
+                showToast(`Skopiowano kod kuchni: <strong class="font-mono">${code}</strong> — wyślij go domownikom!`);
+            } catch (_) {
+                showToast(`Twój kod kuchni to: <strong class="font-mono">${code}</strong>`);
+            }
+        };
+
+        // ================= GLOBALNA KOLEKCJA PUBLICZNYCH PRZEPISÓW =================
+        function subscribePublicRecipes() {
+            if (window.appState.unsubPublicRecipes) {
+                window.appState.unsubPublicRecipes();
+            }
+            window.appState.unsubPublicRecipes = onSnapshot(collection(db, "publiczne_przepisy"), (snapshot) => {
+                window.appState.publicRecipes = snapshot.docs.map(d => ({
+                    publicId: d.id,
+                    ...d.data(),
+                    isPublicCommunity: true
+                }));
+                renderAll();
+            }, (err) => {
+                console.warn("Błąd subskrypcji publiczne_przepisy (sprawdź reguły Firestore):", err);
+            });
+        }
+
+        window.shareRecipeToCommunity = async (recipeId) => {
+            const recipe = window.appState.recipes.find(r => r.id === recipeId);
+            if (!recipe) return;
+
+            const publicDocId = `${window.appState.kitchenCode}_${recipe.id}`;
+            const authorLabel = window.appState.kitchenLabel || "Wspólna Kuchnia";
+
+            try {
+                await setDoc(doc(db, "publiczne_przepisy", publicDocId), {
+                    ...recipe,
+                    publicId: publicDocId,
+                    sourceKitchen: window.appState.kitchenCode,
+                    sharedBy: authorLabel,
+                    sharedAt: new Date().toISOString()
+                });
+                showToast(`🌍 Udostępniono przepis <strong>${recipe.title}</strong> jako <strong>${authorLabel}</strong>!`);
+                if (!document.getElementById('modal-recipe-detail').classList.contains('hidden')) {
+                    openRecipeDetail(recipe.id, false);
+                }
+            } catch (e) {
+                console.error("Błąd udostępniania przepisu:", e);
+                showToast("Nie udało się udostępnić przepisu. Sprawdź reguły Firestore dla publiczne_przepisy.", "error");
+            }
+        };
+
+        window.unshareRecipeFromCommunity = async (publicDocId, localRecipeId = null) => {
+            try {
+                await deleteDoc(doc(db, "publiczne_przepisy", publicDocId));
+                showToast("Wycofano przepis z bazy publicznej.");
+                if (!document.getElementById('modal-recipe-detail').classList.contains('hidden')) {
+                    if (localRecipeId) openRecipeDetail(localRecipeId, false);
+                    else closeModal('modal-recipe-detail');
+                }
+            } catch (e) {
+                console.error("Błąd wycofywania przepisu:", e);
+                showToast("Nie udało się wycofać przepisu.", "error");
+            }
+        };
+
+        window.saveCommunityRecipeToMyKitchen = async (publicDocId) => {
+            const pub = (window.appState.publicRecipes || []).find(p => p.publicId === publicDocId);
+            if (!pub) return;
+
+            const alreadySaved = window.appState.recipes.some(r => r.copiedFromPublicId === publicDocId);
+            if (alreadySaved) {
+                showToast("Ten przepis jest już zapisany w Twojej kuchni!", "warning");
+                return;
+            }
+
+            const copyObj = {
+                id: 'rec_' + Date.now(),
+                title: pub.title,
+                category: pub.category || 'Obiad',
+                time: pub.time || 25,
+                portions: pub.portions || 4,
+                ingredients: JSON.parse(JSON.stringify(pub.ingredients || [])),
+                steps: [...(pub.steps || [])],
+                copiedFromPublicId: publicDocId,
+                originalAuthor: pub.sharedBy || "Społeczność"
+            };
+
+            await persistNewRecipe(copyObj, false);
+            showToast(`Zapisano przepis <strong>${copyObj.title}</strong> (od: ${copyObj.originalAuthor}) w Twojej kuchni!`);
+        };
+
+        function connectToActiveKitchen(code) {
+            if (window.appState.unsubKitchen) {
+                window.appState.unsubKitchen();
+            }
+
+            const cleanCode = code.trim().toUpperCase();
+            window.appState.kitchenCode = cleanCode;
+            showOnlyTopView('view-app');
+
+            document.getElementById('desktop-kitchen-code').textContent = cleanCode;
+            document.getElementById('mobile-kitchen-code').textContent = cleanCode;
+            document.getElementById('modal-code-preview').textContent = cleanCode;
+
+            subscribePublicRecipes();
+            subscribeMyFeedbacks(cleanCode);
+
+            const kitchenRef = doc(db, "kuchnie", cleanCode);
+
+            window.appState.unsubKitchen = onSnapshot(kitchenRef, (docSnap) => {
+                if (!docSnap.exists()) {
+                    showToast(`Kuchnia ${cleanCode} nie istnieje lub została usunięta.`, "error");
+                    logoutFromKitchen();
+                    return;
+                }
+
+                const data = docSnap.data();
+                if (data.active === false) {
+                    showToast(`Dostęp do kuchni ${cleanCode} został zablokowany przez administratora.`, "error");
+                    logoutFromKitchen();
+                    return;
+                }
+
+                document.getElementById('sync-dot').className = 'w-2 h-2 rounded-full bg-emerald-400';
+                document.getElementById('mobile-sync-dot').className = 'w-1.5 h-1.5 rounded-full bg-emerald-400';
+
+                window.appState.kitchenLabel = data.label || "Wspólna Kuchnia";
+                syncKitchenLabelsUI();
+
+                window.appState.recipes = data.recipes && data.recipes.length > 0 ? data.recipes : STARTER_RECIPES;
+                window.appState.deletedPricebookKeys = Array.isArray(data.deletedPricebookKeys) ? data.deletedPricebookKeys : [];
+                window.appState.pricebook = normalizePricebookData(data.pricebook, window.appState.deletedPricebookKeys);
+                window.appState.trackedProducts = Array.isArray(data.trackedProducts) ? data.trackedProducts : DEFAULT_TRACKED;
+                window.appState.pantry = data.pantry || {};
+
+                // Usuń z kafelków spiżarni podstawowe przyprawy/oleje ze stanem 0 (nie zaśmiecają widoku)
+                Object.keys(window.appState.pantry).forEach(pKey => {
+                    const entry = window.appState.pantry[pKey];
+                    if (entry && Number(entry.qty) === 0 && window.isIgnoredStapleOrMicro({ name: pKey, amount: '' })) {
+                        delete window.appState.pantry[pKey];
+                    }
+                });
+
+                // Automatycznie uzupełnij brakujące składniki z istniejących przepisów w Cenniku i Spiżarni (stan: 0)
+                let autoSyncedMissing = 0;
+                window.appState.recipes.forEach(r => {
+                    autoSyncedMissing += ensureIngredientsInPricebookAndPantry(r.ingredients);
+                });
+                if (autoSyncedMissing > 0 && !window.appState._didInitialSync) {
+                    window.appState._didInitialSync = true;
+                    saveKitchenChanges();
+                }
+                window.appState.freezer = Array.isArray(data.freezer) ? data.freezer : [];
+                window.appState.shopping = data.shopping || [];
+                window.appState.shoppingHistory = Array.isArray(data.shoppingHistory) ? data.shoppingHistory : [];
+                window.appState.mealPlan = (data.mealPlan && typeof data.mealPlan === 'object') ? data.mealPlan : {};
+                window.appState.reviews = data.reviews || [];
+                window.appState.pendingScraper = data.pendingScraper || {};
+                window.appState.scraperUpdatedAt = data.lastScraped || null;
+
+                if (data.geminiApiKey !== undefined) {
+                    window.appState.geminiApiKey = data.geminiApiKey;
+                    localStorage.setItem('kuchnia_gemini_key', data.geminiApiKey);
+                    document.getElementById('input-gemini-key').value = data.geminiApiKey;
+                }
+                updateAiKeyBadge();
+                renderAll();
+            }, (error) => {
+                console.error("Błąd połączenia z kuchnią:", error);
+                document.getElementById('sync-dot').className = 'w-2 h-2 rounded-full bg-red-500';
+                document.getElementById('mobile-sync-dot').className = 'w-1.5 h-1.5 rounded-full bg-red-500';
+                showToast("Brak uprawnień odczytu kuchni. Sprawdź Firestore Security Rules.", "error");
+            });
+        }
+
+        async function patchKitchenFields(fieldsMap) {
+            const code = window.appState.kitchenCode;
+            if (!code) return;
+            try {
+                await updateDoc(doc(db, "kuchnie", code), {
+                    ...fieldsMap,
+                    updatedAt: new Date().toISOString()
+                });
+            } catch (e) {
+                console.warn("Fallback do pełnego zapisu:", e);
+                await saveKitchenChanges();
+            }
+        }
+
+        async function saveKitchenChanges() {
+            const code = window.appState.kitchenCode;
+            if (!code) return;
+            const kitchenRef = doc(db, "kuchnie", code);
+            try {
+                await setDoc(kitchenRef, {
+                    label: window.appState.kitchenLabel,
+                    recipes: window.appState.recipes,
+                    pricebook: window.appState.pricebook,
+                    deletedPricebookKeys: window.appState.deletedPricebookKeys || [],
+                    trackedProducts: window.appState.trackedProducts,
+                    pantry: window.appState.pantry,
+                    freezer: window.appState.freezer,
+                    shopping: window.appState.shopping,
+                    shoppingHistory: window.appState.shoppingHistory,
+                    mealPlan: window.appState.mealPlan || {},
+                    reviews: window.appState.reviews,
+                    pendingScraper: window.appState.pendingScraper,
+                    geminiApiKey: window.appState.geminiApiKey || "",
+                    updatedAt: new Date().toISOString()
+                }, { mergeFields: [
+                    "label", "recipes", "pricebook", "deletedPricebookKeys",
+                    "trackedProducts", "pantry", "freezer", "shopping",
+                    "shoppingHistory", "mealPlan", "reviews", "pendingScraper",
+                    "geminiApiKey", "updatedAt"
+                ] });
+            } catch (e) {
+                console.error("Błąd zapisu w kuchnie/" + code, e);
+                showToast("Błąd zapisu w bazie. Sprawdź czy kuchnia nie jest zablokowana.", "error");
+            }
+        }
+
+        // ================= PANEL ADMINISTRATORA (FIREBASE AUTH) =================
+        window.openAdminView = () => {
+            window.location.hash = "admin";
+            showOnlyTopView('view-admin');
+        };
+
+        window.closeAdminView = () => {
+            history.replaceState(null, "", window.location.pathname + window.location.search);
+            if (window.appState.unsubAdminList) {
+                window.appState.unsubAdminList();
+                window.appState.unsubAdminList = null;
+            }
+            if (window.appState.unsubAdminFeedback) {
+                window.appState.unsubAdminFeedback();
+                window.appState.unsubAdminFeedback = null;
+            }
+            if (window.appState.kitchenCode) {
+                connectToActiveKitchen(window.appState.kitchenCode);
+            } else {
+                showOnlyTopView('view-welcome');
+            }
+        };
+
+        window.handleAdminLogin = async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('admin-email').value.trim();
+            const password = document.getElementById('admin-password').value;
+            const btn = document.getElementById('btn-admin-login-submit');
+            btn.disabled = true;
+            btn.textContent = "Logowanie...";
+
+            try {
+                await signInWithEmailAndPassword(auth, email, password);
+                showToast("Zalogowano do Panelu Administratora!");
+            } catch (err) {
+                console.error("Błąd logowania admina:", err);
+                showToast("Niepoprawny e-mail lub hasło administratora.", "error");
+            } finally {
+                btn.disabled = false;
+                btn.textContent = "Zaloguj do Panelu Admina";
+            }
+        };
+
+        window.handleAdminLogout = async () => {
+            await signOut(auth);
+            showToast("Wylogowano administratora.");
+        };
+
+        onAuthStateChanged(auth, (user) => {
+            const loginBox = document.getElementById('admin-login-box');
+            const dashBox = document.getElementById('admin-dashboard-box');
+            const logoutBtn = document.getElementById('btn-admin-logout');
+            const statusText = document.getElementById('admin-user-status');
+
+            if (user) {
+                loginBox.classList.add('hidden');
+                dashBox.classList.remove('hidden');
+                logoutBtn.classList.remove('hidden');
+                statusText.textContent = `Zalogowano jako: ${user.email}`;
+                subscribeAdminKitchens();
+                subscribeAdminFeedbacks();
+            } else {
+                loginBox.classList.remove('hidden');
+                dashBox.classList.add('hidden');
+                logoutBtn.classList.add('hidden');
+                statusText.textContent = "Wymagane logowanie administratora (Firebase Auth)";
+                if (window.appState.unsubAdminList) {
+                    window.appState.unsubAdminList();
+                    window.appState.unsubAdminList = null;
+                }
+                if (window.appState.unsubAdminFeedback) {
+                    window.appState.unsubAdminFeedback();
+                    window.appState.unsubAdminFeedback = null;
+                }
+            }
+        });
+
+        function subscribeAdminKitchens() {
+            if (window.appState.unsubAdminList) window.appState.unsubAdminList();
+            window.appState.unsubAdminList = onSnapshot(collection(db, "kuchnie"), (snapshot) => {
+                window.appState.adminKitchens = snapshot.docs.map(d => ({
+                    code: d.id,
+                    ...d.data()
+                }));
+                renderAdminKitchensList();
+            }, (err) => {
+                console.error("Błąd odczytu listy kuchni przez admina:", err);
+                showToast("Brak uprawnień administratora w Firestore Rules.", "error");
+            });
+        }
+
+        function subscribeAdminFeedbacks() {
+            if (window.appState.unsubAdminFeedback) window.appState.unsubAdminFeedback();
+            window.appState.unsubAdminFeedback = onSnapshot(collection(db, "sugestie_zmian"), (snapshot) => {
+                window.appState.adminFeedbacks = snapshot.docs
+                    .map(d => ({ id: d.id, ...d.data() }))
+                    .sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
+                renderAdminFeedbackList();
+            }, (err) => {
+                console.warn("Błąd odczytu sugestii przez admina:", err);
+            });
+        }
+
+        window.renderAdminFeedbackList = () => {
+            const listEl = document.getElementById('admin-feedback-list');
+            const badgeEl = document.getElementById('admin-feedback-badge');
+            const filter = document.getElementById('admin-feedback-filter')?.value || 'all';
+            if (!listEl) return;
+
+            const all = window.appState.adminFeedbacks || [];
+            const newCount = all.filter(f => f.status !== 'wdrozone').length;
+            if (badgeEl) badgeEl.textContent = `${newCount} nowych / ${all.length} łącznie`;
+
+            const filtered = all.filter(f => {
+                if (filter === 'nowe') return f.status !== 'wdrozone';
+                if (filter === 'wdrozone') return f.status === 'wdrozone';
+                return true;
+            });
+
+            if (filtered.length === 0) {
+                listEl.innerHTML = `<p class="text-xs text-slate-400 italic py-4 text-center">Brak zgłoszeń w wybranej kategorii.</p>`;
+                return;
+            }
+
+            listEl.innerHTML = filtered.map(f => {
+                const isDone = f.status === 'wdrozone';
+                const dateStr = f.createdAt ? new Date(f.createdAt).toLocaleString('pl-PL', { dateStyle: 'short', timeStyle: 'short' }) : '';
+                return `
+                <div class="p-4 rounded-xl bg-slate-950/90 border ${isDone ? 'border-emerald-500/30 opacity-75' : 'border-indigo-500/40'} flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                    <div class="space-y-1">
+                        <div class="flex flex-wrap items-center gap-2">
+                            <span class="px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 text-[11px] font-bold">${f.category || 'Pomysł'}</span>
+                            <span class="px-2 py-0.5 rounded text-[11px] font-bold ${isDone ? 'bg-emerald-500/20 text-emerald-300' : 'bg-amber-500/20 text-amber-300'}">
+                                ${isDone ? '✅ Wdrożone' : '🆕 Nowe'}
+                            </span>
+                            <span class="text-xs text-slate-400">Od: <strong class="text-white">${f.kitchenLabel || 'Kuchnia'}</strong> (<span class="font-mono text-emerald-400">${f.kitchenCode || '?'}</span>) • ${dateStr}</span>
+                        </div>
+                        <h4 class="text-sm sm:text-base font-bold text-white">${f.title}</h4>
+                        <p class="text-xs text-slate-300 whitespace-pre-line leading-relaxed">${f.description}</p>
+                    </div>
+                    <div class="flex sm:flex-col gap-2 shrink-0">
+                        <button onclick="adminToggleFeedbackStatus('${f.id}', '${isDone ? 'nowe' : 'wdrozone'}')" class="px-3 py-1.5 rounded-lg ${isDone ? 'bg-slate-800 text-slate-300' : 'bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/30'} text-xs font-bold">
+                            ${isDone ? '↩️ Cofnij' : '✅ Oznacz wdrożone'}
+                        </button>
+                        <button onclick="adminDeleteFeedback('${f.id}')" class="px-3 py-1.5 rounded-lg bg-red-950/60 hover:bg-red-900/80 text-red-300 border border-red-500/30 text-xs font-bold">
+                            🗑️ Usuń
+                        </button>
+                    </div>
+                </div>
+                `;
+            }).join('');
+        };
+
+        window.adminToggleFeedbackStatus = async (id, nextStatus) => {
+            try {
+                await setDoc(doc(db, "sugestie_zmian", id), { status: nextStatus }, { merge: true });
+                showToast(nextStatus === 'wdrozone' ? "Oznaczono sugestię jako wdrożoną!" : "Przywrócono status zgłoszenia.");
+            } catch (e) {
+                showToast("Błąd aktualizacji zgłoszenia.", "error");
+            }
+        };
+
+        window.adminDeleteFeedback = async (id) => {
+            if (!confirm("Usunąć to zgłoszenie?")) return;
+            try {
+                await deleteDoc(doc(db, "sugestie_zmian", id));
+                showToast("Usunięto zgłoszenie.");
+            } catch (e) {
+                showToast("Błąd usuwania zgłoszenia.", "error");
+            }
+        };
+
+        window.submitAppFeedback = async (e) => {
+            e.preventDefault();
+            const cat = document.getElementById('fb-category').value;
+            const title = document.getElementById('fb-title').value.trim();
+            const description = document.getElementById('fb-description').value.trim();
+            if (!title || !description) return;
+
+            const btn = document.getElementById('btn-submit-feedback');
+            const origText = btn.textContent;
+            btn.disabled = true;
+            btn.textContent = "Wysyłam...";
+
+            try {
+                const fbId = 'fb_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4);
+                await setDoc(doc(db, "sugestie_zmian", fbId), {
+                    id: fbId,
+                    kitchenCode: window.appState.kitchenCode,
+                    kitchenLabel: window.appState.kitchenLabel || "Wspólna Kuchnia",
+                    category: cat,
+                    title,
+                    description,
+                    status: 'nowe',
+                    createdAt: new Date().toISOString()
+                });
+                document.getElementById('fb-title').value = '';
+                document.getElementById('fb-description').value = '';
+                showToast("🚀 Wysłano sugestię do Administratora! Dzięki za pomoc w rozwoju apki.");
+            } catch (err) {
+                console.error("Błąd wysyłania sugestii:", err);
+                showToast("Nie udało się wysłać sugestii. Sprawdź reguły Firestore dla kolekcji sugestie_zmian.", "error");
+            } finally {
+                btn.disabled = false;
+                btn.textContent = origText;
+            }
+        };
+
+        function subscribeMyFeedbacks(kitchenCode) {
+            if (window.appState.unsubMyFeedback) window.appState.unsubMyFeedback();
+            window.appState.unsubMyFeedback = onSnapshot(collection(db, "sugestie_zmian"), (snapshot) => {
+                window.appState.myFeedbacks = snapshot.docs
+                    .map(d => ({ id: d.id, ...d.data() }))
+                    .filter(f => f.kitchenCode === kitchenCode)
+                    .sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
+                renderMyFeedbackHistory();
+            }, () => {});
+        }
+
+        function renderMyFeedbackHistory() {
+            const container = document.getElementById('user-feedback-history');
+            if (!container) return;
+            const list = window.appState.myFeedbacks || [];
+            if (list.length === 0) {
+                container.innerHTML = `<p class="text-xs text-slate-400 italic">Nie wysłałeś jeszcze żadnych sugestii z tej kuchni.</p>`;
+                return;
+            }
+            container.innerHTML = list.map(f => {
+                const isDone = f.status === 'wdrozone';
+                const dateStr = f.createdAt ? new Date(f.createdAt).toLocaleDateString('pl-PL') : '';
+                return `
+                <div class="p-3 rounded-xl bg-slate-950/80 border border-slate-800 flex items-start justify-between gap-3">
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-[11px] font-bold text-indigo-300">${f.category}</span>
+                            <span class="text-[11px] text-slate-500">• ${dateStr}</span>
+                        </div>
+                        <p class="text-sm font-bold text-white mt-0.5">${f.title}</p>
+                        <p class="text-xs text-slate-400 mt-0.5">${f.description}</p>
+                    </div>
+                    <span class="shrink-0 px-2.5 py-1 rounded-lg text-[11px] font-bold ${isDone ? 'bg-emerald-500/20 text-emerald-300' : 'bg-amber-500/20 text-amber-300'}">
+                        ${isDone ? '✅ Wdrożone' : '⏳ W kolejce'}
+                    </span>
+                </div>
+                `;
+            }).join('');
+        }
+
+        window.renderAdminKitchensList = () => {
+            const listEl = document.getElementById('admin-kitchens-list');
+            const query = (document.getElementById('admin-search-kitchen')?.value || '').toLowerCase().trim();
+            const all = window.appState.adminKitchens || [];
+
+            const activeCount = all.filter(k => k.active !== false).length;
+            const blockedCount = all.filter(k => k.active === false).length;
+
+            document.getElementById('admin-stat-total').textContent = all.length;
+            document.getElementById('admin-stat-active').textContent = activeCount;
+            document.getElementById('admin-stat-blocked').textContent = blockedCount;
+
+            const filtered = all.filter(k =>
+                k.code.toLowerCase().includes(query) ||
+                (k.label || '').toLowerCase().includes(query)
+            );
+
+            if (filtered.length === 0) {
+                listEl.innerHTML = `<p class="text-sm text-slate-400 italic py-6 text-center">Brak kuchni spełniających kryteria.</p>`;
+                return;
+            }
+
+            listEl.innerHTML = filtered.map(k => {
+                const isActive = k.active !== false;
+                const recipesCount = Array.isArray(k.recipes) ? k.recipes.length : 0;
+                const pantryCount = k.pantry ? Object.keys(k.pantry).length : 0;
+                const createdStr = k.createdAt ? new Date(k.createdAt).toLocaleDateString('pl-PL') : 'brak daty';
+
+                return `
+                <div class="p-4 rounded-xl bg-slate-950/90 border ${isActive ? 'border-slate-800' : 'border-red-500/40'} flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                    <div class="space-y-1">
+                        <div class="flex flex-wrap items-center gap-2">
+                            <span class="font-mono text-base font-extrabold text-emerald-400 tracking-wider">${k.code}</span>
+                            <span class="text-sm font-bold text-white">${k.label || 'Bez nazwy'}</span>
+                            <span class="px-2 py-0.5 rounded text-[11px] font-bold ${isActive ? 'bg-emerald-500/20 text-emerald-300' : 'bg-red-500/20 text-red-300'}">
+                                ${isActive ? '● AKTYWNA' : '⛔ ZABLOKOWANA'}
+                            </span>
+                        </div>
+                        <p class="text-xs text-slate-400">
+                            Utworzono: ${createdStr} • Przepisów: <strong class="text-slate-200">${recipesCount}</strong> • Produktów w spiżarni: <strong class="text-slate-200">${pantryCount}</strong>
+                        </p>
+                    </div>
+
+                    <div class="flex flex-wrap items-center gap-2 shrink-0">
+                        <button onclick="adminPreviewKitchen('${k.code}')" class="px-3.5 py-2 rounded-xl bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 border border-indigo-500/30 text-xs font-bold">
+                            👁️ Podgląd kuchni
+                        </button>
+                        <button onclick="adminToggleKitchenActive('${k.code}', ${!isActive})" class="px-3.5 py-2 rounded-xl ${isActive ? 'bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border-amber-500/30' : 'bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border-emerald-500/30'} border text-xs font-bold">
+                            ${isActive ? '🔒 Zablokuj dostęp' : '🔓 Odblokuj'}
+                        </button>
+                        <button onclick="adminDeleteKitchen('${k.code}')" class="px-3.5 py-2 rounded-xl bg-red-950/60 hover:bg-red-900/80 text-red-300 border border-red-500/30 text-xs font-bold">
+                            🗑️ Usuń
+                        </button>
+                    </div>
+                </div>
+                `;
+            }).join('');
+        };
+
+        window.adminPreviewKitchen = (code) => {
+            localStorage.setItem('kodKuchni', code);
+            window.appState.kitchenCode = code;
+            closeAdminView();
+            showToast(`Przełączono na podgląd kuchni: <strong class="font-mono">${code}</strong>`);
+        };
+
+        window.adminToggleKitchenActive = async (code, nextState) => {
+            try {
+                await setDoc(doc(db, "kuchnie", code), { active: nextState }, { merge: true });
+                showToast(nextState ? `Odblokowano kuchnię ${code}` : `Zablokowano dostęp do kuchni ${code}`);
+            } catch (e) {
+                showToast("Błąd zmiany statusu kuchni.", "error");
+            }
+        };
+
+        window.adminDeleteKitchen = async (code) => {
+            if (!confirm(`Czy na pewno trwale usunąć kuchnię ${code} wraz ze wszystkimi przepisami i danymi?`)) return;
+            try {
+                await deleteDoc(doc(db, "kuchnie", code));
+                if (window.appState.kitchenCode === code) {
+                    localStorage.removeItem('kodKuchni');
+                    window.appState.kitchenCode = '';
+                }
+                showToast(`Usunięto kuchnię ${code}.`);
+            } catch (e) {
+                showToast("Błąd usuwania kuchni.", "error");
+            }
+        };
+
+        // ================= NORMALIZACJA NAZW I INTELIGENTNE DOPASOWANIE SKŁADNIKÓW =================
+        window.stripDiacritics = (str) => String(str || '').toLowerCase().trim()
+            .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+            .replace(/ł/g, "l");
+
+        const BRAND_AND_FILLER_WORDS = [
+            "mlekovita", "piatnica", "laciate", "mlekpol", "lubelska", "krasnystaw",
+            "wloszczowa", "sierpc", "hochland", "president", "almette", "philadelphia",
+            "danone", "bakoma", "zott", "muller", "fantasia", "activia", "jogobella",
+            "pudliszki", "dawtona", "lowicz", "kotlin", "roleski", "winiary", "knorr",
+            "kamis", "prymat", "bonduelle", "lisner", "graal", "amerigo", "marinero",
+            "sokolow", "morliny", "berlinki", "tarczynski", "krakus", "duda", "henry",
+            "pikok", "dulano", "milbona", "pilos", "lidl", "biedronka", "fruvita",
+            "mleczna dolina", "kraina wedlin", "kraina mies", "nasze smaki", "culinea",
+            "chef select", "freshona", "k classic", "kaufland", "netto", "premieur",
+            "lubella", "barilla", "malma", "arrighi", "sonko", "kupiec", "halina",
+            "risana", " Uncle Bens", "uncle bens", "kujawski", "beskidzki", "rama",
+            "delma", "kasia", "finuu", "osełka", "oselka", "ekstra", "polskie", "polski",
+            "swieze", "swiezy", "uht", "pasteryzowane", "bio", "eko", "xxl", "mega",
+            "promocja", "gazetka", "rodzinne", "klasyczne", "tradycyjne", "wiejskie"
+        ];
+
+                const POLISH_GENITIVE_TO_NOMINATIVE = [
+            // Mięso i wędliny
+            [/^wolowiny\b/i, "Wołowina"],
+            [/^miesa mielonego wolowego\b/i, "Mięso mielone wołowe"],
+            [/^miesa mielonego wieprzowego\b/i, "Mięso mielone wieprzowe"],
+            [/^miesa mielonego drobiowego\b/i, "Mięso mielone drobiowe"],
+            [/^miesa mielonego\b/i, "Mięso mielone"],
+            [/^miesa\b/i, "Mięso"],
+            [/^wieprzowiny\b/i, "Wieprzowina"],
+            [/^cieleciny\b/i, "Cielęcina"],
+            [/^piersi z kurczaka\b/i, "Pierś z kurczaka"],
+            [/^piersi kurczaka\b/i, "Pierś z kurczaka"],
+            [/^filetu z piersi kurczaka\b/i, "Pierś z kurczaka"],
+            [/^fileta z piersi kurczaka\b/i, "Pierś z kurczaka"],
+            [/^filetu z kurczaka\b/i, "Pierś z kurczaka"],
+            [/^kurczaka\b/i, "Kurczak"],
+            [/^piersi z indyka\b/i, "Pierś z indyka"],
+            [/^filetu z indyka\b/i, "Pierś z indyka"],
+            [/^indyka\b/i, "Indyk"],
+            [/^schabu\b/i, "Schab"],
+            [/^karkowki\b/i, "Karkówka"],
+            [/^lopatki wieprzowej\b/i, "Łopatka wieprzowa"],
+            [/^lopatki\b/i, "Łopatka"],
+            [/^szynki\b/i, "Szynka"],
+            [/^poledwicy\b/i, "Polędwica"],
+            [/^poledwiczki\b/i, "Polędwiczka"],
+            [/^kielbasy slaskiej\b/i, "Kiełbasa śląska"],
+            [/^kielbasy\b/i, "Kiełbasa"],
+            [/^boczku wedzonego\b/i, "Wędzony boczek"],
+            [/^boczku\b/i, "Boczek"],
+            [/^parowek\b/i, "Parówki"],
+            [/^kabanosow\b/i, "Kabanosy"],
+            // Ryby
+            [/^lososia\b/i, "Łosoś"],
+            [/^filetu z lososia\b/i, "Łosoś filet"],
+            [/^dorsza\b/i, "Dorsz"],
+            [/^tunczyka w puszce\b/i, "Tuńczyk w puszce"],
+            [/^tunczyka\b/i, "Tuńczyk w puszce"],
+            [/^sledzia\b/i, "Śledź"],
+            [/^sledzi\b/i, "Śledzie"],
+            [/^makreli\b/i, "Makrela"],
+            [/^krewetek\b/i, "Krewetki"],
+            // Nabiał i jaja
+            [/^masla orzechowego\b/i, "Masło orzechowe"],
+            [/^masla klarowanego\b/i, "Masło klarowane"],
+            [/^masla\b/i, "Masło"],
+            [/^mleczka kokosowego\b/i, "Mleczko kokosowe"],
+            [/^mleka\b/i, "Mleko"],
+            [/^smietany\b/i, "Śmietana"],
+            [/^smietanki\b/i, "Śmietanka"],
+            [/^jogurtu naturalnego\b/i, "Jogurt naturalny"],
+            [/^jogurtu greckiego\b/i, "Jogurt grecki"],
+            [/^jogurtu\b/i, "Jogurt"],
+            [/^kefiru\b/i, "Kefir"],
+            [/^maslanki\b/i, "Maślanka"],
+            [/^twarogu\b/i, "Twaróg"],
+            [/^serka wiejskiego lekkiego\b/i, "Serek wiejski lekki"],
+            [/^serka wiejskiego\b/i, "Serek wiejski"],
+            [/^serka homogenizowanego\b/i, "Serek homogenizowany"],
+            [/^serka\b/i, "Serek"],
+            [/^sera zoltego\b/i, "Ser żółty"],
+            [/^sera startego\b/i, "Ser żółty"],
+            [/^sera mozzarella\b/i, "Mozzarella"],
+            [/^mozzarelli\b/i, "Mozzarella"],
+            [/^parmezanu\b/i, "Parmezan"],
+            [/^sera feta\b/i, "Feta"],
+            [/^fety\b/i, "Feta"],
+            [/^sera\b/i, "Ser"],
+            [/^jajek\b/i, "Jajka"],
+            [/^jaj\b/i, "Jajka"],
+            // Warzywa, owoce i grzyby
+            [/^cebuli czerwonej\b/i, "Cebula czerwona"],
+            [/^cebuli\b/i, "Cebula"],
+            [/^czosnku\b/i, "Czosnek"],
+            [/^ziemniakow\b/i, "Ziemniaki"],
+            [/^batatow\b/i, "Bataty"],
+            [/^marchwi\b/i, "Marchew"],
+            [/^marchewki\b/i, "Marchew"],
+            [/^pietruszki\b/i, "Pietruszka"],
+            [/^selera\b/i, "Seler"],
+            [/^pora\b/i, "Por"],
+            [/^kapusty kiszonej\b/i, "Kapusta kiszona"],
+            [/^kapusty pekinskiej\b/i, "Kapusta pekińska"],
+            [/^kapusty bialej\b/i, "Kapusta biała"],
+            [/^kapusty\b/i, "Kapusta"],
+            [/^brokula\b/i, "Brokuł"],
+            [/^brokulow\b/i, "Brokuły"],
+            [/^kalafiora\b/i, "Kalafior"],
+            [/^cukinii\b/i, "Cukinia"],
+            [/^baklazana\b/i, "Bakłażan"],
+            [/^szpinaku\b/i, "Szpinak"],
+            [/^salaty\b/i, "Sałata"],
+            [/^ogorka kiszonego\b/i, "Ogórek kiszony"],
+            [/^ogorkow kiszonych\b/i, "Ogórki kiszone"],
+            [/^ogorka\b/i, "Ogórek"],
+            [/^ogorkow\b/i, "Ogórki"],
+            [/^papryki czerwonej\b/i, "Papryka czerwona"],
+            [/^papryki zoltej\b/i, "Papryka żółta"],
+            [/^papryki zielonej\b/i, "Papryka zielona"],
+            [/^papryki\b/i, "Papryka"],
+            [/^pomidorow krojonych\b/i, "Pomidory krojone"],
+            [/^pomidorow w puszce\b/i, "Pomidory krojone"],
+            [/^pomidorow koktajlowych\b/i, "Pomidory koktajlowe"],
+            [/^pomidorow malinowych\b/i, "Pomidory malinowe"],
+            [/^pomidorow\b/i, "Pomidory"],
+            [/^pomidora\b/i, "Pomidor"],
+            [/^pieczarek\b/i, "Pieczarki"],
+            [/^grzybow\b/i, "Grzyby"],
+            [/^dyni\b/i, "Dynia"],
+            [/^groszku mrozonego\b/i, "Mrożony groszek"],
+            [/^mrozonego groszku\b/i, "Mrożony groszek"],
+            [/^groszku konserwowego\b/i, "Groszek konserwowy"],
+            [/^groszku\b/i, "Groszek"],
+            [/^kukurydzy konserwowej\b/i, "Kukurydza konserwowa"],
+            [/^kukurydzy z puszki\b/i, "Kukurydza konserwowa"],
+            [/^kukurydzy\b/i, "Kukurydza konserwowa"],
+            [/^fasoli czerwonej\b/i, "Czerwona fasola"],
+            [/^czerwonej fasoli\b/i, "Czerwona fasola"],
+            [/^fasoli bialej\b/i, "Biała fasola"],
+            [/^bialej fasoli\b/i, "Biała fasola"],
+            [/^fasolki szparagowej\b/i, "Fasolka szparagowa"],
+            [/^fasoli\b/i, "Fasola"],
+            [/^ciecierzycy\b/i, "Ciecierzyca"],
+            [/^soczewicy\b/i, "Soczewica"],
+            [/^mrozonych owocow\b/i, "Mrożone owoce"],
+            [/^owocow mrozonych\b/i, "Mrożone owoce"],
+            [/^mrozonej mieszanki warzyw\b/i, "Mrożona mieszanka warzyw"],
+            [/^mrozonych warzyw\b/i, "Mrożone warzywa"],
+            [/^jablek\b/i, "Jabłka"],
+            [/^jablka\b/i, "Jabłko"],
+            [/^bananow\b/i, "Banany"],
+            [/^banana\b/i, "Banan"],
+            [/^cytryny\b/i, "Cytryna"],
+            [/^pomaranczy\b/i, "Pomarańcza"],
+            [/^truskawek\b/i, "Truskawki"],
+            [/^malin\b/i, "Maliny"],
+            [/^borowek\b/i, "Borówki"],
+            [/^wisni\b/i, "Wiśnie"],
+            [/^ananasa w puszce\b/i, "Ananas w puszce"],
+            [/^ananasa\b/i, "Ananas"],
+            // Konserwy, przetwory, tłuszcze, sypkie, pieczywo
+            [/^koncentratu pomidorowego\b/i, "Koncentrat pomidorowy"],
+            [/^koncentratu\b/i, "Koncentrat pomidorowy"],
+            [/^passaty pomidorowej\b/i, "Passata pomidorowa"],
+            [/^passaty\b/i, "Passata pomidorowa"],
+            [/^przecieru pomidorowego\b/i, "Przecier pomidorowy"],
+            [/^oliwy z oliwek\b/i, "Oliwa z oliwek"],
+            [/^delikatnej oliwy\b/i, "Oliwa z oliwek"],
+            [/^oliwy\b/i, "Oliwa z oliwek"],
+            [/^oleju rzepakowego\b/i, "Olej rzepakowy"],
+            [/^oleju slonecznikowego\b/i, "Olej słonecznikowy"],
+            [/^oleju\b/i, "Olej"],
+            [/^sosu sojowego\b/i, "Sos sojowy"],
+            [/^bulionu warzywnego\b/i, "Bulion warzywny"],
+            [/^bulionu drobiowego\b/i, "Bulion drobiowy"],
+            [/^bulionu\b/i, "Bulion"],
+            [/^wody lub bulionu\b/i, "Bulion"],
+            [/^wody\b/i, "Woda"],
+            [/^ryzu bialego\b/i, "Ryż biały"],
+            [/^ryzu basmati\b/i, "Ryż basmati"],
+            [/^ryzu jasminowego\b/i, "Ryż jaśminowy"],
+            [/^ryzu\b/i, "Ryż"],
+            [/^makaronu penne\b/i, "Makaron penne"],
+            [/^makaronu spaghetti\b/i, "Makaron spaghetti"],
+            [/^makaronu\b/i, "Makaron"],
+            [/^kaszy peczak\b/i, "Kasza pęczak"],
+            [/^kaszy gryczanej\b/i, "Kasza gryczana"],
+            [/^kaszy jaglanej\b/i, "Kasza jaglana"],
+            [/^kaszy\b/i, "Kasza"],
+            [/^maki pszennej\b/i, "Mąka pszenna"],
+            [/^maki ziemniaczanej\b/i, "Mąka ziemniaczana"],
+            [/^maki\b/i, "Mąka pszenna"],
+            [/^platkow owsianych gorskich\b/i, "Płatki owsiane górskie"],
+            [/^platkow owsianych\b/i, "Płatki owsiane"],
+            [/^chleba swiezego\b/i, "Chleb świeży"],
+            [/^chleba\b/i, "Chleb świeży"],
+            [/^bulek\b/i, "Bułki"],
+            [/^bulki\b/i, "Bułka"],
+            [/^cukru\b/i, "Cukier"],
+            [/^soli\b/i, "Sól"],
+            [/^pieprzu\b/i, "Pieprz"],
+            [/^miodu\b/i, "Miód"],
+            [/^dzemu\b/i, "Dżem"],
+            [/^majonezu\b/i, "Majonez"],
+            [/^ketchupu\b/i, "Ketchup"],
+            [/^musztardy\b/i, "Musztarda"],
+            [/^octu\b/i, "Ocet"],
+            [/^drozdzy\b/i, "Drożdże"]
+        ];
+
+        window.toPolishNominativeFoodName = (rawStr) => {
+            let s = String(rawStr || '').trim();
+            if (!s) return 'Składnik';
+            // Usuń dopiski typu "z puszki" na końcu tylko dla warzyw puszkowanych, jeśli słownik ma kanoniczną nazwę
+            s = s.replace(/\s+/g, ' ').trim();
+            const ascii = window.stripDiacritics(s);
+            for (const [rx, nominative] of POLISH_GENITIVE_TO_NOMINATIVE) {
+                if (rx.test(ascii)) {
+                    return nominative;
+                }
+            }
+            return s.charAt(0).toUpperCase() + s.slice(1);
+        };
+
+        window.cleanGenericFoodName = (rawStr) => {
+            let s = String(rawStr || '').trim();
+            if (!s) return 'Produkt';
+
+            for (let i = 0; i < 3; i++) {
+                s = s.replace(/^(?:zobacz\s+(?:aktualn[aąe]|archiwaln[aąe]|najnowsz[aąe]|od\s+dzi[sś]|ju[zż]\s+od\s+jutr[ao]|jutro|w\s+sklepie|ofert[eę])?\s*|aktualn[aąe]\s+|archiwaln[aąe]\s+|od\s+dzi[sś]\s+|ju[zż]\s+w\s+sprzeda[zż]y\s+|oferta\s+)/i, '').trim();
+            }
+
+            // Usuń gramatury i procenty tłuszczu z nazwy (np. "200g", "3,2%", "1L", "2%")
+            s = s.replace(/\b\d+(?:[.,]\d+)?\s*(?:kg|g|dag|ml|l|szt\.?|%)\b/gi, ' ');
+            s = s.replace(/\b\d+[.,]\d+%?/g, ' ');
+
+            // Usuń nazwy marek i zbędne przymiotniki handlowe
+            BRAND_AND_FILLER_WORDS.forEach(brand => {
+                const escaped = brand.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                if (escaped) {
+                    s = s.replace(new RegExp('\\b' + escaped + '\\b', 'gi'), ' ');
+                }
+            });
+
+            s = s.replace(/\s+/g, ' ').trim();
+            const ascii = window.stripDiacritics(s);
+
+            // Kanoniczne, czyste nazwy ogólne produktów
+            if (ascii.includes('serek wiejski')) {
+                return ascii.includes('lekk') || ascii.includes('light') || ascii.includes('odtluszcz')
+                    ? 'Serek wiejski lekki'
+                    : 'Serek wiejski';
+            }
+            if (ascii.includes('maslo orzech')) return 'Masło orzechowe';
+            if (ascii.includes('masl') && !ascii.includes('maslank')) return 'Masło';
+            if (ascii.includes('maslank')) return 'Maślanka';
+            if (ascii.includes('mleczko kokos')) return 'Mleczko kokosowe';
+            if (/\bmlek[oa]\b/.test(ascii) && !ascii.includes('czekolad')) return 'Mleko';
+            if (ascii.includes('jajk') || /\bjaj[ao]?\b/.test(ascii)) return 'Jajka';
+            if (ascii.includes('smietan') && !ascii.includes('smietank')) return 'Śmietana';
+            if (ascii.includes('smietank')) return 'Śmietanka';
+            if (ascii.includes('jogurt natural')) return 'Jogurt naturalny';
+            if (ascii.includes('jogurt greck')) return 'Jogurt grecki';
+            if (ascii.includes('twarog')) return 'Twaróg';
+            if (ascii.includes('ser zolty') || ascii.includes('gouda') || ascii.includes('edamski') || ascii.includes('ementaler') || ascii.includes('morski')) return 'Ser żółty';
+            if (ascii.includes('mozzarell')) return 'Mozzarella';
+            if (ascii.includes('piers') && ascii.includes('kurczak')) return 'Pierś z kurczaka';
+            if (ascii.includes('mielon')) return 'Mięso mielone';
+            if (ascii.includes('chleb')) return 'Chleb świeży';
+            if (ascii.includes('cebul')) return 'Cebula';
+            if (ascii.includes('czosnk') || ascii.includes('czosnek')) return 'Czosnek';
+            if (ascii.includes('ziemniak')) return 'Ziemniaki';
+            if (ascii.includes('passat')) return 'Passata pomidorowa';
+            if (ascii.includes('koncentrat pomidor')) return 'Koncentrat pomidorowy';
+            if (ascii.includes('pomidor') && (ascii.includes('krojon') || ascii.includes('puszk') || ascii.includes('pelati'))) return 'Pomidory krojone';
+            if (ascii.includes('czerwon') && ascii.includes('fasol')) return 'Czerwona fasola';
+            if (ascii.includes('bial') && ascii.includes('fasol')) return 'Biała fasola';
+            if (ascii.includes('kukurydz')) return 'Kukurydza konserwowa';
+            if (ascii.includes('tunczyk') && !ascii.includes('pesto') && !ascii.includes('sos') && !ascii.includes('salatk')) return 'Tuńczyk w puszce';
+            if (ascii.includes('ananas')) return 'Ananas w puszce';
+            if (/\bryz\b/.test(ascii)) return 'Ryż';
+            if (ascii.includes('makaron')) return 'Makaron';
+
+            if (!s) return rawStr.trim();
+            return window.toPolishNominativeFoodName(s);
+        };
+
+        window.normalizeKey = (str) => {
+            const ascii = window.stripDiacritics(str)
+                .replace(/\(.*?\)/g, ' ')
+                .replace(/[^a-z\s]/g, ' ')
+                .replace(/\b(kg|g|dag|ml|l|szt|sztuk|sztuki|puszka|puszki|opak|sloik|sloiki|kromka|kromki|zabek|zabki|lyzka|lyzki|lyzeczka|lyzeczki|szklanka|szklanki|porcja|porcje)\b/g, ' ')
+                .replace(/\s+/g, ' ')
+                .trim();
+
+            if (!ascii) return '';
+
+            if (ascii.includes('serek wiejski')) {
+                return (ascii.includes('lekk') || ascii.includes('light')) ? 'serek_wiejski_lekki' : 'serek_wiejski';
+            }
+            if (ascii.includes('jajk') || /\bjaj[ao]?\b/.test(ascii)) return 'jajka';
+            if (ascii.includes('cebul')) return 'cebula';
+            if (ascii.includes('czosnk') || ascii.includes('czosnek')) return 'czosnek';
+            if (ascii.includes('ziemniak')) return 'ziemniaki';
+            if (ascii.includes('pomidor') && !ascii.includes('krojon') && !ascii.includes('puszk') && !ascii.includes('passat') && !ascii.includes('koncentrat')) return 'pomidory';
+            if (ascii.includes('tunczyk')) return 'tunczyk';
+            if (ascii.includes('piers') && ascii.includes('kurczak') || ascii === 'kurczak') return 'piers_z_kurczaka';
+            if (ascii.includes('mielon')) return 'mieso_mielone';
+            if (ascii.includes('czerwon') && ascii.includes('fasol')) return 'czerwona_fasola';
+            if (ascii.includes('bial') && ascii.includes('fasol')) return 'biala_fasola';
+            if (ascii.includes('passat')) return 'passata_pomidorowa';
+            if (ascii.includes('kukurydz')) return 'kukurydza_konserwowa';
+            if (ascii.includes('ananas')) return 'ananas_w_puszce';
+            if (/\bryz/.test(ascii)) return 'ryz';
+            if (ascii.includes('makaron')) return 'makaron';
+            if (ascii.includes('maslo orzech')) return 'maslo_orzechowe';
+            if (ascii.includes('masl') && !ascii.includes('maslank')) return 'maslo';
+            if (/\bmlek[oa]\b/.test(ascii)) return 'mleko';
+            if (/^sol[ia]?$/.test(ascii)) return 'sol';
+            if (ascii.includes('pieprz')) return 'pieprz';
+
+            return ascii.replace(/\s+/g, '_');
+        };
+
+        const BROAD_INGREDIENT_GROUPS = [
+            {
+                id: 'mrozone_owoce',
+                groupTriggers: ['mrozone owoce', 'mrozonych owocow', 'owoce mrozone', 'mieszanka owocow'],
+                memberPatterns: [
+                    'mrozone owoce', 'mrozone wisnie', 'mrozone maliny', 'mrozone truskawki',
+                    'mrozone jagody', 'mrozone borowki', 'mrozone porzeczki', 'mrozone sliwki',
+                    'mrozone jablka', 'mrozone mango', 'owoce lesne', 'wisnie', 'maliny',
+                    'truskawki', 'jagody', 'borowki', 'owoce mrozone'
+                ],
+                excludePatterns: ['sok', 'dzem', 'jogurt', 'kisiel', 'galaretka', 'herbata']
+            },
+            {
+                id: 'mrozona_mieszanka_warzyw',
+                groupTriggers: ['mrozona mieszanka warzyw', 'mrozone warzywa', 'warzywa na patelnie', 'mieszanka warzywna'],
+                memberPatterns: [
+                    'mrozona mieszanka warzyw', 'mrozone warzywa', 'warzywa na patelnie',
+                    'mieszanka chinska', 'mieszanka meksykanska', 'bukiet jarzyn', 'wloszczyzna',
+                    'warzywa z patelni', 'mrozony brokul', 'mrozony kalafior', 'mrozony szpinak'
+                ],
+                excludePatterns: ['zupa', 'bulion']
+            },
+            {
+                id: 'makaron',
+                groupTriggers: ['makaron'],
+                memberPatterns: [
+                    'makaron', 'penne', 'spaghetti', 'swiderki', 'fusilli', 'tagliatelle',
+                    'farfalle', 'kokardki', 'rurki', 'nitki', 'lasagne', 'gnocchi', 'kolanka', 'muszelki'
+                ],
+                excludePatterns: ['zupa', 'blyskawiczn', 'sos']
+            },
+            {
+                id: 'kasza',
+                groupTriggers: ['kasza', 'kasza peczak / gryczana'],
+                memberPatterns: [
+                    'kasza', 'peczak', 'kasza peczak', 'kasza gryczana', 'kasza jaglana',
+                    'kasza jeczmienna', 'kuskus', 'bulgur', 'komosa ryzowa', 'quinoa'
+                ],
+                excludePatterns: ['kaszka dla dzieci', 'mleczno']
+            },
+            {
+                id: 'ryz',
+                groupTriggers: ['ryz'],
+                memberPatterns: [
+                    'ryz', 'ryz bialy', 'ryz basmati', 'ryz jasminowy', 'ryz brazowy', 'ryz parboiled', 'ryz arborio'
+                ],
+                excludePatterns: ['wafle', 'mleczn', 'preparowan']
+            },
+            {
+                id: 'ser_zolty',
+                groupTriggers: ['ser zolty', 'ser'],
+                memberPatterns: [
+                    'ser zolty', 'ser', 'gouda', 'edam', 'edamski', 'ementaler', 'ser morski',
+                    'cheddar', 'tilsiter', 'mozzarella', 'parmezan', 'grana padano', 'pecorino',
+                    'feta', 'ser feta', 'camembert', 'brie', 'ser plesniowy', 'gorgonzola',
+                    'ser topiony', 'ser kozi', 'halloumi', 'ricotta', 'mascarpone', 'salami ser'
+                ],
+                excludePatterns: ['serek wiejski', 'sernik', 'deser']
+            },
+            {
+                id: 'jogurt_naturalny',
+                groupTriggers: ['jogurt naturalny'],
+                memberPatterns: ['jogurt naturalny', 'jogurt grecki', 'skyr naturalny', 'jogurt gesty'],
+                excludePatterns: ['owocow', 'pitny', 'deser']
+            },
+            {
+                id: 'fasola',
+                groupTriggers: ['fasola'],
+                memberPatterns: ['czerwona fasola', 'biala fasola', 'fasola czerwona', 'fasola biala', 'fasola czarna', 'fasola pinto'],
+                excludePatterns: ['po bretonsku', 'szparagowa']
+            }
+        ];
+
+        function matchesBroadGroupMember(asciiItemName, groupObj) {
+            if (!asciiItemName || !groupObj) return false;
+            if (groupObj.excludePatterns && groupObj.excludePatterns.some(ex => asciiItemName.includes(ex))) {
+                return false;
+            }
+            return groupObj.memberPatterns.some(mp =>
+                asciiItemName === mp ||
+                asciiItemName.includes(mp) ||
+                mp.includes(asciiItemName)
+            );
+        }
+
+        window.resolveIngredientPantryMatch = (ingName, allowZero = false) => {
+            const pantry = window.appState.pantry || {};
+            const pricebook = window.appState.pricebook || {};
+            const directKey = window.normalizeKey(ingName);
+            const asciiReq = window.stripDiacritics(ingName);
+
+            // 1. Dokładne dopasowanie klucza w spiżarni
+            if (pantry[directKey] !== undefined && pantry[directKey] !== null && pantry[directKey] !== false) {
+                const raw = pantry[directKey];
+                const entry = raw === true
+                    ? { qty: 1, unit: 'szt.', location: 'Spiżarnia' }
+                    : { qty: Number(raw.qty) || 0, unit: raw.unit || 'szt.', location: raw.location || 'Spiżarnia' };
+                if (allowZero || entry.qty > 0) {
+                    return {
+                        matchedKey: directKey,
+                        matchedName: pricebook[directKey]?.name || ingName,
+                        entry,
+                        isGroupSubstitute: false
+                    };
+                }
+            }
+
+            // 2. Dopasowanie częściowe po kluczu kanonicznym
+            for (const [k, raw] of Object.entries(pantry)) {
+                if (raw === undefined || raw === null || raw === false) continue;
+                const canonK = window.normalizeKey(k);
+                if (canonK === directKey || (directKey.length >= 4 && (canonK.includes(directKey) || directKey.includes(canonK)))) {
+                    const entry = raw === true
+                        ? { qty: 1, unit: 'szt.', location: 'Spiżarnia' }
+                        : { qty: Number(raw.qty) || 0, unit: raw.unit || 'szt.', location: raw.location || 'Spiżarnia' };
+                    if (allowZero || entry.qty > 0) {
+                        return {
+                            matchedKey: k,
+                            matchedName: pricebook[k]?.name || k,
+                            entry,
+                            isGroupSubstitute: k !== directKey
+                        };
+                    }
+                }
+            }
+
+            // 3. Szersza grupa składników (np. "Mrożone owoce" -> "Mrożone wiśnie", "Maliny", "Jabłka" itd.)
+            const matchedGroup = BROAD_INGREDIENT_GROUPS.find(g =>
+                g.id === directKey || g.groupTriggers.some(tr => asciiReq.includes(tr))
+            );
+            if (matchedGroup) {
+                // Najpierw szukamy pozycji z dodatnią ilością w spiżarni
+                for (const [k, raw] of Object.entries(pantry)) {
+                    if (raw === undefined || raw === null || raw === false) continue;
+                    const entry = raw === true
+                        ? { qty: 1, unit: 'szt.', location: 'Spiżarnia' }
+                        : { qty: Number(raw.qty) || 0, unit: raw.unit || 'szt.', location: raw.location || 'Spiżarnia' };
+                    if (entry.qty <= 0) continue;
+                    const displayLabel = pricebook[k]?.name || k.replace(/_/g, ' ');
+                    const asciiCand = window.stripDiacritics(displayLabel);
+                    if (matchesBroadGroupMember(asciiCand, matchedGroup)) {
+                        return {
+                            matchedKey: k,
+                            matchedName: displayLabel,
+                            entry,
+                            isGroupSubstitute: true
+                        };
+                    }
+                }
+                if (allowZero) {
+                    for (const [k, raw] of Object.entries(pantry)) {
+                        if (raw === undefined || raw === null || raw === false) continue;
+                        const entry = raw === true
+                            ? { qty: 1, unit: 'szt.', location: 'Spiżarnia' }
+                            : { qty: Number(raw.qty) || 0, unit: raw.unit || 'szt.', location: raw.location || 'Spiżarnia' };
+                        const displayLabel = pricebook[k]?.name || k.replace(/_/g, ' ');
+                        const asciiCand = window.stripDiacritics(displayLabel);
+                        if (matchesBroadGroupMember(asciiCand, matchedGroup)) {
+                            return {
+                                matchedKey: k,
+                                matchedName: displayLabel,
+                                entry,
+                                isGroupSubstitute: true
+                            };
+                        }
+                    }
+                }
+            }
+
+            return null;
+        };
+
+        window.getPantryEntry = (key, allowZero = false) => {
+            const resolved = window.resolveIngredientPantryMatch(key, allowZero);
+            return resolved ? resolved.entry : null;
+        };
+
+        function localSpellFixAndKeywords(rawInput) {
+            const clean = rawInput.trim();
+            const lowerAscii = window.stripDiacritics(clean);
+
+            const dictionary = [
+                { patterns: ["tundzyk", "tuncyk", "tunczyk"], fixed: "Tuńczyk w puszce", query: "tuńczyk w sosie własnym puszka", keywords: ["tunczyk"], cat: "Konserwy i słoiki", unit: "1 puszka" },
+                { patterns: ["ananas"], fixed: "Ananas w puszce", query: "ananas w puszce", keywords: ["ananas"], cat: "Konserwy i słoiki", unit: "1 puszka" },
+                { patterns: ["mieso", "miesko", "mielone"], fixed: "Mięso mielone", query: "mięso mielone 500g", keywords: ["mieso mielone", "mielone", "mieso"], cat: "Mięso i świeże", unit: "500 g" },
+                { patterns: ["piers", "kurczak", "kurczaka", "filet"], fixed: "Pierś z kurczaka", query: "filet z piersi kurczaka", keywords: ["piers z kurczaka", "filet z kurczaka", "kurczak"], cat: "Mięso i świeże", unit: "1 kg" },
+                { patterns: ["pasata", "passata"], fixed: "Passata pomidorowa", query: "passata pomidorowa 500g", keywords: ["passata"], cat: "Konserwy i słoiki", unit: "700 g" },
+                { patterns: ["kukurydz", "kukurydza"], fixed: "Kukurydza konserwowa", query: "kukurydza konserwowa puszka", keywords: ["kukurydza"], cat: "Konserwy i słoiki", unit: "1 puszka" },
+                { patterns: ["fasol", "fasola"], fixed: "Czerwona fasola", query: "fasola czerwona puszka", keywords: ["fasola"], cat: "Konserwy i słoiki", unit: "1 puszka" },
+                { patterns: ["losos"], fixed: "Łosoś filet", query: "łosoś świeży filet", keywords: ["losos"], cat: "Mięso i świeże", unit: "1 kg" },
+                { patterns: ["twarog", "twarug"], fixed: "Twaróg półtłusty", query: "twaróg półtłusty", keywords: ["twarog"], cat: "Lodówka i mrożonki", unit: "1 opak." },
+                { patterns: ["jajk", "jaja", "jajko"], fixed: "Jajka", query: "jaja ściółkowe 10 szt", keywords: ["jajka", "jaja"], cat: "Lodówka i mrożonki", unit: "10 szt." },
+                { patterns: ["makaron"], fixed: "Makaron", query: "makaron penne 500g", keywords: ["makaron"], cat: "Suche i makarony", unit: "500 g" },
+                { patterns: ["ryz"], fixed: "Ryż", query: "ryż biały 4x100g", keywords: ["ryz"], cat: "Suche i makarony", unit: "1 kg" },
+                { patterns: ["ser zolty", "gouda", "ser"], fixed: "Ser żółty", query: "ser gouda", keywords: ["ser zolty", "gouda"], cat: "Lodówka i mrożonki", unit: "1 kg" },
+                { patterns: ["maslo"], fixed: "Masło", query: "masło ekstra 200g", keywords: ["maslo"], cat: "Lodówka i mrożonki", unit: "1 szt." },
+                { patterns: ["mleko", "mleka"], fixed: "Mleko", query: "mleko UHT", keywords: ["mleko"], cat: "Lodówka i mrożonki", unit: "1 l" },
+                { patterns: ["smietan"], fixed: "Śmietana 18%", query: "śmietana 18%", keywords: ["smietana"], cat: "Lodówka i mrożonki", unit: "1 opak." },
+                { patterns: ["jogurt"], fixed: "Jogurt naturalny", query: "jogurt naturalny", keywords: ["jogurt"], cat: "Lodówka i mrożonki", unit: "1 opak." },
+                { patterns: ["szynk", "wedlin"], fixed: "Szynka", query: "szynka", keywords: ["szynka"], cat: "Lodówka i mrożonki", unit: "1 kg" },
+                { patterns: ["oliwa"], fixed: "Oliwa z oliwek", query: "oliwa z oliwek", keywords: ["oliwa"], cat: "Przyprawy i dodatki", unit: "1 but." },
+                { patterns: ["cebula", "cebul"], fixed: "Cebula", query: "cebula", keywords: ["cebula"], cat: "Mięso i świeże", unit: "1 kg" },
+                { patterns: ["czosnek", "czosnk"], fixed: "Czosnek", query: "czosnek", keywords: ["czosnek"], cat: "Przyprawy i dodatki", unit: "1 szt." },
+                { patterns: ["ziemniak"], fixed: "Ziemniaki", query: "ziemniaki", keywords: ["ziemniaki"], cat: "Mięso i świeże", unit: "1 kg" }
+            ];
+
+            for (const entry of dictionary) {
+                if (entry.patterns.some(p => lowerAscii.includes(p))) {
+                    const fixedName = lowerAscii.includes("puszcz") && entry.fixed === "Tuńczyk w puszce"
+                        ? "Tuńczyk w puszce"
+                        : (clean.length <= entry.fixed.length + 3 ? entry.fixed : clean.charAt(0).toUpperCase() + clean.slice(1));
+                    return { fixedName, query: entry.query, keywords: entry.keywords, category: entry.cat || "Inne", unit: entry.unit || "1 szt." };
+                }
+            }
+
+            const capitalized = clean.charAt(0).toUpperCase() + clean.slice(1);
+            const firstWord = lowerAscii.split(/\s+/)[0];
+            return {
+                fixedName: capitalized,
+                query: capitalized,
+                keywords: firstWord.length >= 3 ? [lowerAscii, firstWord] : [lowerAscii],
+                category: "Inne",
+                unit: "1 szt."
+            };
+        }
+
+        function safeParseGeminiJson(rawText, fallbackVal = null) {
+            if (!rawText) return fallbackVal;
+            const cleaned = String(rawText)
+                .trim()
+                .replace(/^```(?:json)?\s*/i, '')
+                .replace(/\s*```$/i, '')
+                .trim();
+            return JSON.parse(cleaned);
+        }
+
+        async function discoverAvailableGeminiModels(apiKey) {
+            try {
+                const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
+                if (!resp.ok) return [];
+                const data = await resp.json();
+                return (data.models || [])
+                    .filter(m => Array.isArray(m.supportedGenerationMethods) && m.supportedGenerationMethods.includes('generateContent'))
+                    .map(m => String(m.name || '').replace(/^models\//, ''))
+                    .filter(name => name.includes('gemini') && !name.includes('embedding') && !name.includes('vision') && !name.includes('image') && !name.includes('tts'));
+            } catch (_) {
+                return [];
+            }
+        }
+
+        async function callGeminiWithFallback(apiKey, payload) {
+            const preferredModels = [
+                'gemini-3.8-flash',
+                'gemini-2.5-flash-lite',
+                'gemini-2.5-flash',
+                'gemini-2.0-flash'
+            ];
+            const tried = new Set();
+            let lastError = null;
+
+            const tryModelList = async (modelList) => {
+                for (let i = 0; i < modelList.length; i++) {
+                    const model = modelList[i];
+                    if (!model || tried.has(model)) continue;
+                    tried.add(model);
+
+                    try {
+                        const resp = await fetch(
+                            `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+                            {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify(payload)
+                            }
+                        );
+                        const data = await resp.json();
+
+                        if (resp.ok && !data.error) {
+                            return data;
+                        }
+
+                        const errMsg = data.error?.message || `HTTP ${resp.status}`;
+                        lastError = new Error(errMsg);
+
+                        // Jeśli klucz API jest ewidentnie błędny, przerwij od razu
+                        if (resp.status === 400 && /API key not valid/i.test(errMsg)) {
+                            throw lastError;
+                        }
+
+                        // Przy 503 (high demand), 429 (rate limit), 404 (not found) lub wycofanym modelu przejdź do kolejnego
+                        if ([404, 429, 500, 503].includes(resp.status) || /high demand|overloaded|not found|not supported|no longer available/i.test(errMsg)) {
+                            await new Promise(r => setTimeout(r, 400));
+                            continue;
+                        }
+                        continue;
+                    } catch (err) {
+                        lastError = err;
+                        if (/API key not valid/i.test(err.message || '')) throw err;
+                    }
+                }
+                return null;
+            };
+
+            const firstPass = await tryModelList(preferredModels);
+            if (firstPass) return firstPass;
+
+            // Automatyczne pobranie listy modeli z Google ListModels jako ostateczny fallback
+            const dynamicModels = await discoverAvailableGeminiModels(apiKey);
+            const secondPass = await tryModelList(dynamicModels);
+            if (secondPass) return secondPass;
+
+            throw lastError || new Error('Wszystkie modele Gemini są chwilowo niedostępne.');
+        }
+
+        function updateAiKeyBadge() {
+            const badge = document.getElementById('ai-key-badge');
+            if (!badge) return;
+            if (window.appState.geminiApiKey) {
+                badge.textContent = "Aktywny (Cloud)";
+                badge.className = "font-semibold text-emerald-400";
+            } else {
+                badge.textContent = "Parser lokalny";
+                badge.className = "font-semibold text-amber-400";
+            }
+        }
+
+        function buildInitialPricebook() {
+            const pb = {};
+            Object.entries(DEFAULT_PRICEBOOK_UNITS).forEach(([key, item]) => {
+                pb[key] = {
+                    name: item.name,
+                    unit: item.unit,
+                    category: item.category,
+                    price: item.price,
+                    basePrice: item.price,
+                    promoPrice: item.price,
+                    isPromo: false,
+                    store: "Frisco / Baza"
+                };
+            });
+            return pb;
+        }
+
+        function normalizePricebookData(rawPb, deletedKeys = []) {
+            const deletedSet = new Set(deletedKeys || []);
+            const base = buildInitialPricebook();
+            Object.keys(base).forEach(k => {
+                if (deletedSet.has(k)) delete base[k];
+            });
+            if (!rawPb || typeof rawPb !== 'object') return base;
+
+            const merged = { ...base };
+            Object.entries(rawPb).forEach(([rawKey, item]) => {
+                if (!item || typeof item !== 'object') return;
+                const canonicalKey = window.normalizeKey(item.name || rawKey);
+                if (canonicalKey !== rawKey && merged[canonicalKey] && rawKey === 'jajko') return;
+
+                const activePrice = item.price !== undefined
+                    ? Number(item.price)
+                    : (item.isPromo && item.promoPrice !== undefined ? Number(item.promoPrice) : Number(item.basePrice || 5.00));
+
+                const enforcedUnit = canonicalKey === 'jajka'
+                    ? '10 szt.'
+                    : (item.unit || (base[canonicalKey] ? base[canonicalKey].unit : "1 szt."));
+
+                const fixedPbName = canonicalKey === 'jajka'
+                    ? 'Jajka'
+                    : window.toPolishNominativeFoodName(item.name || (base[canonicalKey] ? base[canonicalKey].name : rawKey));
+                merged[canonicalKey] = {
+                    name: fixedPbName,
+                    unit: enforcedUnit,
+                    category: item.category || (base[canonicalKey] ? base[canonicalKey].category : "Inne"),
+                    price: Number(activePrice.toFixed(2)),
+                    basePrice: Number(activePrice.toFixed(2)),
+                    promoPrice: Number(activePrice.toFixed(2)),
+                    isPromo: false,
+                    store: item.store || "Cennik"
+                };
+            });
+            return merged;
+        }
+
+        // ================= IGNOROWANIE PRZYPRAW / ŁYŻEK OLEJU W KOSZTACH I BRAKACH =================
+        window.isIgnoredStapleOrMicro = (ing) => {
+            if (!ing) return false;
+            const normName = window.stripDiacritics(ing.name || '');
+            const normAmt = window.stripDiacritics(ing.amount || '');
+            const normCat = window.stripDiacritics(ing.cat || '');
+
+            // 0. Jeśli kategoria w przepisie to przyprawy, ale NIE jest to czosnek, masło orzechowe, sos sojowy, bulion w słoiku/kostce, koncentrat, miód, majonez, musztarda, pesto
+            const key = window.normalizeKey(ing.name || '');
+            const pbItem = window.appState?.pricebook?.[key];
+            const isCountedJarOrSauce = (
+                ['czosnek', 'maslo_orzechowe', 'sos_sojowy', 'bulion_kostka', 'bulion_w_sloiku', 'bulion_sloik', 'bulion', 'koncentrat_pomidorowy', 'miod', 'dzem', 'powidla', 'majonez', 'musztarda', 'chrzan', 'pesto', 'ketchup', 'smietana', 'jogurt_naturalny', 'mleczko_kokosowe', 'maka_pszenna', 'maka_ziemniaczana', 'platki_owsiane_gorskie', 'ryz', 'kasza_peczak'].includes(key) ||
+                key.includes('bulion') || key.includes('maslo_orzech') || key.includes('koncentrat') || key.includes('sos_soj') || key.includes('miod') || key.includes('pesto')
+            );
+            if (pbItem && window.stripDiacritics(pbItem.category || '') === 'przyprawy i dodatki') {
+                if (!isCountedJarOrSauce) return true;
+            }
+
+            // 1. Szeroka lista przypraw, ziół, marynat, proszków i podstaw kuchennych
+            const spiceWords = [
+                'sol', 'pieprz', 'woda', 'olej', 'oliwa', 'przypraw', 'ziol', 'papryk',
+                'oregano', 'bazyli', 'majeran', 'tymian', 'kmin', 'kumin', 'curry',
+                'kurkum', 'cynamon', 'lisc laurow', 'liscie laurow', 'ziele angielsk',
+                'cukier', 'cukru', 'ocet', 'octu', 'rozmaryn', 'kolendr', 'imbir',
+                'galka muszkatolow', 'chili', 'chilli', 'cayenne', 'pieprz cayenne',
+                'czosnek granulowany', 'cebula suszona', 'vegeta', 'ziarenka smaku',
+                'przyprawa do', 'mieszanka przypraw', 'ziola prowansalskie', 'koper',
+                'koperek', 'pietruszk', 'natka', 'szczypiorek', 'lubczyk', 'czaber',
+                'estragon', 'szalwi', 'mieta', 'wanili', 'cukier waniliowy',
+                'proszek do pieczenia', 'soda oczyszczona', 'drozdze suche',
+                'skrobia', 'maka ziemniaczana', 'musztard', 'chrzan', 'ketchup',
+                'majonez', 'sos worcester', 'tabasco', 'sos rybny', 'sezam',
+                'mak', 'kminek', 'gorczyc', 'gozdzik', 'kardamon', 'anyz', 'szafran'
+            ];
+
+            // Wyjątek: nie traktuj świeżej papryki warzywa (np. "Papryka czerwona 1 szt.") jako przyprawy, chyba że jest w gramach/łyżeczkach lub ma słowo "mielona/słodka/ostra/wędzona/suszon"
+            if (normName.includes('papryk')) {
+                if (/\b(slodk|ostr|wedzon|mielon|suszon|przypraw|szczypt|lyzeczk|lyzk)\b/.test(normName + ' ' + normAmt)) return true;
+            } else if (!normName.includes('tunczyk') && !normName.includes('sledz') && !normName.includes('kurczak')) {
+                if (spiceWords.some(sw => new RegExp('(?:^|\\s)' + sw + '(?:\\s|$)').test(normName))) {
+                    return true;
+                }
+            }
+
+            // 2. Mikro-ilości w przepisach: dla słoików/sosów (np. bulion w słoiku, masło orzechowe, koncentrat, miód, sos sojowy) przeliczamy łyżki/łyżeczki dokładnie z ceny słoika!
+            if (isCountedJarOrSauce && /\b(lyzk|lyzeczk|szklank|garsc)\b/.test(normAmt)) return false;
+            if (/\b(lyzk|lyzeczk|szczypt|odrobin|kropl|do smaku|wg uznania|garsc)\b/.test(normAmt)) return true;
+
+            return false;
+        };
+
+        // ================= PARSER ILOŚCI + EKWIWALENTY KULINARNE (ŁYŻKI, SŁOIKI, CHLEB, CZOSNEK, WARZYWA) =================
+        const CULINARY_EQUIVALENTS = {
+            // Pieczywo i warzywa
+            chleb_swiezy: { slicesPerLoaf: 16, gramsPerLoaf: 500, gramsPerTbsp: 10 },
+            chleb: { slicesPerLoaf: 16, gramsPerLoaf: 500, gramsPerTbsp: 10 },
+            bulka: { gramsPerPiece: 65 },
+            czosnek: { clovesPerBulb: 10, gramsPerBulb: 50, gramsPerTbsp: 12 },
+            cebula: { gramsPerPiece: 130 },
+            ziemniaki: { gramsPerPiece: 150 },
+            pomidory: { gramsPerPiece: 140 },
+            papryka: { gramsPerPiece: 180 },
+            marchew: { gramsPerPiece: 90 },
+            jablko: { gramsPerPiece: 160 },
+            cytryna: { gramsPerPiece: 100 },
+            piers_z_kurczaka: { gramsPerPiece: 220 },
+            maslo: { gramsPerPiece: 200, gramsPerTbsp: 15 },
+            ser_zolty: { gramsPerSlice: 20, gramsPerTbsp: 10 },
+            szynka: { gramsPerSlice: 20 },
+
+            // Słoiki, buliony, pasty, sosy w butelkach (przeliczniki na 1 łyżkę stołową = 15 ml)
+            bulion_w_sloiku: { tbspPerPack: 12, gramsPerPack: 180, gramsPerTbsp: 15 },
+            bulion_sloik: { tbspPerPack: 12, gramsPerPack: 180, gramsPerTbsp: 15 },
+            bulion: { tbspPerPack: 12, gramsPerPack: 180, gramsPerTbsp: 15 },
+            bulion_kostka: { gramsPerPiece: 10, gramsPerTbsp: 10 },
+            maslo_orzechowe: { tbspPerPack: 20, gramsPerPack: 400, gramsPerTbsp: 20 },
+            koncentrat_pomidorowy: { tbspPerPack: 10, gramsPerPack: 200, gramsPerTbsp: 20 },
+            sos_sojowy: { tbspPerPack: 13, mlPerPack: 200, gramsPerTbsp: 15 },
+            miod: { tbspPerPack: 18, gramsPerPack: 370, gramsPerTbsp: 20 },
+            dzem: { tbspPerPack: 18, gramsPerPack: 350, gramsPerTbsp: 20 },
+            powidla: { tbspPerPack: 18, gramsPerPack: 350, gramsPerTbsp: 20 },
+            majonez: { tbspPerPack: 15, gramsPerPack: 270, gramsPerTbsp: 18 },
+            musztarda: { tbspPerPack: 12, gramsPerPack: 210, gramsPerTbsp: 18 },
+            chrzan: { tbspPerPack: 11, gramsPerPack: 200, gramsPerTbsp: 18 },
+            pesto: { tbspPerPack: 10, gramsPerPack: 190, gramsPerTbsp: 19 },
+            ketchup: { tbspPerPack: 25, gramsPerPack: 450, gramsPerTbsp: 18 },
+            smietana: { tbspPerPack: 13, gramsPerPack: 200, gramsPerTbsp: 15 },
+            jogurt_naturalny: { tbspPerPack: 13, gramsPerPack: 200, gramsPerTbsp: 15 },
+            mleczko_kokosowe: { tbspPerPack: 26, mlPerPack: 400, gramsPerTbsp: 15 },
+            passata_pomidorowa: { tbspPerPack: 46, gramsPerPack: 700, gramsPerTbsp: 15 },
+            oliwa: { tbspPerPack: 33, mlPerPack: 500, gramsPerTbsp: 14 },
+            olej: { tbspPerPack: 66, mlPerPack: 1000, gramsPerTbsp: 14 },
+
+            // Produkty sypkie (łyżka / szklanka)
+            maka_pszenna: { tbspPerPack: 83, gramsPerPack: 1000, gramsPerTbsp: 12, gramsPerCup: 160 },
+            maka_ziemniaczana: { tbspPerPack: 33, gramsPerPack: 500, gramsPerTbsp: 15, gramsPerCup: 180 },
+            platki_owsiane_gorskie: { tbspPerPack: 50, gramsPerPack: 500, gramsPerTbsp: 10, gramsPerCup: 110 },
+            ryz: { tbspPerPack: 65, gramsPerPack: 1000, gramsPerTbsp: 15, gramsPerCup: 190 },
+            kasza_peczak: { tbspPerPack: 26, gramsPerPack: 400, gramsPerTbsp: 15, gramsPerCup: 180 },
+            cukier: { tbspPerPack: 66, gramsPerPack: 1000, gramsPerTbsp: 15, gramsPerCup: 220 }
+        };
+
+        function getCulinaryEquivalents(canonKey) {
+            if (!canonKey) return {};
+            if (CULINARY_EQUIVALENTS[canonKey]) return CULINARY_EQUIVALENTS[canonKey];
+            if (canonKey.includes('bulion') && !canonKey.includes('kostk')) return CULINARY_EQUIVALENTS.bulion_w_sloiku;
+            if (canonKey.includes('maslo_orzech')) return CULINARY_EQUIVALENTS.maslo_orzechowe;
+            if (canonKey.includes('koncentrat')) return CULINARY_EQUIVALENTS.koncentrat_pomidorowy;
+            if (canonKey.includes('sos_soj') || canonKey.includes('worcester') || canonKey.includes('sos_rybn')) return CULINARY_EQUIVALENTS.sos_sojowy;
+            if (canonKey.includes('miod')) return CULINARY_EQUIVALENTS.miod;
+            if (canonKey.includes('dzem') || canonKey.includes('konfitur')) return CULINARY_EQUIVALENTS.dzem;
+            if (canonKey.includes('majonez')) return CULINARY_EQUIVALENTS.majonez;
+            if (canonKey.includes('musztard')) return CULINARY_EQUIVALENTS.musztarda;
+            if (canonKey.includes('pesto')) return CULINARY_EQUIVALENTS.pesto;
+            if (canonKey.includes('maka')) return CULINARY_EQUIVALENTS.maka_pszenna;
+            return {};
+        }
+
+        function parseQuantityString(str, canonKey = '') {
+            if (!str) return { val: 1, baseUnit: 'szt.', rawUnit: 'szt.' };
+            const clean = window.stripDiacritics(String(str)).replace(',', '.');
+            const match = clean.match(/(\d+(?:\.\d+)?)\s*(kg|g|dag|l|ml|szt\.?|sztuk[ia]?|puszk[ia]?|opak\.?|sloik[ia]?|kromk[ia]?|zabk[iow]?|zabek|plastr[yow]?|plaster|kostk[ia]?|but\.?|lyzeczk[ia]?|lyzeczek|lyzk[ia]?|lyzek|szklank[ia]?|szklanek|garsc[ia]?|garsci)?/);
+            if (!match) return { val: 1, baseUnit: 'szt.', rawUnit: 'szt.' };
+
+            let val = parseFloat(match[1]);
+            let unit = (match[2] || 'szt').replace(/\.$/, '');
+            const eq = getCulinaryEquivalents(canonKey);
+
+            if (unit === 'kg') return { val: val * 1000, baseUnit: 'g', rawUnit: 'kg' };
+            if (unit === 'dag') return { val: val * 10, baseUnit: 'g', rawUnit: 'dag' };
+            if (unit === 'g') return { val: val, baseUnit: 'g', rawUnit: 'g' };
+            if (unit === 'l') return { val: val * 1000, baseUnit: 'ml', rawUnit: 'l' };
+            if (unit === 'ml') return { val: val, baseUnit: 'ml', rawUnit: 'ml' };
+            if (unit.startsWith('puszk')) return { val: val, baseUnit: 'puszka', rawUnit: 'puszka' };
+            if (unit.startsWith('opak')) return { val: val, baseUnit: 'opak.', rawUnit: 'opak.' };
+            if (unit.startsWith('sloik')) return { val: val, baseUnit: 'słoik', rawUnit: 'słoik' };
+            if (unit.startsWith('but')) return { val: val, baseUnit: 'but.', rawUnit: 'but.' };
+
+            // Łyżeczki (1 łyżeczka = 1/3 łyżki stołowej = 5 ml)
+            if (unit.startsWith('lyzecz')) {
+                return { val: val / 3, baseUnit: 'tbsp', rawUnit: 'łyżeczka' };
+            }
+            // Łyżki stołowe (1 łyżka = 15 ml)
+            if (unit.startsWith('lyz')) {
+                return { val: val, baseUnit: 'tbsp', rawUnit: 'łyżka' };
+            }
+            // Szklanka (250 ml = ok. 16.6 łyżki)
+            if (unit.startsWith('szklan')) {
+                return { val: val * (250 / 15), baseUnit: 'tbsp', rawUnit: 'szklanka' };
+            }
+            // Garść (ok. 30 g ≈ 2.5 łyżki)
+            if (unit.startsWith('garsc')) {
+                return { val: val * 2.5, baseUnit: 'tbsp', rawUnit: 'garść' };
+            }
+
+            // Kromki -> ułamek bochenka (16 kromek = 1 bochenek)
+            if (unit.startsWith('kromk')) {
+                const perLoaf = eq.slicesPerLoaf || 16;
+                return { val: val / perLoaf, baseUnit: 'szt.', rawUnit: 'kromka' };
+            }
+            // Ząbki czosnku -> ułamek główki (10 ząbków = 1 główka)
+            if (unit.startsWith('zab')) {
+                const perBulb = eq.clovesPerBulb || 10;
+                return { val: val / perBulb, baseUnit: 'szt.', rawUnit: 'ząbek' };
+            }
+            // Plastry sera/wędliny -> gramy (20 g na plaster)
+            if (unit.startsWith('plastr') || unit === 'plaster') {
+                return { val: val * (eq.gramsPerSlice || 20), baseUnit: 'g', rawUnit: 'plaster' };
+            }
+            // Kostki masła -> gramy (200 g)
+            if (unit.startsWith('kostk')) {
+                return { val: val * (eq.gramsPerPiece || 200), baseUnit: 'g', rawUnit: 'kostka' };
+            }
+
+            return { val: val, baseUnit: 'szt.', rawUnit: 'szt.' };
+        }
+
+        function computeRatioBetweenAmounts(reqParsed, packParsed, canonKey = '') {
+            if (!packParsed || packParsed.val <= 0) return 1;
+            const eq = getCulinaryEquivalents(canonKey);
+            const packUnits = ['szt.', 'słoik', 'but.', 'opak.', 'puszka'];
+
+            // Ten sam wymiar (np. g i g, szt. i szt., tbsp i tbsp)
+            if (reqParsed.baseUnit === packParsed.baseUnit) {
+                return reqParsed.val / packParsed.val;
+            }
+
+            // Przepis na łyżki / łyżeczki / szklanki (tbsp)
+            if (reqParsed.baseUnit === 'tbsp') {
+                // Cennik lub spiżarnia w opakowaniach (1 słoik, 1 but., 1 szt., 1 opak.)
+                if (packUnits.includes(packParsed.baseUnit)) {
+                    const tbspPerPack = eq.tbspPerPack || 15;
+                    return reqParsed.val / (packParsed.val * tbspPerPack);
+                }
+                // Cennik lub spiżarnia w gramach (np. 400 g, 1 kg)
+                if (packParsed.baseUnit === 'g') {
+                    const gramsPerTbsp = eq.gramsPerTbsp || 15;
+                    return (reqParsed.val * gramsPerTbsp) / packParsed.val;
+                }
+                // Cennik lub spiżarnia w mililitrach (np. 200 ml, 1 l)
+                if (packParsed.baseUnit === 'ml') {
+                    return (reqParsed.val * 15) / packParsed.val;
+                }
+            }
+
+            // Spiżarnia w łyżkach, a przepis w g/ml/opakowaniu
+            if (packParsed.baseUnit === 'tbsp') {
+                if (packUnits.includes(reqParsed.baseUnit)) {
+                    const tbspPerPack = eq.tbspPerPack || 15;
+                    return (reqParsed.val * tbspPerPack) / packParsed.val;
+                }
+                if (reqParsed.baseUnit === 'g') {
+                    const gramsPerTbsp = eq.gramsPerTbsp || 15;
+                    return (reqParsed.val / gramsPerTbsp) / packParsed.val;
+                }
+                if (reqParsed.baseUnit === 'ml') {
+                    return (reqParsed.val / 15) / packParsed.val;
+                }
+            }
+
+            // Przepis w szt. (np. 1 cebula, 4 ziemniaki), a cennik/spiżarnia w g/kg
+            if (reqParsed.baseUnit === 'szt.' && packParsed.baseUnit === 'g' && eq.gramsPerPiece) {
+                return (reqParsed.val * eq.gramsPerPiece) / packParsed.val;
+            }
+            // Przepis w g (np. 50 g masła, 250 g chleba), a cennik/spiżarnia w szt./słoik
+            if (reqParsed.baseUnit === 'g' && packUnits.includes(packParsed.baseUnit)) {
+                const gPerPiece = eq.gramsPerPiece || eq.gramsPerLoaf || eq.gramsPerBulb || eq.gramsPerPack;
+                if (gPerPiece) return reqParsed.val / (packParsed.val * gPerPiece);
+            }
+            // Przepis w ml (np. 50 ml sosu sojowego), a cennik w but./słoik
+            if (reqParsed.baseUnit === 'ml' && packUnits.includes(packParsed.baseUnit)) {
+                const mlPerPiece = eq.mlPerPack || eq.gramsPerPack;
+                if (mlPerPiece) return reqParsed.val / (packParsed.val * mlPerPiece);
+            }
+            // Passata / mleczko kokosowe: 1 ml ≈ 1 g
+            if ((reqParsed.baseUnit === 'ml' && packParsed.baseUnit === 'g') || (reqParsed.baseUnit === 'g' && packParsed.baseUnit === 'ml')) {
+                return reqParsed.val / packParsed.val;
+            }
+            // Puszka (400 ml / 240 g) vs ml/g
+            if (reqParsed.baseUnit === 'ml' && packParsed.baseUnit === 'puszka') {
+                return reqParsed.val / (packParsed.val * 400);
+            }
+            if (reqParsed.baseUnit === 'g' && packParsed.baseUnit === 'puszka') {
+                return reqParsed.val / (packParsed.val * 240);
+            }
+            return null;
+        }
+
+        function formatUnitNormalizedPrice(price, unitStr, canonKey = '') {
+            const p = Number(price || 0);
+            if (p <= 0 || !unitStr) return '';
+            const parsed = parseQuantityString(unitStr, canonKey);
+            if (parsed.baseUnit === 'g' && parsed.val > 0 && parsed.val !== 1000) {
+                return `${((p / parsed.val) * 1000).toFixed(2)} zł/kg`;
+            }
+            if (parsed.baseUnit === 'ml' && parsed.val > 0 && parsed.val !== 1000) {
+                return `${((p / parsed.val) * 1000).toFixed(2)} zł/l`;
+            }
+            return '';
+        }
+
+        function findBestPricebookEntryForRecipe(ingName) {
+            const canonKey = window.normalizeKey(ingName);
+            const pb = window.appState.pricebook || {};
+            const candidates = Object.entries(pb).filter(([k, item]) => {
+                return k === canonKey || k.startsWith(`${canonKey}__`) || window.normalizeKey(item.name || '') === canonKey;
+            });
+            if (candidates.length === 0) return pb[canonKey] || null;
+            if (candidates.length === 1) return candidates[0][1];
+
+            // Wybierz wariant o najkorzystniejszej cenie jednostkowej (zł/kg lub zł/l)
+            let bestItem = candidates[0][1];
+            let bestUnitCost = Infinity;
+            candidates.forEach(([k, item]) => {
+                const parsed = parseQuantityString(item.unit || '1 szt.', canonKey);
+                const normVal = parsed.val > 0 ? Number(item.price || 0) / parsed.val : Number(item.price || 0);
+                if (normVal < bestUnitCost) {
+                    bestUnitCost = normVal;
+                    bestItem = item;
+                }
+            });
+            return bestItem;
+        }
+
+        function calculateIngredientCostFromPricebook(ing, pbItem) {
+            if (window.isIgnoredStapleOrMicro(ing)) return 0;
+            if (!pbItem) return Number(ing.price || 0);
+            const unitPrice = Number(pbItem.price ?? pbItem.basePrice ?? ing.price ?? 0);
+            const canonKey = window.normalizeKey(ing.name);
+            const req = parseQuantityString(ing.amount, canonKey);
+            const pack = parseQuantityString(pbItem.unit || '1 szt.', canonKey);
+
+            const ratio = computeRatioBetweenAmounts(req, pack, canonKey);
+            if (ratio !== null && !isNaN(ratio) && ratio > 0) {
+                return Number((ratio * unitPrice).toFixed(2));
+            }
+            return unitPrice;
+        }
+
+        window.deductRecipeFromPantry = (recipe) => {
+            if (!recipe || !Array.isArray(recipe.ingredients)) return 0;
+            let deductedCount = 0;
+
+            recipe.ingredients.forEach(ing => {
+                if (window.isIgnoredStapleOrMicro(ing)) return;
+                const resolved = window.resolveIngredientPantryMatch(ing.name, false);
+                if (!resolved || !resolved.entry) return;
+                const targetKey = resolved.matchedKey;
+                const current = resolved.entry;
+
+                const req = parseQuantityString(ing.amount, targetKey);
+                const have = parseQuantityString(`${current.qty} ${current.unit}`, targetKey);
+                const ratio = computeRatioBetweenAmounts(req, have, targetKey);
+
+                if (ratio !== null && !isNaN(ratio)) {
+                    const consumedInCurrentUnit = current.qty * ratio;
+                    const nextQty = Math.max(0, Number((current.qty - consumedInCurrentUnit).toFixed(2)));
+                    window.appState.pantry[targetKey].qty = nextQty;
+                    deductedCount++;
+                } else {
+                    const nextQty = Math.max(0, Number((current.qty - 1).toFixed(2)));
+                    window.appState.pantry[targetKey].qty = nextQty;
+                    deductedCount++;
+                }
+            });
+
+            return deductedCount;
+        };
+
+        // ================= SPIŻARNIA, LODÓWKA & ZAMRAŻARKA =================
+        window.addManualPantryItem = async (e) => {
+            e.preventDefault();
+            const nameInput = document.getElementById('pantry-add-name');
+            const qtyInput = document.getElementById('pantry-add-qty');
+            const unitInput = document.getElementById('pantry-add-unit');
+            const catInput = document.getElementById('pantry-add-cat');
+            const locInput = document.getElementById('pantry-add-loc');
+
+            const rawName = nameInput.value.trim();
+            const parsedQty = parseFloat(qtyInput.value);
+            const qty = isNaN(parsedQty) ? 1 : Math.max(0, parsedQty);
+            const unit = unitInput.value;
+            const chosenCat = catInput ? catInput.value : 'auto';
+            const location = locInput.value;
+            if (!rawName) return;
+
+            let fixed = localSpellFixAndKeywords(rawName);
+            const activeGeminiKey = window.appState.geminiApiKey;
+            if (activeGeminiKey) {
+                try {
+                    const data = await callGeminiWithFallback(activeGeminiKey, {
+                        contents: [{ parts: [{ text: `Popraw polską nazwę produktu spożywczego (dodaj polskie znaki, popraw literówki, wielka litera na początku): "${rawName}". Zwróć JSON: {"fixedName": "Poprawna nazwa"}` }] }],
+                        generationConfig: { responseMimeType: "application/json" }
+                    });
+                    const parsed = safeParseGeminiJson(data.candidates?.[0]?.content?.parts?.[0]?.text, {});
+                    if (parsed.fixedName) fixed.fixedName = parsed.fixedName;
+                } catch (_) {}
+            }
+
+            const key = window.normalizeKey(fixed.fixedName);
+            const resolvedCategory = chosenCat && chosenCat !== 'auto'
+                ? chosenCat
+                : (location === 'Lodówka' ? 'Lodówka i mrożonki' : (fixed.category || 'Inne'));
+
+            if (!window.appState.pricebook[key]) {
+                window.appState.pricebook[key] = {
+                    name: fixed.fixedName,
+                    unit: key === 'jajka' ? '10 szt.' : (fixed.unit || "1 szt."),
+                    category: resolvedCategory,
+                    price: 5.00,
+                    basePrice: 5.00,
+                    promoPrice: 5.00,
+                    isPromo: false,
+                    store: "Cennik"
+                };
+            } else if (chosenCat && chosenCat !== 'auto') {
+                window.appState.pricebook[key].category = chosenCat;
+            }
+
+            const existing = window.getPantryEntry(key, true);
+            if (existing && existing.unit === unit) {
+                window.appState.pantry[key] = { qty: Number((existing.qty + qty).toFixed(2)), unit, location };
+            } else {
+                window.appState.pantry[key] = { qty, unit, location };
+            }
+
+            await saveKitchenChanges();
+            const correctedNote = window.stripDiacritics(rawName) !== window.stripDiacritics(fixed.fixedName) || rawName !== fixed.fixedName
+                ? ` (poprawiono z "${rawName}")` : '';
+            showToast(`Dodano do ${location === 'Lodówka' ? 'Lodówki' : 'Spiżarni'}: <strong>${fixed.fixedName}</strong> (${qty} ${unit})${correctedNote}`);
+            nameInput.value = '';
+            qtyInput.value = '1';
+        };
+
+        window.adjustPantryQuantity = async (key, delta) => {
+            const current = window.getPantryEntry(key, true);
+            if (!current) {
+                window.appState.pantry[key] = { qty: delta > 0 ? 1 : 0, unit: 'szt.', location: 'Spiżarnia' };
+            } else {
+                const step = (current.unit === 'g' || current.unit === 'ml') ? 100 : (current.unit === 'kg' || current.unit === 'l' ? 0.5 : 1);
+                const nextQty = Math.max(0, Number((current.qty + delta * step).toFixed(2)));
+                window.appState.pantry[key] = { ...current, qty: nextQty };
+            }
+            renderAll();
+            await patchKitchenFields({ [`pantry.${key}`]: window.appState.pantry[key] });
+        };
+
+        window.setPantryQuantityDirect = async (key, newQtyRaw) => {
+            const val = parseFloat(newQtyRaw);
+            const current = window.getPantryEntry(key, true) || { qty: 0, unit: 'szt.', location: 'Spiżarnia' };
+            const safeVal = isNaN(val) ? 0 : Math.max(0, Number(val.toFixed(2)));
+            window.appState.pantry[key] = { ...current, qty: safeVal };
+            renderAll();
+            await patchKitchenFields({ [`pantry.${key}`]: window.appState.pantry[key] });
+        };
+
+        window.changePantryUnitOrLocation = async (key, field, value) => {
+            const current = window.getPantryEntry(key, true) || { qty: 0, unit: 'szt.', location: 'Spiżarnia' };
+            window.appState.pantry[key] = { ...current, [field]: value };
+            renderAll();
+            await patchKitchenFields({ [`pantry.${key}`]: window.appState.pantry[key] });
+        };
+
+        window.changePantryCategory = async (key, newCategory) => {
+            if (!newCategory) return;
+            if (!window.appState.pricebook[key]) {
+                window.appState.pricebook[key] = {
+                    name: key.replace(/_/g, ' ').replace(/^./, c => c.toUpperCase()),
+                    unit: key === 'jajka' ? '10 szt.' : '1 szt.',
+                    category: newCategory,
+                    price: 5.00,
+                    basePrice: 5.00,
+                    promoPrice: 5.00,
+                    isPromo: false,
+                    store: "Cennik"
+                };
+            } else {
+                window.appState.pricebook[key].category = newCategory;
+            }
+            window.appState.deletedPricebookKeys = (window.appState.deletedPricebookKeys || []).filter(k => k !== key);
+            await saveKitchenChanges();
+            showToast(`Przeniesiono <strong>${window.appState.pricebook[key].name}</strong> do działu: <strong>${newCategory}</strong>`);
+        };
+
+        window.togglePantryItem = async (key) => {
+            const current = window.getPantryEntry(key, true);
+            if (current) {
+                delete window.appState.pantry[key];
+                renderAll();
+                const code = window.appState.kitchenCode;
+                if (code) {
+                    try {
+                        await updateDoc(doc(db, "kuchnie", code), {
+                            [`pantry.${key}`]: deleteField(),
+                            updatedAt: new Date().toISOString()
+                        });
+                    } catch (_) {
+                        await saveKitchenChanges();
+                    }
+                }
+            } else {
+                const pb = window.appState.pricebook[key];
+                const isFridge = pb && (pb.category === 'Lodówka i mrożonki' || pb.category === 'Mięso i świeże');
+                window.appState.pantry[key] = { qty: 1, unit: 'szt.', location: isFridge ? 'Lodówka' : 'Spiżarnia' };
+                await saveKitchenChanges();
+            }
+            if (!document.getElementById('modal-recipe-detail').classList.contains('hidden')) {
+                const titleEl = document.querySelector('#recipe-detail-content h2');
+                if (titleEl) {
+                    const rec = window.appState.recipes.find(r => r.title === titleEl.textContent);
+                    if (rec) openRecipeDetail(rec.id, false);
+                }
+            }
+        };
+
+        window.deletePantryProductCompletely = async (key) => {
+            const itemName = window.appState.pricebook[key]?.name || key;
+            if (!confirm(`Czy na pewno całkowicie usunąć "${itemName}" ze Spiżarni oraz Cennika (nie będzie widoczny nawet jako 0)?`)) return;
+
+            delete window.appState.pantry[key];
+            delete window.appState.pricebook[key];
+
+            if (!Array.isArray(window.appState.deletedPricebookKeys)) {
+                window.appState.deletedPricebookKeys = [];
+            }
+            if (!window.appState.deletedPricebookKeys.includes(key)) {
+                window.appState.deletedPricebookKeys.push(key);
+            }
+
+            renderAll();
+
+            const code = window.appState.kitchenCode;
+            if (code) {
+                try {
+                    await updateDoc(doc(db, "kuchnie", code), {
+                        [`pantry.${key}`]: deleteField(),
+                        [`pricebook.${key}`]: deleteField(),
+                        deletedPricebookKeys: window.appState.deletedPricebookKeys,
+                        updatedAt: new Date().toISOString()
+                    });
+                } catch (_) {
+                    await saveKitchenChanges();
+                }
+            }
+            showToast(`🗑️ Całkowicie usunięto <strong>${itemName}</strong> ze Spiżarni i Cennika.`);
+        };
+
+        window.renameProductEverywhere = async (oldKey) => {
+            const oldPb = window.appState.pricebook?.[oldKey];
+            const currentName = oldPb?.name || oldKey;
+            const input = prompt(`Podaj nową nazwę dla produktu "${currentName}":`, currentName);
+            if (input === null) return;
+            const trimmed = input.trim();
+            if (!trimmed || trimmed === currentName) return;
+
+            const newName = trimmed.charAt(0).toUpperCase() + trimmed.slice(1);
+            const newKey = window.normalizeKey(newName);
+            if (!newKey) return;
+
+            const code = window.appState.kitchenCode;
+
+            if (newKey === oldKey) {
+                // Zmiana tylko wielkości liter / nazwy wyświetlanej przy tym samym kluczu kanonicznym
+                if (window.appState.pricebook[oldKey]) {
+                    window.appState.pricebook[oldKey].name = newName;
+                }
+                await saveKitchenChanges();
+                showToast(`✏️ Zmieniono nazwę na: <strong>${newName}</strong>`);
+                return;
+            }
+
+            // Przeniesienie z oldKey -> newKey w Cenniku oraz Spiżarni (z połączeniem ilości jeśli nowy produkt już istnieje!)
+            const existingNewPb = window.appState.pricebook[newKey];
+            if (!existingNewPb && oldPb) {
+                window.appState.pricebook[newKey] = {
+                    ...oldPb,
+                    name: newKey === 'jajka' ? 'Jajka' : newName,
+                    unit: newKey === 'jajka' ? '10 szt.' : (oldPb.unit || '1 szt.')
+                };
+            }
+            delete window.appState.pricebook[oldKey];
+            window.appState.deletedPricebookKeys = (window.appState.deletedPricebookKeys || []).filter(k => k !== newKey);
+            if (!window.appState.deletedPricebookKeys.includes(oldKey)) {
+                window.appState.deletedPricebookKeys.push(oldKey);
+            }
+
+            const oldPantry = window.getPantryEntry(oldKey, true);
+            const newPantry = window.getPantryEntry(newKey, true);
+            if (oldPantry) {
+                if (newPantry && newPantry.unit === oldPantry.unit) {
+                    window.appState.pantry[newKey] = {
+                        ...newPantry,
+                        qty: Number((Number(newPantry.qty || 0) + Number(oldPantry.qty || 0)).toFixed(2))
+                    };
+                } else if (!newPantry || Number(newPantry.qty || 0) === 0) {
+                    window.appState.pantry[newKey] = { ...oldPantry };
+                }
+                delete window.appState.pantry[oldKey];
+            }
+
+            renderAll();
+
+            if (code) {
+                try {
+                    await updateDoc(doc(db, "kuchnie", code), {
+                        [`pricebook.${oldKey}`]: deleteField(),
+                        [`pantry.${oldKey}`]: deleteField(),
+                        [`pricebook.${newKey}`]: window.appState.pricebook[newKey],
+                        ...(window.appState.pantry[newKey] ? { [`pantry.${newKey}`]: window.appState.pantry[newKey] } : {}),
+                        deletedPricebookKeys: window.appState.deletedPricebookKeys,
+                        updatedAt: new Date().toISOString()
+                    });
+                } catch (_) {
+                    await saveKitchenChanges();
+                }
+            }
+
+            showToast(existingNewPb
+                ? `✏️ Zmieniono nazwę "${currentName}" i połączono z istniejącym produktem <strong>${existingNewPb.name}</strong>!`
+                : `✏️ Zmieniono nazwę produktu: "${currentName}" → <strong>${newName}</strong>`
+            );
+        };
+
+        window.clearPantry = async () => {
+            window.appState.pantry = {};
+            await saveKitchenChanges();
+            showToast("Wyczyszczono zapasy w spiżarni i lodówce.");
+        };
+
+        window.addFreezerMeal = async (e) => {
+            e.preventDefault();
+            const nameEl = document.getElementById('freezer-meal-name');
+            const portionsEl = document.getElementById('freezer-meal-portions');
+            const noteEl = document.getElementById('freezer-meal-note');
+
+            const rawName = nameEl.value.trim();
+            const portions = parseInt(portionsEl.value, 10) || 1;
+            const note = noteEl.value.trim();
+            if (!rawName) return;
+
+            const capitalized = rawName.charAt(0).toUpperCase() + rawName.slice(1);
+            const existing = window.appState.freezer.find(m => window.stripDiacritics(m.name) === window.stripDiacritics(capitalized));
+
+            if (existing) {
+                existing.portions = Number(existing.portions) + portions;
+                if (note) existing.note = note;
+            } else {
+                window.appState.freezer.unshift({
+                    id: 'frz_' + Date.now(),
+                    name: capitalized,
+                    portions,
+                    note,
+                    frozenAt: new Date().toLocaleDateString('pl-PL')
+                });
+            }
+
+            await saveKitchenChanges();
+            nameEl.value = '';
+            portionsEl.value = '2';
+            noteEl.value = '';
+            showToast(`❄️ Zapisano w zamrażarce: <strong>${capitalized}</strong> (${portions} porc.)`);
+        };
+
+        window.freezeFromRecipe = async (recipeId, isPublic = false) => {
+            const recipe = isPublic
+                ? window.appState.publicRecipes.find(r => r.publicId === recipeId)
+                : window.appState.recipes.find(r => r.id === recipeId);
+            if (!recipe) return;
+
+            const defaultPortions = Math.max(1, Math.round((recipe.portions || 4) / 2));
+            const existing = window.appState.freezer.find(m => window.stripDiacritics(m.name) === window.stripDiacritics(recipe.title));
+
+            if (existing) {
+                existing.portions = Number(existing.portions) + defaultPortions;
+            } else {
+                window.appState.freezer.unshift({
+                    id: 'frz_' + Date.now(),
+                    name: recipe.title,
+                    portions: defaultPortions,
+                    note: 'Z ugotowanego przepisu',
+                    frozenAt: new Date().toLocaleDateString('pl-PL')
+                });
+            }
+
+            await saveKitchenChanges();
+            showToast(`❄️ Dodano ${defaultPortions} porcje "${recipe.title}" do zamrażarki!`);
+        };
+
+        window.adjustFreezerPortions = async (mealId, delta) => {
+            const meal = window.appState.freezer.find(m => m.id === mealId);
+            if (!meal) return;
+            const next = Number(meal.portions) + delta;
+            if (next <= 0) {
+                window.appState.freezer = window.appState.freezer.filter(m => m.id !== mealId);
+                showToast(`Wyjęto ostatnią porcję "${meal.name}" z zamrażarki.`);
+            } else {
+                meal.portions = next;
+            }
+            await saveKitchenChanges();
+        };
+
+        window.renderFreezer = () => {
+            const container = document.getElementById('freezer-meals-list');
+            const badge = document.getElementById('freezer-total-portions');
+            if (!container) return;
+
+            const meals = window.appState.freezer || [];
+            const totalPortions = meals.reduce((sum, m) => sum + (Number(m.portions) || 0), 0);
+            badge.textContent = `${totalPortions} porcji w zamrażarce`;
+
+            if (meals.length === 0) {
+                container.innerHTML = `<p class="col-span-full text-xs text-slate-400 italic py-2">Zamrażarka gotowych dań jest pusta. Wpisz powyżej ugotowane danie (np. Chili con carne, Pierogi), żeby pamiętać ile porcji czeka na szybki obiad.</p>`;
+                return;
+            }
+
+            container.innerHTML = meals.map(meal => `
+                <div class="p-3.5 rounded-xl bg-slate-950/90 border border-sky-500/30 flex items-center justify-between gap-3">
+                    <div class="min-w-0">
+                        <div class="flex items-center gap-1.5">
+                            <span class="text-sky-400 text-xs">❄️</span>
+                            <h4 class="text-sm font-bold text-white truncate">${meal.name}</h4>
+                        </div>
+                        <p class="text-[11px] text-slate-400 mt-0.5">
+                            Zamrożono: ${meal.frozenAt || 'ostatnio'} ${meal.note ? `• <span class="text-slate-300">${meal.note}</span>` : ''}
+                        </p>
+                    </div>
+                    <div class="flex items-center gap-1.5 shrink-0 bg-slate-900 px-2 py-1 rounded-lg border border-slate-800">
+                        <button onclick="adjustFreezerPortions('${meal.id}', -1)" class="w-6 h-6 rounded bg-slate-800 hover:bg-red-950/70 text-slate-200 hover:text-red-300 font-bold text-sm flex items-center justify-center">−</button>
+                        <span class="px-1.5 text-xs font-extrabold text-sky-300 font-mono">${meal.portions} porc.</span>
+                        <button onclick="adjustFreezerPortions('${meal.id}', 1)" class="w-6 h-6 rounded bg-slate-800 hover:bg-sky-900/70 text-slate-200 hover:text-sky-300 font-bold text-sm flex items-center justify-center">+</button>
+                    </div>
+                </div>
+            `).join('');
+        };
+
+        window.renderPantry = () => {
+            const fullList = document.getElementById('pantry-full-list');
+            const almostList = document.getElementById('pantry-almost-list');
+            const catContainer = document.getElementById('pantry-categories-container');
+
+            const evaluated = window.appState.recipes.map(r => ({ recipe: r, metrics: calculateRecipeMetrics(r) }));
+            const fullRecipes = evaluated.filter(e => e.metrics.isReadyFromPantry);
+            const almostRecipes = evaluated.filter(e => e.metrics.isAlmostReady);
+
+            document.getElementById('pantry-full-count').textContent = fullRecipes.length;
+            document.getElementById('pantry-almost-count').textContent = almostRecipes.length;
+
+            fullList.innerHTML = fullRecipes.length === 0
+                ? `<p class="text-sm text-slate-400 italic">Brak dań, do których macie 100% składników. Dodaj produkty powyżej lub kliknij pozycje poniżej.</p>`
+                : fullRecipes.map(({ recipe, metrics }) => `
+                    <div onclick="openRecipeDetail('${recipe.id}', false)" class="p-3 rounded-xl bg-emerald-950/30 border border-emerald-500/30 flex items-center justify-between cursor-pointer hover:bg-emerald-950/50 transition-colors">
+                        <div>
+                            <p class="text-sm font-bold text-white">${recipe.title}</p>
+                            <p class="text-xs text-emerald-400">Wszystkie ${metrics.totalIngredients} składników w domu!</p>
+                        </div>
+                        <span class="text-xs font-bold text-emerald-300 px-2.5 py-1 rounded-lg bg-emerald-500/20">Gotuj →</span>
+                    </div>
+                `).join('');
+
+            almostList.innerHTML = almostRecipes.length === 0
+                ? `<p class="text-sm text-slate-400 italic">Brak dań z 1–2 brakującymi składnikami.</p>`
+                : almostRecipes.map(({ recipe, metrics }) => `
+                    <div class="p-3 rounded-xl bg-slate-900/90 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <div>
+                            <p onclick="openRecipeDetail('${recipe.id}', false)" class="text-sm font-bold text-white hover:text-amber-400 cursor-pointer">${recipe.title}</p>
+                            <p class="text-xs text-amber-400 mt-0.5">Brakuje: <strong>${metrics.missingIngredients.map(m => m.name).join(', ')}</strong></p>
+                        </div>
+                        <button onclick="addMissingToShopping('${recipe.id}', false)" class="shrink-0 px-3 py-1.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 text-xs font-bold border border-amber-500/30">
+                            + Do zakupów
+                        </button>
+                    </div>
+                `).join('');
+
+            const byCategory = {};
+            Object.entries(window.appState.pricebook).forEach(([key, item]) => {
+                const cat = item.category || 'Inne';
+                if (!byCategory[cat]) byCategory[cat] = [];
+                byCategory[cat].push({ key, ...item });
+            });
+
+            catContainer.innerHTML = Object.entries(byCategory).map(([cat, items]) => `
+                <div class="bg-[#1e293b] rounded-2xl border border-slate-800 p-5">
+                    <h4 class="text-sm font-bold uppercase tracking-wider text-slate-300 mb-3">${cat}</h4>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+                        ${items.sort((a, b) => a.name.localeCompare(b.name)).map(item => {
+                            const entry = window.getPantryEntry(item.key, true);
+                            if (!entry) {
+                                return `
+                                <div class="px-3 py-2 rounded-xl text-xs sm:text-sm font-medium border bg-slate-900/90 text-slate-300 border-slate-700/80 hover:border-slate-500 transition-all flex items-center justify-between gap-2">
+                                    <button onclick="togglePantryItem('${item.key}')" class="flex-1 flex items-center justify-between gap-2 text-left min-w-0">
+                                        <span class="truncate">+ ${item.name}</span>
+                                        <span class="text-[11px] text-slate-500 shrink-0">Brak</span>
+                                    </button>
+                                    <button onclick="deletePantryProductCompletely('${item.key}')" title="Usuń trwale ten produkt ze spiżarni i cennika" class="px-1.5 py-0.5 rounded text-slate-500 hover:text-red-400 hover:bg-red-950/50 text-xs font-bold shrink-0">✕</button>
+                                </div>
+                                `;
+                            }
+                            const isZero = entry.qty <= 0;
+                            return `
+                            <div class="p-2.5 rounded-xl border ${isZero ? 'bg-slate-900/70 border-slate-700 opacity-80' : 'bg-emerald-950/35 border-emerald-500/50'} flex flex-col gap-2 shadow-sm">
+                                <div class="flex items-center justify-between gap-1.5">
+                                    <button onclick="togglePantryItem('${item.key}')" title="Zwiń do stanu Brak (0)" class="flex items-center gap-1.5 text-left min-w-0 flex-1">
+                                        <span class="w-4 h-4 rounded ${isZero ? 'bg-slate-700 text-slate-400' : 'bg-emerald-500 text-slate-950'} font-bold text-[11px] flex items-center justify-center shrink-0">${isZero ? '0' : '✓'}</span>
+                                        <span class="text-xs sm:text-sm font-bold ${isZero ? 'text-slate-400' : 'text-emerald-200'} truncate">${item.name}</span>
+                                    </button>
+                                    <div class="flex items-center gap-1 shrink-0">
+                                        <button onclick="renameProductEverywhere('${item.key}')" title="Zmień nazwę produktu" class="px-1.5 py-0.5 rounded bg-slate-900 hover:bg-indigo-950/70 text-slate-400 hover:text-indigo-300 border border-slate-800 text-[11px]">✏️</button>
+                                        <select onchange="changePantryUnitOrLocation('${item.key}', 'location', this.value)" class="px-1.5 py-0.5 rounded bg-slate-900 border border-slate-700 text-[10px] text-slate-300">
+                                            <option value="Lodówka" ${entry.location === 'Lodówka' ? 'selected' : ''}>🧊 Lodówka</option>
+                                            <option value="Spiżarnia" ${entry.location !== 'Lodówka' ? 'selected' : ''}>🥫 Spiżarnia</option>
+                                        </select>
+                                        <button onclick="deletePantryProductCompletely('${item.key}')" title="Usuń trwale produkt (nie będzie nawet jako 0)" class="px-1.5 py-0.5 rounded bg-slate-900 hover:bg-red-950/70 text-slate-400 hover:text-red-400 border border-slate-800 text-xs font-bold">✕</button>
+                                    </div>
+                                </div>
+                                <div class="flex items-center justify-between gap-1.5">
+                                    <span class="text-[10px] text-slate-400">Dział:</span>
+                                    <select onchange="changePantryCategory('${item.key}', this.value)" class="flex-1 px-2 py-0.5 rounded bg-slate-900/90 border border-slate-800 text-[11px] text-slate-300 focus:outline-none focus:border-emerald-500">
+                                        ${['Warzywa i owoce', 'Mięso i świeże', 'Lodówka i mrożonki', 'Konserwy i słoiki', 'Suche i makarony', 'Przyprawy i dodatki', 'Przekąski i słodycze', 'Inne'].map(cOpt => `<option value="${cOpt}" ${(item.category || 'Inne') === cOpt ? 'selected' : ''}>${cOpt}</option>`).join('')}
+                                    </select>
+                                </div>
+                                <div class="flex items-center justify-between gap-1.5 bg-slate-950/80 p-1 rounded-lg border border-slate-800">
+                                    <button onclick="adjustPantryQuantity('${item.key}', -1)" class="w-7 h-7 rounded bg-slate-800 hover:bg-red-950/70 text-slate-200 hover:text-red-300 font-bold text-sm flex items-center justify-center">−</button>
+                                    <div class="flex items-center gap-1">
+                                        <input type="number" step="0.1" min="0" value="${entry.qty}" onchange="setPantryQuantityDirect('${item.key}', this.value)" class="w-14 bg-transparent text-center text-xs font-mono font-bold ${isZero ? 'text-red-400' : 'text-white'} focus:outline-none">
+                                        <select onchange="changePantryUnitOrLocation('${item.key}', 'unit', this.value)" class="bg-slate-900 text-[11px] ${isZero ? 'text-slate-400' : 'text-emerald-400'} font-semibold rounded px-1 py-0.5 border border-slate-800">
+                                            ${['szt.', 'g', 'kg', 'ml', 'l', 'opak.', 'puszka', 'słoik'].map(u => `<option value="${u}" ${entry.unit === u ? 'selected' : ''}>${u}</option>`).join('')}
+                                        </select>
+                                    </div>
+                                    <button onclick="adjustPantryQuantity('${item.key}', 1)" class="w-7 h-7 rounded bg-slate-800 hover:bg-emerald-900/70 text-slate-200 hover:text-emerald-300 font-bold text-sm flex items-center justify-center">+</button>
+                                </div>
+                            </div>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>
+            `).join('');
+        };
+
+        // ================= CENNIK & SKANER PARAGONÓW (Z FILTREM NIESPOŻYWCZYM) =================
+        const NON_FOOD_BLACKLIST = [
+            "reklamowka", "torba", "siatka", "worek", "worki", "papier toaletowy", "recznik papierowy",
+            "chusteczki", "mydlo", "szampon", "zel pod prysznic", "pasta do zebow", "szczoteczka",
+            "plyn do naczyn", "proszek do prania", "kapsulki do prania", "plyn do plukania", "domestos",
+            "gabka", "zmywak", "folia aluminiowa", "papier do pieczenia", "baterie", "zarowka",
+            "karma dla", "zwirek", "pieluchy", "pampers", "dezodorant", "krem do", "balsam",
+            "rabat", "opust", "kaucja", "butelka zwrotna", "opakowanie kaucja"
+        ];
+
+        function isFoodReceiptItem(item) {
+            if (!item || item.isFood === false) return false;
+            const normName = window.stripDiacritics(item.name || '');
+            if (!normName || normName.length < 2) return false;
+            return !NON_FOOD_BLACKLIST.some(bad => normName.includes(bad));
+        }
+
+        function compressImageToBase64(file, maxDim = 1400, quality = 0.85) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        let w = img.width, h = img.height;
+                        if (w > maxDim || h > maxDim) {
+                            if (w > h) { h = Math.round((h * maxDim) / w); w = maxDim; }
+                            else { w = Math.round((w * maxDim) / h); h = maxDim; }
+                        }
+                        const canvas = document.createElement('canvas');
+                        canvas.width = w; canvas.height = h;
+                        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                        resolve(canvas.toDataURL('image/jpeg', quality).split(',')[1]);
+                    };
+                    img.onerror = reject;
+                    img.src = ev.target.result;
+                };
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        }
+
+        window.handleReceiptImageUpload = async (event) => {
+            const file = event.target.files?.[0];
+            if (!file) return;
+
+            const activeGeminiKey = window.appState.geminiApiKey;
+            if (!activeGeminiKey) {
+                showToast("Wpisz swój klucz Gemini API w ustawieniach kuchni (Nazwa & Klucz AI), aby odczytywać paragony!", "warning");
+                openKitchenModal();
+                event.target.value = '';
+                return;
+            }
+
+            const labelEl = document.getElementById('receipt-upload-btn-label');
+            const origLabel = labelEl.textContent;
+            labelEl.textContent = "Analizuję paragon...";
+
+            try {
+                const b64Image = await compressImageToBase64(file);
+                const existingNames = Object.values(window.appState.pricebook).map(i => `${i.name} (${i.unit})`).join(', ');
+
+                const prompt = `Przeanalizuj zdjęcie paragonu ze sklepu (Lidl, Biedronka, Netto, Frisco itp.).
+BARDZO WAŻNE ZASADY:
+1. USUWAJ CAŁKOWICIE MARKI, PRODUCENTÓW, PROCENTY TŁUSZCZU I GRAMATURY Z NAZWY PRODUKTU!
+   Zwracaj wyłącznie OGÓLNĄ, BAZOWĄ NAZWĘ PRODUKTU po polsku (w mianowniku, wielką literą):
+   - "MASŁO EKSTRA MLEKOVITA 200G" -> "Masło"
+   - "MLEKO ŁACIATE 3,2% 1L" -> "Mleko"
+   - "SEREK WIEJSKI PIĄTNICA 200G" -> "Serek wiejski"
+   - "SEREK WIEJSKI LEKKI PIĄTNICA" -> "Serek wiejski lekki" (wariant lekki/light zachowaj osobno!)
+   - "RYŻ BIAŁY SONKO 4X100G" -> "Ryż"
+   - "MAKARON PENNE LUBELLA 500G" -> "Makaron"
+   - "JAJA ŚCIÓŁKOWE M 10SZT" -> "Jajka" (z "unit": "10 szt.")
+   Dopasuj nazwę do istniejącego cennika, jeśli to ten sam produkt bazowy: [${existingNames}].
+2. IGNORUJ CAŁKOWICIE WSZYSTKIE PRODUKTY NIESPOŻYWCZE (reklamówki, torby, chemię, kosmetyki, papier toaletowy, ręczniki papierowe, karmę dla zwierząt, kaucje). Jeśli pod produktem spożywczym jest rabat/opust, odejmij go od ceny tego produktu. Zwracaj WYŁĄCZNIE żywność ("isFood": true).
+3. Jeśli kupiono wielosztuki (np. "3 x 5,50 = 16,50") lub wagę (np. "0,650 kg x 24,99 = 16,24"), pole "unitPrice" MUSI zawierać CENĘ ZA 1 JEDNOSTKĘ (np. 5.50 za 1 szt./opak. lub 24.99 za 1 kg), a pole "purchasedQty" kupioną ilość (np. 3 lub 0.65).
+4. Zwróć WYŁĄCZNIE poprawny JSON:
+[{"name": "Masło", "isFood": true, "unit": "1 szt.", "unitPrice": 6.49, "purchasedQty": 1, "pantryUnit": "szt.", "category": "Lodówka i mrożonki", "store": "Lidl"}]`;
+
+                const result = await callGeminiWithFallback(activeGeminiKey, {
+                    contents: [{ parts: [{ text: prompt }, { inline_data: { mime_type: "image/jpeg", data: b64Image } }] }],
+                    generationConfig: { responseMimeType: "application/json" }
+                });
+                const rawJson = result.candidates?.[0]?.content?.parts?.[0]?.text;
+                if (!rawJson) throw new Error("Brak odpowiedzi z Gemini Vision");
+
+                const parsed = safeParseGeminiJson(rawJson, []);
+                if (!Array.isArray(parsed) || parsed.length === 0) {
+                    showToast("Nie znaleziono produktów spożywczych na zdjęciu.", "warning");
+                    return;
+                }
+
+                const onlyFood = parsed.filter(isFoodReceiptItem);
+
+                window.appState.scannedReceiptItems = onlyFood.map((item, idx) => {
+                    const cleanedName = window.cleanGenericFoodName(item.name || "Produkt");
+                    const canonKey = window.normalizeKey(cleanedName);
+                    const isEggs = canonKey === 'jajka';
+                    const existingPb = window.appState.pricebook[canonKey];
+                    const finalName = isEggs ? 'Jajka' : (existingPb ? existingPb.name : cleanedName);
+                    return {
+                        id: 'rcp_' + idx,
+                        selected: true,
+                        name: finalName,
+                        unit: isEggs ? '10 szt.' : (existingPb ? existingPb.unit : (item.unit || "1 szt.")),
+                        unitPrice: Number(parseFloat(item.unitPrice || 0).toFixed(2)),
+                        purchasedQty: Number(parseFloat(item.purchasedQty || 1).toFixed(2)),
+                        pantryUnit: item.pantryUnit || "szt.",
+                        category: item.category || "Inne",
+                        store: item.store || "Paragon"
+                    };
+                }).filter(i => i.unitPrice > 0);
+
+                renderScannedReceiptReview();
+                const skippedCount = parsed.length - window.appState.scannedReceiptItems.length;
+                showToast(
+                    skippedCount > 0
+                        ? `Odczytano ${window.appState.scannedReceiptItems.length} produktów spożywczych (pominięto ${skippedCount} niespożywczych)!`
+                        : `Odczytano ${window.appState.scannedReceiptItems.length} produktów spożywczych z paragonu!`
+                );
+            } catch (err) {
+                console.error("Błąd skanera paragonu:", err);
+                showToast("Nie udało się odczytać paragonu. Sprawdź czy zdjęcie jest wyraźne i czy klucz Gemini API jest poprawny.", "error");
+            } finally {
+                labelEl.textContent = origLabel;
+                event.target.value = '';
+            }
+        };
+
+        function renderScannedReceiptReview() {
+            const panel = document.getElementById('receipt-review-panel');
+            const listEl = document.getElementById('receipt-items-list');
+            const countEl = document.getElementById('receipt-items-count');
+            const items = window.appState.scannedReceiptItems || [];
+
+            if (items.length === 0) {
+                panel.classList.add('hidden');
+                return;
+            }
+
+            panel.classList.remove('hidden');
+            countEl.textContent = items.length;
+
+            listEl.innerHTML = items.map((item, idx) => {
+                const key = window.normalizeKey(item.name);
+                const existing = window.appState.pricebook[key];
+                return `
+                <div class="p-3 rounded-xl bg-slate-950/90 border ${existing ? 'border-emerald-500/40' : 'border-slate-800'} flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                    <div class="flex items-center gap-2.5 flex-1 min-w-0">
+                        <input type="checkbox" ${item.selected ? 'checked' : ''} onchange="updateScannedReceiptField(${idx}, 'selected', this.checked)" class="rounded text-emerald-500 focus:ring-0">
+                        <div class="min-w-0 flex-1">
+                            <div class="flex items-center gap-2">
+                                <input type="text" value="${item.name}" onchange="updateScannedReceiptField(${idx}, 'name', this.value)" class="bg-transparent border-b border-slate-700 focus:border-emerald-500 text-sm font-bold text-white w-full focus:outline-none">
+                                <span class="shrink-0 text-[10px] px-2 py-0.5 rounded font-bold ${existing ? 'bg-emerald-500/20 text-emerald-300' : 'bg-sky-500/20 text-sky-300'}">
+                                    ${existing ? `Aktualizacja (było ${Number(existing.price).toFixed(2)} zł)` : 'Nowy w cenniku'}
+                                </span>
+                            </div>
+                            <p class="text-[11px] text-slate-400 mt-1">
+                                Kupiono: <strong class="text-slate-200">${item.purchasedQty} ${item.pantryUnit}</strong> • Sklep: ${item.store}
+                            </p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2 shrink-0">
+                        <select onchange="updateScannedReceiptField(${idx}, 'unit', this.value)" class="px-2 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-xs text-slate-200">
+                            ${['1 szt.', '10 szt.', '1 puszka', '1 kg', '1 opak.', '1 l', '500 g'].map(u => `<option value="${u}" ${item.unit === u ? 'selected' : ''}>${u}</option>`).join('')}
+                        </select>
+                        <input type="number" step="0.01" value="${item.unitPrice.toFixed(2)}" onchange="updateScannedReceiptField(${idx}, 'unitPrice', parseFloat(this.value))" class="w-24 px-2.5 py-1.5 rounded-lg bg-slate-900 border border-emerald-500/50 text-xs font-mono font-bold text-emerald-400 text-right">
+                        <span class="text-xs text-slate-400">zł</span>
+                    </div>
+                </div>
+                `;
+            }).join('');
+        }
+
+        window.updateScannedReceiptField = (idx, field, value) => {
+            if (window.appState.scannedReceiptItems[idx]) window.appState.scannedReceiptItems[idx][field] = value;
+        };
+
+        window.discardScannedReceipt = () => {
+            window.appState.scannedReceiptItems = [];
+            document.getElementById('receipt-review-panel').classList.add('hidden');
+        };
+
+        window.commitScannedReceipt = async () => {
+            const selected = (window.appState.scannedReceiptItems || []).filter(i => i.selected && i.name && i.unitPrice > 0);
+            if (selected.length === 0) {
+                showToast("Zaznacz przynajmniej jedną pozycję.", "warning");
+                return;
+            }
+
+            const alsoAddToPantry = document.getElementById('receipt-also-pantry').checked;
+
+            selected.forEach(item => {
+                const key = window.normalizeKey(item.name);
+                const existing = window.appState.pricebook[key];
+                const finalUnit = key === 'jajka' ? '10 szt.' : item.unit;
+
+                window.appState.pricebook[key] = {
+                    name: key === 'jajka' ? 'Jajka' : item.name,
+                    unit: finalUnit,
+                    category: existing ? existing.category : item.category,
+                    price: Number(item.unitPrice.toFixed(2)),
+                    basePrice: Number(item.unitPrice.toFixed(2)),
+                    promoPrice: Number(item.unitPrice.toFixed(2)),
+                    isPromo: false,
+                    store: item.store || "Paragon"
+                };
+
+                if (alsoAddToPantry) {
+                    const prevPantry = window.getPantryEntry(key, true);
+                    const isFridge = item.category === 'Lodówka i mrożonki' || item.category === 'Mięso i świeże';
+                    if (prevPantry && prevPantry.unit === item.pantryUnit) {
+                        window.appState.pantry[key] = {
+                            qty: Number((prevPantry.qty + item.purchasedQty).toFixed(2)),
+                            unit: item.pantryUnit,
+                            location: prevPantry.location
+                        };
+                    } else {
+                        window.appState.pantry[key] = {
+                            qty: item.purchasedQty,
+                            unit: item.pantryUnit,
+                            location: isFridge ? 'Lodówka' : 'Spiżarnia'
+                        };
+                    }
+                }
+            });
+
+            const receiptTotal = selected.reduce((sum, item) => sum + Number((item.unitPrice * item.purchasedQty).toFixed(2)), 0);
+            const storeName = selected[0]?.store || "Paragon AI";
+            window.appState.shoppingHistory.unshift({
+                id: 'shist_' + Date.now(),
+                timestamp: new Date().toISOString(),
+                date: new Date().toLocaleDateString('pl-PL'),
+                source: `📸 ${storeName}`,
+                total: Number(receiptTotal.toFixed(2)),
+                items: selected.map(item => ({
+                    name: item.name,
+                    qty: `${item.purchasedQty} ${item.pantryUnit}`,
+                    price: Number((item.unitPrice * item.purchasedQty).toFixed(2))
+                }))
+            });
+
+            window.appState.scannedReceiptItems = [];
+            document.getElementById('receipt-review-panel').classList.add('hidden');
+            await saveKitchenChanges();
+            showToast(alsoAddToPantry
+                ? `Zaktualizowano ${selected.length} cen w Cenniku oraz dodano zakupy do Spiżarni!`
+                : `Zaktualizowano ${selected.length} cen w Cenniku!`
+            );
+        };
+
+        window.addNewPricebookItem = async (e) => {
+            e.preventDefault();
+            const nameEl = document.getElementById('pb-new-name');
+            const unitEl = document.getElementById('pb-new-unit');
+            const catEl = document.getElementById('pb-new-cat');
+            const priceEl = document.getElementById('pb-new-price');
+
+            const rawName = nameEl.value.trim();
+            const price = parseFloat(priceEl.value);
+            if (!rawName || isNaN(price) || price <= 0) return;
+
+            const fixed = localSpellFixAndKeywords(rawName);
+            const key = window.normalizeKey(fixed.fixedName);
+            const chosenUnit = key === 'jajka' ? '10 szt.' : unitEl.value;
+
+            window.appState.deletedPricebookKeys = (window.appState.deletedPricebookKeys || []).filter(k => k !== key);
+            window.appState.pricebook[key] = {
+                name: key === 'jajka' ? 'Jajka' : fixed.fixedName,
+                unit: chosenUnit,
+                category: catEl.value,
+                price: Number(price.toFixed(2)),
+                basePrice: Number(price.toFixed(2)),
+                promoPrice: Number(price.toFixed(2)),
+                isPromo: false,
+                store: "Ręcznie"
+            };
+
+            await saveKitchenChanges();
+            nameEl.value = '';
+            priceEl.value = '';
+            showToast(`Dodano do Cennika: <strong>${fixed.fixedName}</strong> (${price.toFixed(2)} zł / ${chosenUnit})`);
+        };
+
+        window.updateIngredientPrice = async (key, newVal) => {
+            const item = window.appState.pricebook[key];
+            const num = parseFloat(newVal);
+            if (!item || isNaN(num) || num < 0) return;
+            item.price = Number(num.toFixed(2));
+            item.basePrice = Number(num.toFixed(2));
+            item.promoPrice = Number(num.toFixed(2));
+            item.isPromo = false;
+            item.store = "Ręcznie";
+            await saveKitchenChanges();
+            showToast(`Zaktualizowano cenę: ${item.name} → ${num.toFixed(2)} zł`);
+        };
+
+        window.updateIngredientUnit = async (key, newUnit) => {
+            const item = window.appState.pricebook[key];
+            if (!item) return;
+            item.unit = key === 'jajka' ? '10 szt.' : newUnit;
+            await saveKitchenChanges();
+        };
+
+        window.deletePricebookItem = async (key) => {
+            const itemName = window.appState.pricebook[key]?.name || key;
+            delete window.appState.pricebook[key];
+
+            if (!Array.isArray(window.appState.deletedPricebookKeys)) {
+                window.appState.deletedPricebookKeys = [];
+            }
+            if (!window.appState.deletedPricebookKeys.includes(key)) {
+                window.appState.deletedPricebookKeys.push(key);
+            }
+
+            // Jeśli w spiżarni był pusty kafelek (0 szt.) dla tego produktu, też go sprzątamy
+            if (window.appState.pantry && window.appState.pantry[key] && Number(window.appState.pantry[key].qty) === 0) {
+                delete window.appState.pantry[key];
+            }
+
+            renderAll();
+
+            const code = window.appState.kitchenCode;
+            if (code) {
+                try {
+                    await updateDoc(doc(db, "kuchnie", code), {
+                        [`pricebook.${key}`]: deleteField(),
+                        [`pantry.${key}`]: window.appState.pantry[key] ? window.appState.pantry[key] : deleteField(),
+                        deletedPricebookKeys: window.appState.deletedPricebookKeys,
+                        updatedAt: new Date().toISOString()
+                    });
+                } catch (_) {
+                    await saveKitchenChanges();
+                }
+            }
+            showToast(`Usunięto z cennika: <strong>${itemName}</strong>.`);
+        };
+
+        window.renderPricebook = () => {
+            const list = document.getElementById('pricebook-list');
+            const searchEl = document.getElementById('pricebook-search');
+            if (!list || !searchEl) return;
+
+            const query = searchEl.value.toLowerCase().trim();
+            const entries = Object.entries(window.appState.pricebook)
+                .filter(([_, item]) => item.name.toLowerCase().includes(query))
+                .sort((a, b) => a[1].name.localeCompare(b[1].name));
+
+            if (entries.length === 0) {
+                list.innerHTML = `<p class="col-span-full text-sm text-slate-400 italic py-4 text-center">Brak składników pasujących do wyszukiwania.</p>`;
+                return;
+            }
+
+            list.innerHTML = entries.map(([key, item]) => {
+                const isEggs = key === 'jajka';
+                const unitDisplay = isEggs ? '10 szt.' : (item.unit || '1 szt.');
+                return `
+                <div class="p-3.5 rounded-xl border bg-slate-900/90 border-slate-800 hover:border-slate-700 transition-all flex items-center justify-between gap-3">
+                    <div class="min-w-0">
+                        <div class="flex items-center gap-1.5">
+                            <p class="text-sm font-bold text-white truncate">${item.name}</p>
+                            <button onclick="renameProductEverywhere('${key}')" title="Zmień nazwę produktu" class="text-[11px] text-slate-400 hover:text-indigo-300 px-1">✏️</button>
+                            <span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-800 text-slate-400">${item.store || 'Cennik'}</span>
+                        </div>
+                        <p class="text-[11px] text-slate-400 mt-0.5">${item.category || 'Inne'}</p>
+                    </div>
+                    <div class="flex items-center gap-1.5 shrink-0">
+                        ${isEggs
+                            ? `<span class="px-2.5 py-1.5 rounded-lg bg-slate-950 border border-slate-700 text-xs font-bold text-amber-300">10 szt.</span>`
+                            : `<select onchange="updateIngredientUnit('${key}', this.value)" class="px-2 py-1.5 rounded-lg bg-slate-950 border border-slate-700 text-xs text-slate-300">
+                                ${['1 szt.', '10 szt.', '1 puszka', '1 kg', '1 opak.', '1 l', '500 g', '450 g', '400 g', '300 g', '1 słoik', '1 but.'].map(u => `<option value="${u}" ${unitDisplay === u ? 'selected' : ''}>${u}</option>`).join('')}
+                               </select>`
+                        }
+                        <div class="text-right">
+                            <div class="flex items-center gap-1">
+                                <input type="number" step="0.01" value="${Number(item.price ?? item.basePrice ?? 0).toFixed(2)}" onchange="updateIngredientPrice('${key}', this.value)" class="w-24 px-2.5 py-1.5 rounded-lg bg-slate-950 border border-emerald-500/40 text-xs text-emerald-400 font-bold text-right font-mono">
+                                <span class="text-xs text-slate-400">zł</span>
+                            </div>
+                            ${formatUnitNormalizedPrice(item.price ?? item.basePrice ?? 0, unitDisplay, key) ? `<span class="block text-[10px] text-sky-400 font-mono mt-0.5">${formatUnitNormalizedPrice(item.price ?? item.basePrice ?? 0, unitDisplay, key)}</span>` : ''}
+                        </div>
+                        <button onclick="deletePricebookItem('${key}')" title="Usuń z cennika" class="p-1.5 text-slate-500 hover:text-red-400 text-xs">✕</button>
+                    </div>
+                </div>
+                `;
+            }).join('');
+        };
+
+        // ================= RADAR & WERYFIKACJA SCRAPERA =================
+        window.addTrackedProductWithAI = async (e) => {
+            e.preventDefault();
+            const inputEl = document.getElementById('track-prod-name');
+            const priceEl = document.getElementById('track-prod-maxprice');
+            const rawName = inputEl.value.trim();
+            const maxPriceVal = parseFloat(priceEl.value);
+            if (!rawName) return;
+
+            const resolved = localSpellFixAndKeywords(rawName);
+            const alreadyExists = window.appState.trackedProducts.some(
+                t => window.stripDiacritics(t.name) === window.stripDiacritics(resolved.fixedName)
+            );
+
+            if (alreadyExists) {
+                showToast(`Produkt "${resolved.fixedName}" jest już na liście śledzonych.`, "warning");
+            } else {
+                window.appState.trackedProducts.unshift({
+                    id: 'tr_' + Date.now(),
+                    name: resolved.fixedName,
+                    query: resolved.query,
+                    keywords: resolved.keywords,
+                    maxPrice: (!isNaN(maxPriceVal) && maxPriceVal > 0) ? maxPriceVal : null
+                });
+                await saveKitchenChanges();
+                showToast(`Dodano <strong>${resolved.fixedName}</strong> do radaru!`);
+            }
+            inputEl.value = '';
+            priceEl.value = '';
+        };
+
+        window.removeTrackedProduct = async (id) => {
+            window.appState.trackedProducts = window.appState.trackedProducts.filter(t => t.id !== id);
+            await saveKitchenChanges();
+            showToast("Usunięto produkt z radaru.");
+        };
+
+        window.renderTrackedProducts = () => {
+            const container = document.getElementById('tracked-products-list');
+            if (!container) return;
+            const list = window.appState.trackedProducts || [];
+            if (list.length === 0) {
+                container.innerHTML = `<p class="text-xs text-slate-400 italic">Brak własnych produktów na radarze.</p>`;
+                return;
+            }
+            container.innerHTML = list.map(item => `
+                <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-950 border border-indigo-500/40 text-xs text-slate-200">
+                    <span class="w-2 h-2 rounded-full bg-indigo-400"></span>
+                    <span class="font-bold text-white">${item.name}</span>
+                    ${item.maxPrice ? `<span class="text-emerald-400 font-mono">(do ${Number(item.maxPrice).toFixed(2)} zł)</span>` : ''}
+                    <button onclick="removeTrackedProduct('${item.id}')" class="ml-1 text-slate-500 hover:text-red-400 font-bold">✕</button>
+                </div>
+            `).join('');
+        };
+
+        function formatPromoDateRangePl(validFrom, validTo) {
+            const fmt = (dStr) => {
+                if (!dStr) return '';
+                const parts = String(dStr).split('-');
+                if (parts.length === 3) return `${parts[2]}.${parts[1]}.${parts[0]}`;
+                return dStr;
+            };
+            const f = fmt(validFrom);
+            const t = fmt(validTo);
+            if (f && t) return `od ${f} do ${t}`;
+            if (t) return `do ${t}`;
+            if (f) return `od ${f}`;
+            return 'aktualna gazetka';
+        }
+
+        function getStoreBadgeStyle(storeName) {
+            const s = (storeName || '').toLowerCase();
+            if (s.includes('lidl')) return 'bg-blue-500/20 text-blue-300 border-blue-500/40';
+            if (s.includes('biedronka')) return 'bg-red-500/20 text-red-300 border-red-500/40';
+            if (s.includes('netto')) return 'bg-amber-500/20 text-amber-300 border-amber-500/40';
+            return 'bg-indigo-500/20 text-indigo-300 border-indigo-500/40';
+        }
+
+        window.setVerifyStoreFilter = (storeKey) => {
+            window.appState.verifyStoreFilter = storeKey;
+            renderVerifyScraper();
+        };
+
+        window.setVerifyCategoryFilter = (catKey) => {
+            window.appState.verifyCategoryFilter = catKey;
+            renderVerifyScraper();
+        };
+
+        window.setVerifyDatePreset = (presetKey) => {
+            window.appState.verifyDateFilter = presetKey;
+            if (presetKey !== 'custom') {
+                window.appState.verifyCustomDateFrom = '';
+                window.appState.verifyCustomDateTo = '';
+                const fEl = document.getElementById('verify-date-from');
+                const tEl = document.getElementById('verify-date-to');
+                if (fEl) fEl.value = '';
+                if (tEl) tEl.value = '';
+            }
+            renderVerifyScraper();
+        };
+
+        window.setVerifyCustomDates = () => {
+            const fVal = document.getElementById('verify-date-from')?.value || '';
+            const tVal = document.getElementById('verify-date-to')?.value || '';
+            window.appState.verifyCustomDateFrom = fVal;
+            window.appState.verifyCustomDateTo = tVal;
+            window.appState.verifyDateFilter = (fVal || tVal) ? 'custom' : 'all';
+            renderVerifyScraper();
+        };
+
+        window.resetAllVerifyFilters = () => {
+            window.appState.verifyStoreFilter = 'all';
+            window.appState.verifyRadarOnly = false;
+            window.appState.verifyCategoryFilter = 'all';
+            window.appState.verifyDateFilter = 'all';
+            window.appState.verifyCustomDateFrom = '';
+            window.appState.verifyCustomDateTo = '';
+            const sEl = document.getElementById('verify-search');
+            const fEl = document.getElementById('verify-date-from');
+            const tEl = document.getElementById('verify-date-to');
+            if (sEl) sEl.value = '';
+            if (fEl) fEl.value = '';
+            if (tEl) tEl.value = '';
+            renderVerifyScraper();
+        };
+
+        const VERIFY_CATEGORIES = [
+            { id: 'all', label: 'Wszystkie działy', icon: '🍽️' },
+            { id: 'mieso', label: 'Mięso i wędliny', icon: '🥩' },
+            { id: 'nabial', label: 'Nabiał i jaja', icon: '🧀' },
+            { id: 'warzywa', label: 'Warzywa i owoce', icon: '🥦' },
+            { id: 'pieczywo', label: 'Pieczywo', icon: '🥖' },
+            { id: 'suche', label: 'Suche i konserwy', icon: '🥫' },
+            { id: 'ryby', label: 'Ryby', icon: '🐟' },
+            { id: 'tluszcze', label: 'Tłuszcze i dodatki', icon: '🫒' }
+        ];
+
+        function classifyVerifyFoodCategory(item, prodKey = '') {
+            const text = window.stripDiacritics(`${item.name || ''} ${prodKey} ${item.rawText || ''}`);
+            if (/(kurczak|indyk|wieprzow|wolow|schab|karkowk|lopatk|szynk|poledwic|mielon|kielbas|boczek|boczku|parowk|kabanos|kaczk|gulasz|zeberk|udk|skrzydelk|filet|piers|mieso)/.test(text)) return 'mieso';
+            if (/(losos|dorsz|tunczyk|sledz|pstrag|makrel|mintaj|morszczuk|krewetk|ryb)/.test(text)) return 'ryby';
+            if (/(mleko|maslo|ser|gouda|edam|ementaler|morski|mozzarell|twarog|serek|jogurt|smietan|kefir|maslank|jaj|feta|camembert|parmezan|ricotta|mascarpone)/.test(text) && !text.includes('maslo orzechowe')) return 'nabial';
+            if (/(chleb|bulk|bagietk|tortill|pieczyw|tostow|kajzerk|graham)/.test(text)) return 'pieczywo';
+            if (/(pomidor|passat|przecier|koncentrat pomidor|ogor|papryk|cebul|czosn|ziemniak|marchew|pietruszk|seler|kapust|brokul|kalafior|cukini|baklazan|szpinak|salat|rzodkiew|burak|por|pieczark|dyni|awokado|jablk|banan|cytryn|pomarancz|mandarynk|grejpfrut|borowk|malin|truskawk|winogron|gruszk|sliwk|brzoskwini|ananas|mango|kiwi|arbuz)/.test(text)) return 'warzywa';
+            if (/(oliw|olej|maslo orzechowe|sos sojowy|bulion)/.test(text)) return 'tluszcze';
+            return 'suche';
+        }
+
+        function getNormalizedVerifyStore(item) {
+            const raw = item.store || (item.source ? item.source.replace(/^Promocja\s+/i, '').split('(')[0].trim() : 'Inne');
+            const low = raw.toLowerCase();
+            if (low.includes('lidl')) return 'Lidl';
+            if (low.includes('biedronka')) return 'Biedronka';
+            if (low.includes('netto')) return 'Netto';
+            return raw || 'Inne';
+        }
+
+        function matchesVerifyDateFilter(item) {
+            const mode = window.appState.verifyDateFilter || 'all';
+            if (mode === 'all') return true;
+
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const toIso = (d) => d.toISOString().slice(0, 10);
+            const todayStr = toIso(today);
+
+            const vFrom = item.validFrom || null;
+            const vTo = item.validTo || null;
+
+            if (mode === 'active_today') {
+                if (vFrom && vFrom > todayStr) return false;
+                if (vTo && vTo < todayStr) return false;
+                return Boolean(vFrom || vTo);
+            }
+
+            if (mode === 'ending_soon') {
+                if (!vTo) return false;
+                const in3Days = new Date(today);
+                in3Days.setDate(in3Days.getDate() + 3);
+                const maxStr = toIso(in3Days);
+                return vTo >= todayStr && vTo <= maxStr;
+            }
+
+            if (mode === 'this_week') {
+                const day = today.getDay() || 7;
+                const monday = new Date(today);
+                monday.setDate(today.getDate() - day + 1);
+                const sunday = new Date(monday);
+                sunday.setDate(monday.getDate() + 6);
+                const monStr = toIso(monday);
+                const sunStr = toIso(sunday);
+                const effFrom = vFrom || vTo;
+                const effTo = vTo || vFrom;
+                if (!effFrom && !effTo) return false;
+                return effFrom <= sunStr && effTo >= monStr;
+            }
+
+            if (mode === 'has_dates') {
+                return Boolean(vFrom || vTo);
+            }
+
+            if (mode === 'custom') {
+                const cFrom = window.appState.verifyCustomDateFrom;
+                const cTo = window.appState.verifyCustomDateTo;
+                if (!cFrom && !cTo) return true;
+                const effFrom = vFrom || vTo;
+                const effTo = vTo || vFrom;
+                if (!effFrom && !effTo) return false;
+                if (cFrom && effTo < cFrom) return false;
+                if (cTo && effFrom > cTo) return false;
+                return true;
+            }
+
+            return true;
+        }
+
+        function matchOfferWithRadar(item, prodKey = '') {
+            const tracked = window.appState.trackedProducts || [];
+            if (tracked.length === 0) return null;
+            const hay = window.stripDiacritics(`${item.name || ''} ${prodKey} ${item.rawText || ''}`);
+            const price = Number(item.detectedPrice || 0);
+
+            for (const tr of tracked) {
+                const kws = Array.isArray(tr.keywords) && tr.keywords.length > 0
+                    ? tr.keywords
+                    : [window.stripDiacritics(tr.name || '')];
+                if (kws.some(kw => kw && hay.includes(window.stripDiacritics(kw)))) {
+                    const maxP = Number(tr.maxPrice || 0);
+                    const isUnderTarget = maxP > 0 ? price <= maxP : true;
+                    return { trackedItem: tr, isUnderTarget, maxPrice: maxP };
+                }
+            }
+            return null;
+        }
+
+        window.toggleVerifyRadarOnly = () => {
+            window.appState.verifyRadarOnly = !window.appState.verifyRadarOnly;
+            renderVerifyScraper();
+        };
+
+        function getFilteredPendingEntries() {
+            const allItems = Object.entries(window.appState.pendingScraper || {});
+            const storeFilter = window.appState.verifyStoreFilter || 'all';
+            const catFilter = window.appState.verifyCategoryFilter || 'all';
+            const radarOnly = Boolean(window.appState.verifyRadarOnly);
+            const query = (document.getElementById('verify-search')?.value || '').toLowerCase().trim();
+
+            const filtered = allItems.filter(([prodKey, item]) => {
+                const st = getNormalizedVerifyStore(item);
+                if (storeFilter !== 'all' && st !== storeFilter) return false;
+
+                if (catFilter !== 'all') {
+                    const itemCat = classifyVerifyFoodCategory(item, prodKey);
+                    if (itemCat !== catFilter) return false;
+                }
+
+                if (!matchesVerifyDateFilter(item)) return false;
+
+                if (radarOnly && !matchOfferWithRadar(item, prodKey)) return false;
+
+                if (query) {
+                    const cleanName = window.cleanGenericFoodName(item.name || prodKey).toLowerCase();
+                    const rawText = (item.rawText || '').toLowerCase();
+                    if (!cleanName.includes(query) && !rawText.includes(query)) return false;
+                }
+                return true;
+            });
+
+            // Przypnij oferty z Radaru Śledzonych na samą górę listy (nie ukrywając pozostałych!)
+            return filtered.sort((a, b) => {
+                const ra = matchOfferWithRadar(a[1], a[0]);
+                const rb = matchOfferWithRadar(b[1], b[0]);
+                const scoreA = ra ? (ra.isUnderTarget ? 2 : 1) : 0;
+                const scoreB = rb ? (rb.isUnderTarget ? 2 : 1) : 0;
+                return scoreB - scoreA;
+            });
+        }
+
+        window.triggerScraperNow = async () => {
+            const pat = window.appState.githubToken;
+            const repo = (window.appState.githubRepo || 'przemyslawwinter/przepisnikAI').replace(/^https?:\/\/github\.com\//i, '').replace(/\.git$/i, '').replace(/\/$/, '');
+            const wf = window.appState.githubWorkflow || 'scraper.yml';
+
+            if (!pat) {
+                showToast("Wklej swój GitHub Token (PAT z uprawnieniem Actions/Workflow) w ustawieniach kuchni, aby uruchamiać scraper jednym kliknięciem!", "warning");
+                openKitchenModal();
+                return;
+            }
+
+            const btn = document.getElementById('btn-run-scraper-now');
+            const origHtml = btn ? btn.innerHTML : '';
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = `<span class="animate-spin inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full"></span> <span>Uruchamiam bota...</span>`;
+            }
+
+            const prevScrapedAt = window.appState.scraperUpdatedAt;
+
+            try {
+                // Wykryj domyślną gałąź repozytorium (main lub master)
+                let defaultBranch = 'main';
+                try {
+                    const repoInfoResp = await fetch(`https://api.github.com/repos/${repo}`, {
+                        headers: {
+                            'Authorization': `Bearer ${pat}`,
+                            'Accept': 'application/vnd.github+json'
+                        }
+                    });
+                    if (repoInfoResp.ok) {
+                        const repoJson = await repoInfoResp.json();
+                        if (repoJson.default_branch) defaultBranch = repoJson.default_branch;
+                    }
+                } catch (_) {}
+
+                const dispatchResp = await fetch(`https://api.github.com/repos/${repo}/actions/workflows/${encodeURIComponent(wf)}/dispatches`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${pat}`,
+                        'Accept': 'application/vnd.github+json',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ ref: defaultBranch })
+                });
+
+                if (dispatchResp.status === 204 || dispatchResp.ok) {
+                    showToast("🚀 Bot wystartował na GitHub Actions! Skanuje gazetki Lidla, Biedronki i Netto (ok. 30–45 sek.) — lista odświeży się automatycznie.");
+                    if (btn) {
+                        btn.innerHTML = `<span class="animate-spin inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full"></span> <span>Skanuję gazetki...</span>`;
+                    }
+
+                    // Obserwuj przez max 90 sekund pojawienie się nowego lastScraped w Firestore
+                    let checks = 0;
+                    const pollTimer = setInterval(() => {
+                        checks++;
+                        if (window.appState.scraperUpdatedAt && window.appState.scraperUpdatedAt !== prevScrapedAt) {
+                            clearInterval(pollTimer);
+                            if (btn) {
+                                btn.disabled = false;
+                                btn.innerHTML = origHtml;
+                            }
+                            showToast("✅ Świeże promocje pobrane! Uruchamiam filtr AI...");
+                            if (window.appState.geminiApiKey) {
+                                window.cleanPendingScraperWithAI(true);
+                            }
+                        } else if (checks >= 30) {
+                            clearInterval(pollTimer);
+                            if (btn) {
+                                btn.disabled = false;
+                                btn.innerHTML = origHtml;
+                            }
+                        }
+                    }, 3000);
+                } else {
+                    const errText = await dispatchResp.text();
+                    console.error("GitHub workflow dispatch error:", dispatchResp.status, errText);
+                    if (btn) {
+                        btn.disabled = false;
+                        btn.innerHTML = origHtml;
+                    }
+                    if (dispatchResp.status === 404) {
+                        showToast(`Nie znaleziono workflow <code>${wf}</code> w repozytorium <code>${repo}</code>. Sprawdź nazwę pliku w ustawieniach.`, "error");
+                    } else if (dispatchResp.status === 401 || dispatchResp.status === 403) {
+                        showToast("Brak uprawnień tokena GitHub (wymagany zakres: workflow / Actions: Write).", "error");
+                    } else {
+                        showToast(`Błąd uruchamiania bota (HTTP ${dispatchResp.status}).`, "error");
+                    }
+                }
+            } catch (err) {
+                console.error("Błąd połączenia z GitHub API:", err);
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = origHtml;
+                }
+                showToast("Błąd połączenia z GitHub API.", "error");
+            }
+        };
+
+                window.cleanPendingScraperWithAI = async (silent = false) => {
+            const apiKey = window.appState.geminiApiKey;
+            if (!apiKey) {
+                if (!silent) {
+                    showToast("Wpisz swój klucz Gemini API w ustawieniach kuchni (Nazwa & Klucz AI), aby użyć filtra AI!", "warning");
+                    openKitchenModal();
+                }
+                return;
+            }
+
+            const entries = Object.entries(window.appState.pendingScraper || {});
+            if (entries.length === 0) {
+                if (!silent) showToast("Poczekalnia promocji jest pusta.", "warning");
+                return;
+            }
+
+            const btn = document.getElementById('btn-ai-clean-promos');
+            const origHtml = btn ? btn.innerHTML : '';
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = `<span class="animate-spin inline-block w-4 h-4 border-2 border-amber-300 border-t-transparent rounded-full"></span> <span>AI odsiewa...</span>`;
+            }
+
+            try {
+                const payloadItems = entries.map(([k, v]) => ({
+                    key: k,
+                    name: window.cleanGenericFoodName(v.name || k),
+                    raw: v.rawText || v.name || ''
+                }));
+
+                const keptMap = {};
+                const chunkSize = 90;
+
+                for (let i = 0; i < payloadItems.length; i += chunkSize) {
+                    const chunk = payloadItems.slice(i, i + chunkSize);
+                    const prompt = `Jesteś rygorystycznym filtrem produktów spożywczych do gotowania w domu.
+Przejrzyj poniższą listę promocji z gazetek sklepowych i ZOSTAW WYŁĄCZNIE prawdziwe produkty spożywcze / składniki kulinarne do jedzenia i gotowania:
+- mięso, wędliny, ryby, owoce morza
+- nabiał, sery, masło, jajka, jogurty naturalne
+- warzywa, owoce, grzyby, bakalie, orzechy naturalne
+- pieczywo, makarony, ryż, kasze, mąka, płatki owsiane
+- konserwy, przetwory, passaty, oliwa, olej, przyprawy, miód, dżem
+
+BEZWZGLĘDNIE WYRZUĆ (nie dodawaj do wyniku):
+- wszelkie artykuły niespożywcze (dyfuzory zapachowe, świeczki, chemię, kosmetyki, zestawy prezentowe, odzież, narzędzia, karmę)
+- wszelkie słodycze i wypieki cukiernicze (ciastka, praliny, czekolady, batony, wafelki, żelki, cukierki, lody, pączki, drożdżówki, dekoracje cukrowe)
+- chipsy, chrupki, prażynki, popcorn, krakersy, paluszki
+- herbaty, kawy, yerba mate
+- napoje gazowane, cole, energetyki, izotoniki, soki, nektary oraz alkohol
+
+Dla każdej zaakceptowanej pozycji zwróć oczyszczoną, krótką polską nazwę produktu (bez słów typu "Zobacz", "archiwalna", marek i gramatur).
+Zwróć WYŁĄCZNIE poprawną tablicę JSON:
+[{"key": "klucz_z_wejscia", "cleanName": "Czysta nazwa produktu", "category": "Mięso i świeże|Lodówka i mrożonki|Warzywa i owoce|Konserwy i słoiki|Suche i makarony|Przyprawy i dodatki"}]
+
+Lista do przefiltrowania:
+${JSON.stringify(chunk)}`;
+
+                    const resJson = await callGeminiWithFallback(apiKey, {
+                        contents: [{ parts: [{ text: prompt }] }],
+                        generationConfig: { responseMimeType: "application/json" }
+                    });
+                    const rawText = resJson.candidates?.[0]?.content?.parts?.[0]?.text || "[]";
+                    const parsed = safeParseGeminiJson(rawText, {});
+
+                    if (Array.isArray(parsed)) {
+                        parsed.forEach(item => {
+                            if (item && item.key && window.appState.pendingScraper[item.key]) {
+                                keptMap[item.key] = {
+                                    cleanName: item.cleanName ? String(item.cleanName).trim() : null,
+                                    category: item.category ? String(item.category).trim() : null
+                                };
+                            }
+                        });
+                    }
+                }
+
+                const nextPending = {};
+                let removedCount = 0;
+                entries.forEach(([k, origObj]) => {
+                    if (keptMap[k]) {
+                        nextPending[k] = {
+                            ...origObj,
+                            name: keptMap[k].cleanName || window.cleanGenericFoodName(origObj.name || k),
+                            category: keptMap[k].category || origObj.category || 'Inne'
+                        };
+                    } else {
+                        removedCount++;
+                    }
+                });
+
+                window.appState.pendingScraper = nextPending;
+                await saveKitchenChanges();
+                showToast(`✨ Filtr AI zakończony! Usunięto <strong>${removedCount}</strong> zbędnych pozycji (słodycze, chipsy, napoje, chemia), zostało <strong>${Object.keys(nextPending).length}</strong> produktów spożywczych.`);
+            } catch (err) {
+                console.error("Błąd filtrowania promocji przez AI:", err);
+                showToast("Nie udało się przefiltrować listy przez Gemini AI. Sprawdź klucz API w ustawieniach kuchni.", "error");
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = origHtml;
+                }
+            }
+        };
+
+        window.renderVerifyScraper = () => {
+            const listEl = document.getElementById('verify-scraper-list');
+            const filtersEl = document.getElementById('verify-store-filters');
+            const catFiltersEl = document.getElementById('verify-category-filters');
+            const datePresetsEl = document.getElementById('verify-date-presets');
+            const lastScrapedEl = document.getElementById('verify-last-scraped-info');
+            if (lastScrapedEl) {
+                if (window.appState.scraperUpdatedAt) {
+                    const d = new Date(window.appState.scraperUpdatedAt);
+                    lastScrapedEl.textContent = !isNaN(d.getTime())
+                        ? `• Ostatnie skanowanie: ${d.toLocaleString('pl-PL', { dateStyle: 'short', timeStyle: 'short' })}`
+                        : '';
+                } else {
+                    lastScrapedEl.textContent = '';
+                }
+            }
+            const allItems = Object.entries(window.appState.pendingScraper || {});
+
+            // 1. Pigułki sklepów
+            const storeCounts = {};
+            const catCounts = {};
+            allItems.forEach(([prodKey, item]) => {
+                const st = getNormalizedVerifyStore(item);
+                storeCounts[st] = (storeCounts[st] || 0) + 1;
+                const cat = classifyVerifyFoodCategory(item, prodKey);
+                catCounts[cat] = (catCounts[cat] || 0) + 1;
+            });
+
+            const activeFilter = window.appState.verifyStoreFilter || 'all';
+            if (activeFilter !== 'all' && !storeCounts[activeFilter]) {
+                window.appState.verifyStoreFilter = 'all';
+            }
+            const currentFilter = window.appState.verifyStoreFilter || 'all';
+
+            if (filtersEl) {
+                const knownStores = ['Lidl', 'Biedronka', 'Netto', ...Object.keys(storeCounts).filter(s => !['Lidl', 'Biedronka', 'Netto'].includes(s))];
+                const chips = [
+                    { id: 'all', label: `Wszystkie sklepy (${allItems.length})`, activeClass: 'bg-indigo-500 text-white' },
+                    ...knownStores.filter(st => storeCounts[st] > 0 || ['Lidl', 'Biedronka', 'Netto'].includes(st)).map(st => {
+                        const icon = st === 'Lidl' ? '🔵' : st === 'Biedronka' ? '🐞' : st === 'Netto' ? '🟡' : '🏪';
+                        const activeCls = st === 'Lidl'
+                            ? 'bg-blue-500 text-white'
+                            : st === 'Biedronka'
+                            ? 'bg-red-500 text-white'
+                            : st === 'Netto'
+                            ? 'bg-amber-400 text-slate-950'
+                            : 'bg-indigo-500 text-white';
+                        return { id: st, label: `${icon} ${st} (${storeCounts[st] || 0})`, activeClass: activeCls };
+                    })
+                ];
+
+                filtersEl.innerHTML = chips.map(ch => {
+                    const isAct = currentFilter === ch.id;
+                    return `<button type="button" onclick="setVerifyStoreFilter('${ch.id}')" class="px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${isAct ? ch.activeClass + ' shadow-md' : 'bg-slate-900 text-slate-300 border border-slate-700 hover:border-slate-500'}">${ch.label}</button>`;
+                }).join('');
+            }
+
+            // 2. Pigułki kategorii spożywczych (Mięso, Nabiał, Warzywa/Owoce, Pieczywo, Suche/Konserwy, Ryby, Tłuszcze)
+            const currentCat = window.appState.verifyCategoryFilter || 'all';
+            if (catFiltersEl) {
+                catFiltersEl.innerHTML = VERIFY_CATEGORIES.map(c => {
+                    const count = c.id === 'all' ? allItems.length : (catCounts[c.id] || 0);
+                    const isAct = currentCat === c.id;
+                    return `<button type="button" onclick="setVerifyCategoryFilter('${c.id}')" class="px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${isAct ? 'bg-emerald-500 text-slate-950 font-bold shadow-sm' : 'bg-slate-950/90 text-slate-300 border border-slate-800 hover:border-slate-600'}">${c.icon} ${c.label} (${count})</button>`;
+                }).join('');
+            }
+
+            // 3. Szybkie filtry dat
+            const currentDateMode = window.appState.verifyDateFilter || 'all';
+            if (datePresetsEl) {
+                const radarMatchCount = allItems.filter(([pk, it]) => Boolean(matchOfferWithRadar(it, pk))).length;
+                const isRadarOnly = Boolean(window.appState.verifyRadarOnly);
+                const datePresets = [
+                    { id: 'all', label: 'Wszystkie daty' },
+                    { id: 'active_today', label: '✅ Ważne dzisiaj' },
+                    { id: 'ending_soon', label: '⏳ Kończą się (do 3 dni)' },
+                    { id: 'this_week', label: '📆 Ten tydzień' }
+                ];
+                datePresetsEl.innerHTML = [
+                    `<button type="button" onclick="toggleVerifyRadarOnly()" class="px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all ${isRadarOnly ? 'bg-indigo-500 text-white shadow-sm' : 'bg-indigo-950/60 text-indigo-300 border border-indigo-500/40 hover:border-indigo-400'}">🎯 Tylko z Radaru (${radarMatchCount})</button>`,
+                    ...datePresets.map(dp => {
+                        const isAct = currentDateMode === dp.id;
+                        return `<button type="button" onclick="setVerifyDatePreset('${dp.id}')" class="px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${isAct ? 'bg-sky-500 text-slate-950 font-bold' : 'bg-slate-950 text-slate-300 border border-slate-800 hover:border-slate-600'}">${dp.label}</button>`;
+                    })
+                ].join('');
+            }
+
+            const items = getFilteredPendingEntries();
+            document.getElementById('verify-btn-count').textContent = items.length;
+
+            if (allItems.length === 0) {
+                listEl.innerHTML = `<div class="bg-[#1e293b] rounded-2xl border border-slate-800 p-10 text-center">
+                    <h3 class="text-base font-bold text-white">Poczekalnia jest pusta</h3>
+                    <p class="text-sm text-slate-400 mt-1">Wszystkie pozycje ze scrapera zostały już zweryfikowane.</p>
+                </div>`;
+                return;
+            }
+
+            if (items.length === 0) {
+                listEl.innerHTML = `<div class="bg-[#1e293b] rounded-2xl border border-slate-800 p-8 text-center space-y-2">
+                    <h3 class="text-base font-bold text-white">Brak promocji dla wybranych filtrów</h3>
+                    <p class="text-xs text-slate-400">Zmień sklep, dział produktu lub zakres dat obowiązywania promocji.</p>
+                    <button type="button" onclick="resetAllVerifyFilters()" class="mt-2 px-4 py-2 rounded-xl bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 text-xs font-bold">Wyczyść wszystkie filtry</button>
+                </div>`;
+                return;
+            }
+
+        function resolveOfferWeight(item) {
+            if (item && item.weight) return String(item.weight).trim();
+            const raw = `${item?.rawText || ''} ${item?.name || ''}`;
+            const cleaned = raw
+                .replace(/\d+[.,]\d+\s*zł\s*\/\s*(?:1\s*)?(?:kg|l|100\s*g)/gi, ' ')
+                .replace(/\(\s*\d+[.,]\d+\s*zł\s*\/\s*[^)]+\)/gi, ' ');
+            const mMulti = cleaned.match(/\b(\d+\s*[x×]\s*\d+(?:[.,]\d+)?\s*(?:kg|g|dag|ml|l))\b/i);
+            if (mMulti) return mMulti[1].replace(/\s+/g, ' ').toLowerCase().replace('×', 'x');
+            const mStd = cleaned.match(/\b(\d+(?:[.,]\d+)?)\s*(kg|g|dag|ml|l|szt\.?)\b/i);
+            if (mStd) {
+                const num = mStd[1].replace('.', ',');
+                let unit = mStd[2].toLowerCase().replace(/\.$/, '');
+                if (unit === 'szt') unit = 'szt.';
+                return `${num} ${unit}`;
+            }
+            return '';
+        }
+
+            listEl.innerHTML = items.map(([prodKey, item]) => {
+                const cleanName = window.cleanGenericFoodName(item.name || prodKey);
+                const key = window.normalizeKey(cleanName);
+                const detected = Number(item.detectedPrice || 0);
+                const safeProdKey = prodKey.replace(/'/g, "\\'");
+                const storeLabel = item.store || (item.source ? item.source.replace(/^Promocja\s+/i, '').split('(')[0].trim() : 'Gazetka');
+                const storeBadgeClass = getStoreBadgeStyle(storeLabel);
+                const dateRangeText = formatPromoDateRangePl(item.validFrom, item.validTo);
+                const weightLabel = resolveOfferWeight(item);
+                const existingPb = window.appState.pricebook[key];
+                const radarHit = matchOfferWithRadar(item, prodKey);
+                const radarBadge = radarHit
+                    ? (radarHit.isUnderTarget
+                        ? `<span class="px-2.5 py-0.5 rounded-lg bg-emerald-500/20 border border-emerald-500/45 text-xs font-extrabold text-emerald-300">🎯 RADAR: Okazja!${radarHit.maxPrice ? ` (cel ≤ ${radarHit.maxPrice.toFixed(2)} zł)` : ''}</span>`
+                        : `<span class="px-2.5 py-0.5 rounded-lg bg-indigo-500/20 border border-indigo-500/45 text-xs font-bold text-indigo-300">🎯 RADAR: ${radarHit.trackedItem.name}${radarHit.maxPrice ? ` (cel ≤ ${radarHit.maxPrice.toFixed(2)} zł)` : ''}</span>`)
+                    : '';
+
+                return `
+                <div class="bg-[#1e293b] rounded-2xl border ${radarHit ? (radarHit.isUnderTarget ? 'border-emerald-500/60 shadow-lg shadow-emerald-500/10' : 'border-indigo-500/50') : 'border-slate-800 hover:border-slate-700'} p-4 flex flex-col lg:flex-row lg:items-center justify-between gap-4 transition-all">
+                    <div class="space-y-1.5 min-w-0 flex-1">
+                        <div class="flex flex-wrap items-center gap-2">
+                            ${radarBadge}
+                            <span class="px-2.5 py-0.5 rounded-lg border text-xs font-extrabold uppercase tracking-wide ${storeBadgeClass}">
+                                🏪 ${storeLabel}
+                            </span>
+                            ${weightLabel ? `<span class="px-2.5 py-0.5 rounded-lg bg-emerald-500/15 border border-emerald-500/35 text-xs font-bold text-emerald-300">⚖️ ${weightLabel}</span>` : ''}
+                            <span class="px-2.5 py-0.5 rounded-lg bg-slate-900 border border-slate-700 text-xs font-semibold text-sky-300">
+                                📅 ${dateRangeText}
+                            </span>
+                            ${existingPb ? `<span class="text-[11px] text-slate-400">W cenniku: <strong class="text-slate-200">${Number(existingPb.price).toFixed(2)} zł</strong></span>` : '<span class="text-[11px] text-emerald-400 font-semibold">Nowy produkt</span>'}
+                        </div>
+
+                        <div class="flex items-center gap-2">
+                            <input type="text" id="verify-name-${key}" value="${cleanName}" class="bg-slate-950/80 border border-slate-700 focus:border-emerald-500 rounded-lg px-2.5 py-1 text-base font-bold text-white w-full focus:outline-none">
+                        </div>
+
+                        <p class="text-xs text-slate-400 truncate">
+                            Z gazetki: <span class="font-mono text-slate-300">${String(item.rawText || item.name || '').replace(/^(?:zobacz\s+(?:aktualn[aąe]|archiwaln[aąe]|od\s+dzi[sś])?\s*|archiwaln[aąe]\s+|aktualn[aąe]\s+)/i, '')}</span>
+                            ${item.sourceUrl ? ` • <a href="${item.sourceUrl}" target="_blank" rel="noopener" class="text-indigo-400 hover:underline">Źródło ↗</a>` : ''}
+                        </p>
+                    </div>
+
+                    <div class="flex flex-wrap items-center justify-between sm:justify-end gap-2 shrink-0 pt-2 lg:pt-0 border-t lg:border-t-0 border-slate-800/80">
+                        <div class="flex items-center gap-1.5 bg-slate-950 px-2.5 py-1.5 rounded-xl border border-emerald-500/40">
+                            <span class="text-[11px] text-slate-400">Cena:</span>
+                            <input type="number" step="0.01" id="verify-price-${key}" value="${detected.toFixed(2)}" class="w-20 bg-transparent text-sm font-mono font-extrabold text-emerald-400 text-right focus:outline-none">
+                            <span class="text-xs text-slate-400">zł</span>
+                        </div>
+                        <div class="flex flex-wrap items-center gap-1.5">
+                            <button onclick="addScraperItemToShopping('${safeProdKey}')" title="Dodaj promocję bezpośrednio do Listy Zakupów z gramaturą i datą ważności" class="px-3.5 py-2.5 rounded-xl bg-sky-500/20 hover:bg-sky-500/30 text-sky-300 border border-sky-500/40 font-bold text-xs transition-all">🛒 + Zakupy</button>
+                            <button onclick="approveScraperItem('${safeProdKey}')" class="px-4 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs shadow-md shadow-emerald-500/15 transition-all">✓ Zatwierdź do Cennika</button>
+                            <button onclick="rejectScraperItem('${safeProdKey}')" title="Odrzuć" class="px-3 py-2.5 rounded-xl bg-slate-800 hover:bg-red-950/60 text-slate-300 hover:text-red-300 text-xs font-bold transition-all">✕</button>
+                        </div>
+                    </div>
+                </div>
+                `;
+            }).join('');
+        };
+
+        function mapVerifyCategoryToAppCategory(catId, itemCategory = '') {
+            if (itemCategory === 'Warzywa i owoce' || catId === 'warzywa') return 'Warzywa i owoce';
+            if (catId === 'mieso' || catId === 'pieczywo' || catId === 'ryby') return 'Mięso i świeże';
+            if (catId === 'nabial') return 'Lodówka i mrożonki';
+            if (catId === 'tluszcze') return 'Przyprawy i dodatki';
+            return itemCategory || 'Suche i makarony';
+        }
+
+        window.approveScraperItem = async (prodKey) => {
+            const item = window.appState.pendingScraper[prodKey];
+            if (!item) return;
+            const rawProdName = item.name || prodKey;
+            const initialKey = window.normalizeKey(window.cleanGenericFoodName(rawProdName));
+            const nameEl = document.getElementById(`verify-name-${initialKey}`);
+            const finalName = window.cleanGenericFoodName(nameEl ? nameEl.value.trim() : rawProdName);
+            const key = window.normalizeKey(finalName);
+
+            const inputEl = document.getElementById(`verify-price-${initialKey}`);
+            const finalPrice = inputEl ? parseFloat(inputEl.value) : Number(item.detectedPrice);
+            const storeLabel = item.store || (item.source ? item.source.replace(/^Promocja\s+/i, '').split('(')[0].trim() : 'Gazetka');
+            const dateRangeText = formatPromoDateRangePl(item.validFrom, item.validTo);
+            const weightLabel = resolveOfferWeight(item);
+            const catId = classifyVerifyFoodCategory(item, prodKey);
+
+            if (!isNaN(finalPrice) && finalPrice > 0) {
+                const existing = window.appState.pricebook[key];
+                const resolvedCategory = existing ? existing.category : mapVerifyCategoryToAppCategory(catId, item.category);
+                const resolvedUnit = key === 'jajka'
+                    ? '10 szt.'
+                    : (weightLabel || (existing ? existing.unit : "1 szt."));
+
+                const weightSlug = weightLabel ? '__' + window.stripDiacritics(weightLabel).replace(/[^a-z0-9]/g, '') : '';
+                const isStandardBaseUnit = !weightSlug || ['__1kg', '__1l', '__1szt', '__10szt'].includes(weightSlug);
+                const pbStorageKey = isStandardBaseUnit ? key : `${key}${weightSlug}`;
+                const pbDisplayName = key === 'jajka'
+                    ? 'Jajka'
+                    : (!isStandardBaseUnit && weightLabel ? `${finalName} (${weightLabel})` : finalName);
+
+                window.appState.deletedPricebookKeys = (window.appState.deletedPricebookKeys || []).filter(k => k !== pbStorageKey && k !== key);
+                window.appState.pricebook[pbStorageKey] = {
+                    name: pbDisplayName,
+                    unit: resolvedUnit,
+                    category: resolvedCategory,
+                    price: Number(finalPrice.toFixed(2)),
+                    basePrice: Number(finalPrice.toFixed(2)),
+                    promoPrice: Number(finalPrice.toFixed(2)),
+                    isPromo: true,
+                    promoValidFrom: item.validFrom || null,
+                    promoValidTo: item.validTo || null,
+                    store: `${storeLabel} (${dateRangeText})`
+                };
+            }
+            delete window.appState.pendingScraper[prodKey];
+            await saveKitchenChanges();
+            showToast(`Zatwierdzono do Cennika: <strong>${finalName}</strong>${weightLabel ? ` (${weightLabel})` : ''} — ${finalPrice.toFixed(2)} zł • ${storeLabel}`);
+        };
+
+        window.addScraperItemToShopping = async (prodKey) => {
+            const item = window.appState.pendingScraper[prodKey];
+            if (!item) return;
+
+            const rawProdName = item.name || prodKey;
+            const initialKey = window.normalizeKey(window.cleanGenericFoodName(rawProdName));
+            const nameEl = document.getElementById(`verify-name-${initialKey}`);
+            const finalName = window.cleanGenericFoodName(nameEl ? nameEl.value.trim() : rawProdName);
+            const key = window.normalizeKey(finalName);
+
+            const inputEl = document.getElementById(`verify-price-${initialKey}`);
+            const finalPrice = inputEl ? parseFloat(inputEl.value) : Number(item.detectedPrice || 0);
+            const storeLabel = getNormalizedVerifyStore(item);
+            const validFrom = item.validFrom || null;
+            const validTo = item.validTo || null;
+            const dateRangeText = formatPromoDateRangePl(validFrom, validTo);
+            const weightLabel = resolveOfferWeight(item);
+
+            const existingPb = window.appState.pricebook[key];
+            const catId = classifyVerifyFoodCategory(item, prodKey);
+            const shopCategory = existingPb?.category || mapVerifyCategoryToAppCategory(catId, item.category);
+            const resolvedUnit = key === 'jajka'
+                ? '10 szt.'
+                : (weightLabel || (existingPb ? existingPb.unit : "1 szt."));
+
+            if (!isNaN(finalPrice) && finalPrice > 0) {
+                window.appState.deletedPricebookKeys = (window.appState.deletedPricebookKeys || []).filter(k => k !== key);
+                window.appState.pricebook[key] = {
+                    name: key === 'jajka' ? 'Jajka' : finalName,
+                    unit: resolvedUnit,
+                    category: shopCategory,
+                    price: Number(finalPrice.toFixed(2)),
+                    basePrice: Number(finalPrice.toFixed(2)),
+                    promoPrice: Number(finalPrice.toFixed(2)),
+                    isPromo: true,
+                    promoValidFrom: validFrom,
+                    promoValidTo: validTo,
+                    store: `${storeLabel} (${dateRangeText})`
+                };
+            }
+
+            const displayShopName = weightLabel ? `${finalName} (${weightLabel})` : finalName;
+            const existingShop = window.appState.shopping.find(
+                s => !s.checked && window.normalizeKey(s.baseName || s.name) === key && (s.promoStore || '') === storeLabel
+            );
+
+            if (existingShop) {
+                existingShop.name = displayShopName;
+                existingShop.price = Number((finalPrice || 0).toFixed(2));
+                existingShop.promoStore = storeLabel;
+                existingShop.promoValidFrom = validFrom;
+                existingShop.promoValidTo = validTo;
+                existingShop.promoDateText = dateRangeText;
+            } else {
+                window.appState.shopping.unshift({
+                    id: 'shop_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+                    name: displayShopName,
+                    baseName: finalName,
+                    category: shopCategory,
+                    price: Number((finalPrice || 0).toFixed(2)),
+                    promoStore: storeLabel,
+                    promoValidFrom: validFrom,
+                    promoValidTo: validTo,
+                    promoDateText: dateRangeText,
+                    checked: false
+                });
+            }
+
+            delete window.appState.pendingScraper[prodKey];
+            await saveKitchenChanges();
+            showToast(`🛒 Dodano do Listy Zakupów: <strong>${displayShopName}</strong> (${storeLabel} • ${dateRangeText})`);
+        };
+
+        window.rejectScraperItem = async (prodKey) => {
+            delete window.appState.pendingScraper[prodKey];
+            await saveKitchenChanges();
+        };
+
+        window.approveAllPendingScraper = async () => {
+            const filteredEntries = getFilteredPendingEntries();
+            for (const [k] of filteredEntries) {
+                await window.approveScraperItem(k);
+            }
+        };
+
+        window.clearPendingScraper = async () => {
+            window.appState.pendingScraper = {};
+            await saveKitchenChanges();
+            showToast("Wyczyszczono poczekalnię.");
+        };
+
+        // ================= OBLICZENIA I PRZEPISY (LOKALNE + SPOŁECZNOŚĆ) =================
+        function calculateRecipeMetrics(recipe) {
+            let currentTotal = 0;
+            let missingIngredients = [];
+            let ownedCount = 0;
+
+            (recipe.ingredients || []).forEach(ing => {
+                if (window.isIgnoredStapleOrMicro(ing)) {
+                    ownedCount++;
+                    return;
+                }
+                const resolvedMatch = window.resolveIngredientPantryMatch(ing.name, false);
+                const effectiveKey = resolvedMatch ? resolvedMatch.matchedKey : window.normalizeKey(ing.name);
+                const pbItem = findBestPricebookEntryForRecipe(ing.name) || window.appState.pricebook[effectiveKey];
+                const activeP = calculateIngredientCostFromPricebook(ing, pbItem);
+                currentTotal += activeP;
+
+                const pantryEntry = resolvedMatch ? resolvedMatch.entry : null;
+                if (!pantryEntry) {
+                    missingIngredients.push({ ...ing, activePrice: activeP, reason: 'brak w spiżarni (stan: 0)' });
+                } else {
+                    const req = parseQuantityString(ing.amount, effectiveKey);
+                    const have = parseQuantityString(`${pantryEntry.qty} ${pantryEntry.unit}`, effectiveKey);
+                    const ratio = computeRatioBetweenAmounts(req, have, effectiveKey);
+                    const subLabel = resolvedMatch.isGroupSubstitute ? ` (${resolvedMatch.matchedName})` : '';
+                    if (ratio !== null && ratio > 1.02) {
+                        missingIngredients.push({ ...ing, activePrice: activeP, reason: `masz ${pantryEntry.qty} ${pantryEntry.unit}${subLabel}, potrzeba ${ing.amount}` });
+                    } else {
+                        ownedCount++;
+                    }
+                }
+            });
+
+            const recipeReviews = window.appState.reviews.filter(r => r.recipeId === recipe.id || r.recipeTitle === recipe.title);
+            const avgRating = recipeReviews.length > 0
+                ? (recipeReviews.reduce((acc, r) => acc + Number(r.rating), 0) / recipeReviews.length).toFixed(1)
+                : null;
+            const avgRealPortionCost = recipeReviews.length > 0
+                ? (recipeReviews.reduce((acc, r) => acc + Number(r.portionCost), 0) / recipeReviews.length).toFixed(2)
+                : null;
+
+            return {
+                currentTotal,
+                missingIngredients,
+                ownedCount,
+                totalIngredients: (recipe.ingredients || []).length,
+                isReadyFromPantry: missingIngredients.length === 0,
+                isAlmostReady: missingIngredients.length > 0 && missingIngredients.length <= 2,
+                avgRating,
+                avgRealPortionCost
+            };
+        }
+
+        const PRESET_RECIPE_TAGS = [
+            "Danie główne",
+            "Obiad jednogarnkowy",
+            "Makarony",
+            "Ryż i kasze",
+            "Zupy",
+            "Śniadanie / Kolacja",
+            "Desery",
+            "Przekąski / Sałatki",
+            "Wypieki i słodkości",
+            "Napoje / Koktajle",
+            "Na szybko",
+            "Wege"
+        ];
+
+        window.getRecipeAllTags = (recipe) => {
+            const set = new Set();
+            if (recipe && recipe.category) set.add(String(recipe.category).trim());
+            if (recipe && Array.isArray(recipe.tags)) {
+                recipe.tags.forEach(t => {
+                    const clean = String(t || '').trim();
+                    if (clean) set.add(clean);
+                });
+            }
+            return Array.from(set);
+        };
+
+        window.renderRecipeTagSelectorPills = (containerId, selectedTags = []) => {
+            const el = document.getElementById(containerId);
+            if (!el) return;
+            const normSelected = new Set((selectedTags || []).map(t => window.stripDiacritics(t)));
+            const allOptions = Array.from(new Set([...PRESET_RECIPE_TAGS, ...(selectedTags || [])]));
+
+            el.innerHTML = allOptions.map(tag => {
+                const isChecked = normSelected.has(window.stripDiacritics(tag));
+                return `
+                <button type="button" data-tag-val="${tag}" data-selected="${isChecked ? '1' : '0'}" onclick="toggleRecipeTagPill(this)" class="recipe-tag-pill px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all ${isChecked ? 'bg-emerald-500/25 text-emerald-300 border-emerald-500/50' : 'bg-slate-900 text-slate-400 border-slate-700 hover:border-slate-500'}">
+                    ${isChecked ? '✓ ' : '+ '}${tag}
+                </button>
+                `;
+            }).join('');
+        };
+
+        window.toggleRecipeTagPill = (btn) => {
+            const val = btn.dataset.tagVal;
+            const isActive = btn.dataset.selected === '1';
+            if (isActive) {
+                btn.dataset.selected = '0';
+                btn.className = 'recipe-tag-pill px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all bg-slate-900 text-slate-400 border-slate-700 hover:border-slate-500';
+                btn.textContent = `+ ${val}`;
+            } else {
+                btn.dataset.selected = '1';
+                btn.className = 'recipe-tag-pill px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all bg-emerald-500/25 text-emerald-300 border-emerald-500/50';
+                btn.textContent = `✓ ${val}`;
+            }
+        };
+
+        window.collectSelectedTagsFromContainer = (containerId, customInputId = null, primaryCategory = '') => {
+            const tags = new Set();
+            if (primaryCategory) tags.add(primaryCategory.trim());
+            const container = document.getElementById(containerId);
+            if (container) {
+                container.querySelectorAll('.recipe-tag-pill[data-selected="1"]').forEach(btn => {
+                    if (btn.dataset.tagVal) tags.add(btn.dataset.tagVal.trim());
+                });
+            }
+            if (customInputId) {
+                const customVal = (document.getElementById(customInputId)?.value || '').trim();
+                if (customVal) {
+                    customVal.split(',').forEach(part => {
+                        const clean = part.trim();
+                        if (clean) tags.add(clean.charAt(0).toUpperCase() + clean.slice(1));
+                    });
+                }
+            }
+            return Array.from(tags);
+        };
+
+        window.setRecipeTypeTagFilter = (tagVal) => {
+            window.appState.currentRecipeCategoryTagFilter = tagVal;
+            renderRecipes();
+        };
+
+        window.setRecipeFilter = (filter) => {
+            window.appState.currentFilter = filter;
+            document.querySelectorAll('.filter-chip').forEach(btn => {
+                const isActive = btn.dataset.filter === filter;
+                btn.className = isActive
+                    ? 'filter-chip px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap bg-emerald-500 text-slate-950 transition-all'
+                    : 'filter-chip px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap bg-[#1e293b] text-slate-300 border border-slate-700 hover:border-emerald-500/50 transition-all';
+            });
+            renderRecipes();
+        };
+
+        window.renderRecipes = () => {
+            const grid = document.getElementById('recipes-grid');
+            const tagBar = document.getElementById('recipe-type-tag-bar');
+            const query = document.getElementById('recipe-search').value.toLowerCase().trim();
+            const filter = window.appState.currentFilter;
+            const activeTypeTag = window.appState.currentRecipeCategoryTagFilter || 'all';
+
+            const localRecs = (window.appState.recipes || []).map(r => ({
+                ...r,
+                isPublicCommunity: false,
+                sharedPublicDocId: `${window.appState.kitchenCode}_${r.id}`
+            }));
+
+            const otherCommunityRecs = (window.appState.publicRecipes || [])
+                .filter(p => p.sourceKitchen !== window.appState.kitchenCode)
+                .map(p => ({ ...p, id: p.publicId, isPublicCommunity: true }));
+
+            const commCountEl = document.getElementById('chip-community-count');
+            if (commCountEl) commCountEl.textContent = otherCommunityRecs.length;
+
+            let combined = filter === 'community'
+                ? otherCommunityRecs
+                : [...localRecs, ...otherCommunityRecs];
+
+            // Zbierz wszystkie używane typy/tagi do paska filtrowania
+            if (tagBar) {
+                const tagCounts = {};
+                combined.forEach(r => {
+                    window.getRecipeAllTags(r).forEach(t => {
+                        tagCounts[t] = (tagCounts[t] || 0) + 1;
+                    });
+                });
+                const orderedTags = [
+                    ...PRESET_RECIPE_TAGS.filter(t => tagCounts[t] > 0 || t === 'Desery'),
+                    ...Object.keys(tagCounts).filter(t => !PRESET_RECIPE_TAGS.includes(t))
+                ];
+
+                tagBar.innerHTML = [
+                    `<button type="button" onclick="setRecipeTypeTagFilter('all')" class="px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${activeTypeTag === 'all' ? 'bg-sky-500 text-slate-950 font-bold' : 'bg-slate-900/90 text-slate-400 border border-slate-800 hover:text-slate-200'}">Wszystkie typy (${combined.length})</button>`,
+                    ...orderedTags.map(t => {
+                        const isAct = window.stripDiacritics(activeTypeTag) === window.stripDiacritics(t);
+                        const cnt = tagCounts[t] || 0;
+                        const icon = t === 'Desery' ? '🍰 ' : t === 'Zupy' ? '🍲 ' : t === 'Makarony' ? '🍝 ' : t === 'Śniadanie / Kolacja' ? '🍳 ' : '';
+                        return `<button type="button" onclick="setRecipeTypeTagFilter('${t.replace(/'/g, "\\'")}')" class="px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${isAct ? 'bg-sky-500 text-slate-950 font-bold shadow-sm' : 'bg-slate-900/90 text-slate-300 border border-slate-800 hover:border-slate-600'}">${icon}${t} (${cnt})</button>`;
+                    })
+                ].join('');
+            }
+
+            let enriched = combined.map(r => ({ recipe: r, metrics: calculateRecipeMetrics(r) }));
+
+            if (activeTypeTag !== 'all') {
+                const normTargetTag = window.stripDiacritics(activeTypeTag);
+                enriched = enriched.filter(({ recipe }) =>
+                    window.getRecipeAllTags(recipe).some(t => window.stripDiacritics(t) === normTargetTag)
+                );
+            }
+
+            if (query) {
+                enriched = enriched.filter(({ recipe }) =>
+                    recipe.title.toLowerCase().includes(query) ||
+                    (recipe.sharedBy || '').toLowerCase().includes(query) ||
+                    (recipe.originalAuthor || '').toLowerCase().includes(query) ||
+                    window.getRecipeAllTags(recipe).some(t => t.toLowerCase().includes(query)) ||
+                    (recipe.ingredients || []).some(i => i.name.toLowerCase().includes(query))
+                );
+            }
+            if (filter === 'pantry') enriched = enriched.filter(({ metrics }) => metrics.isReadyFromPantry || metrics.isAlmostReady);
+            else if (filter === 'rated') enriched = enriched.filter(({ metrics }) => metrics.avgRating !== null);
+
+            enriched.sort((a, b) => {
+                if (filter === 'by_type') {
+                    const catCmp = String(a.recipe.category || 'Inne').localeCompare(String(b.recipe.category || 'Inne'), 'pl');
+                    if (catCmp !== 0) return catCmp;
+                    return a.recipe.title.localeCompare(b.recipe.title, 'pl');
+                }
+                if (filter === 'rated') return (Number(b.metrics.avgRating) || 0) - (Number(a.metrics.avgRating) || 0);
+                if (filter === 'cheap') return a.metrics.currentTotal - b.metrics.currentTotal;
+                return a.metrics.missingIngredients.length - b.metrics.missingIngredients.length;
+            });
+
+            if (enriched.length === 0) {
+                grid.innerHTML = `<div class="col-span-full text-center py-12 bg-[#1e293b] rounded-2xl border border-slate-800">
+                    <p class="text-slate-400 text-sm">Brak przepisów spełniających wybrane kryteria.</p>
+                </div>`;
+                return;
+            }
+
+            grid.innerHTML = enriched.map(({ recipe, metrics }) => {
+                const isPublic = !!recipe.isPublicCommunity;
+                const isAlreadySharedByMe = !isPublic && (window.appState.publicRecipes || []).some(p => p.publicId === recipe.sharedPublicDocId);
+                const allTags = window.getRecipeAllTags(recipe);
+                const extraTags = allTags.filter(t => t !== (recipe.category || 'Obiad'));
+                const authorTag = isPublic
+                    ? `<span class="px-2.5 py-0.5 rounded-md bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 text-[11px] font-bold">🌍 Od: ${recipe.sharedBy || 'Inna kuchnia'}</span>`
+                    : isAlreadySharedByMe
+                    ? `<span class="px-2.5 py-0.5 rounded-md bg-sky-500/20 text-sky-300 text-[11px] font-bold">🌍 Udostępniony</span>`
+                    : recipe.originalAuthor
+                    ? `<span class="px-2.5 py-0.5 rounded-md bg-indigo-500/15 text-indigo-300 text-[11px] font-medium">📥 Od: ${recipe.originalAuthor}</span>`
+                    : '';
+
+                return `
+                <div class="bg-[#1e293b] rounded-2xl border ${isPublic ? 'border-indigo-500/40' : metrics.isReadyFromPantry ? 'border-teal-500/40' : 'border-slate-800'} p-5 flex flex-col justify-between transition-all hover:border-slate-600">
+                    <div>
+                        <div class="flex flex-wrap items-center gap-1.5 mb-3">
+                            <span class="px-2.5 py-0.5 rounded-md bg-slate-800 text-slate-200 text-[11px] font-semibold">${recipe.category || 'Obiad'}</span>
+                            ${extraTags.map(t => `<span class="px-2 py-0.5 rounded-md bg-sky-500/15 text-sky-300 border border-sky-500/25 text-[10px] font-semibold">#${t}</span>`).join('')}
+                            ${authorTag}
+                            ${metrics.isReadyFromPantry ? `<span class="px-2.5 py-0.5 rounded-md bg-teal-500/20 text-teal-300 text-[11px] font-bold">✅ Masz 100% w domu</span>` : ''}
+                            ${metrics.avgRating ? `<span class="px-2.5 py-0.5 rounded-md bg-amber-500/20 text-amber-400 text-[11px] font-bold">⭐ ${metrics.avgRating}</span>` : ''}
+                        </div>
+
+                        <h3 onclick="openRecipeDetail('${recipe.id}', ${isPublic})" class="text-lg font-bold text-white hover:text-emerald-400 cursor-pointer transition-colors leading-snug">${recipe.title}</h3>
+
+                        <div class="mt-4 pt-3 border-t border-slate-800/80 grid grid-cols-2 gap-2 text-xs">
+                            <div>
+                                <span class="text-slate-400 block">Koszt wg Twojego Cennika:</span>
+                                <span class="text-base font-extrabold text-white mt-0.5 block">${metrics.currentTotal.toFixed(2)} zł</span>
+                            </div>
+                            <div>
+                                <span class="text-slate-400 block">${metrics.avgRealPortionCost ? 'Rzeczywista porcja:' : 'Czas / Porcje:'}</span>
+                                <span class="text-sm font-bold ${metrics.avgRealPortionCost ? 'text-amber-400' : 'text-slate-200'} mt-0.5 block">
+                                    ${metrics.avgRealPortionCost ? `${metrics.avgRealPortionCost} zł / os.` : `${recipe.time || 25} min • ${recipe.portions || 4} porc.`}
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="mt-3 text-xs">
+                            <div class="flex justify-between text-slate-400 mb-1">
+                                <span>W Twojej spiżarni: ${metrics.ownedCount}/${metrics.totalIngredients}</span>
+                                <span>${metrics.missingIngredients.length === 0 ? 'Komplet!' : `Brakuje: ${metrics.missingIngredients.length}`}</span>
+                            </div>
+                            <div class="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                                <div class="h-full bg-emerald-500 rounded-full" style="width: ${metrics.totalIngredients > 0 ? Math.round((metrics.ownedCount / metrics.totalIngredients) * 100) : 0}%"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-5 pt-3 border-t border-slate-800 flex items-center gap-2">
+                        <button onclick="openRecipeDetail('${recipe.id}', ${isPublic})" class="flex-1 py-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold transition-colors">Przepis</button>
+                        ${!isPublic ? `<button onclick="openEditRecipeModal('${recipe.id}')" title="Edytuj przepis (np. zmień składnik)" class="py-2 px-2.5 rounded-xl bg-slate-800 hover:bg-indigo-500/20 text-slate-300 hover:text-indigo-300 border border-slate-700 text-xs font-semibold transition-colors">✏️</button>` : ''}
+                        ${metrics.missingIngredients.length > 0 ? `
+                            <button onclick="addMissingToShopping('${recipe.id}', ${isPublic})" class="py-2 px-3 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-400 border border-emerald-500/30 text-xs font-semibold transition-colors">
+                                + Zakupy (${metrics.missingIngredients.length})
+                            </button>
+                        ` : ''}
+                        ${isPublic
+                            ? `<button onclick="saveCommunityRecipeToMyKitchen('${recipe.publicId}')" title="Zapisz kopię przepisu w swojej kuchni" class="py-2 px-3 rounded-xl bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 border border-indigo-500/40 text-xs font-semibold transition-colors">📥 Zapisz u siebie</button>`
+                            : `<button onclick="openReviewModal('${recipe.id}', false)" class="py-2 px-3 rounded-xl ${metrics.isReadyFromPantry ? 'bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border-amber-500/40' : 'bg-slate-800/80 text-slate-400 border-slate-700'} border text-xs font-semibold transition-colors">
+                                ${metrics.isReadyFromPantry ? '🍳 Ugotuj' : '🔒 Brak zapasów'}
+                               </button>`
+                        }
+                    </div>
+                </div>
+                `;
+            }).join('');
+        };
+
+        window.openRecipeDetail = (recipeId, isPublic = false) => {
+            const recipe = isPublic
+                ? (window.appState.publicRecipes || []).find(r => r.publicId === recipeId)
+                : (window.appState.recipes || []).find(r => r.id === recipeId);
+            if (!recipe) return;
+
+            const metrics = calculateRecipeMetrics(recipe);
+            const recipeReviews = window.appState.reviews.filter(r => r.recipeId === recipe.id || r.recipeTitle === recipe.title);
+            const publicDocId = isPublic ? recipe.publicId : `${window.appState.kitchenCode}_${recipe.id}`;
+            const isSharedByMe = !isPublic && (window.appState.publicRecipes || []).some(p => p.publicId === publicDocId);
+
+            document.getElementById('recipe-detail-content').innerHTML = `
+                <div class="pr-8">
+                    <div class="flex flex-wrap items-center gap-2">
+                        <span class="px-2.5 py-1 rounded-md bg-emerald-500/15 text-emerald-400 text-xs font-bold">${recipe.category || 'Obiad'}</span>
+                        ${window.getRecipeAllTags(recipe).filter(t => t !== (recipe.category || 'Obiad')).map(t => `<span class="px-2 py-0.5 rounded-md bg-sky-500/15 text-sky-300 border border-sky-500/30 text-xs font-semibold">#${t}</span>`).join('')}
+                        ${isPublic
+                            ? `<span class="px-2.5 py-1 rounded-md bg-indigo-500/20 text-indigo-300 text-xs font-bold">🌍 Udostępniony przez: ${recipe.sharedBy || 'Inna kuchnia'}</span>`
+                            : isSharedByMe
+                            ? `<span class="px-2.5 py-1 rounded-md bg-sky-500/20 text-sky-300 text-xs font-bold">🌍 Widoczny dla innych kuchni jako: ${window.appState.kitchenLabel}</span>`
+                            : ''
+                        }
+                    </div>
+                    <h2 class="text-2xl font-extrabold text-white mt-2">${recipe.title}</h2>
+                    <div class="flex flex-wrap gap-4 text-xs text-slate-400 mt-2">
+                        <span>⏱️ Czas: <strong class="text-slate-200">${recipe.time || 25} min</strong></span>
+                        <span>🍽️ Porcje: <strong class="text-slate-200">${recipe.portions || 4}</strong></span>
+                        <span>💰 Koszt całości: <strong class="text-emerald-400">${metrics.currentTotal.toFixed(2)} zł</strong></span>
+                    </div>
+                </div>
+
+                <div class="mt-6">
+                    <div class="flex items-center justify-between mb-2">
+                        <h4 class="text-sm font-bold uppercase tracking-wider text-slate-300">Składniki (kliknij, aby przełączyć w spiżarni)</h4>
+                        ${metrics.missingIngredients.length > 0 ? `<button onclick="addMissingToShopping('${recipeId}', ${isPublic})" class="text-xs font-bold text-emerald-400 hover:underline">+ Dodaj brakujące do zakupów</button>` : ''}
+                    </div>
+                    <div class="space-y-2">
+                        ${(recipe.ingredients || []).map(ing => {
+                            if (window.isIgnoredStapleOrMicro(ing)) {
+                                return `
+                                <div class="flex items-center justify-between p-2.5 rounded-xl border bg-slate-900/40 border-slate-800/70 opacity-75">
+                                    <div class="flex items-center gap-2.5 flex-wrap">
+                                        <span class="w-5 h-5 rounded-md flex items-center justify-center text-xs bg-slate-800 text-emerald-400 font-bold">~</span>
+                                        <span class="text-sm font-medium text-slate-300">${ing.name}</span>
+                                        <span class="text-xs text-slate-400">(${ing.amount})</span>
+                                        <span class="text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-400">Podstawa kuchenna (pominięto w koszcie)</span>
+                                    </div>
+                                    <span class="text-xs font-semibold text-slate-500">0.00 zł</span>
+                                </div>
+                                `;
+                            }
+                            const resolvedMatch = window.resolveIngredientPantryMatch(ing.name, true);
+                            const key = resolvedMatch ? resolvedMatch.matchedKey : window.normalizeKey(ing.name);
+                            const pantryEntry = resolvedMatch ? resolvedMatch.entry : null;
+                            const hasPositive = pantryEntry && pantryEntry.qty > 0;
+                            const isMissingThis = metrics.missingIngredients.some(m => m.name === ing.name);
+                            const inPantry = hasPositive && !isMissingThis;
+                            const pb = window.appState.pricebook[key] || window.appState.pricebook[window.normalizeKey(ing.name)];
+                            const portionPrice = calculateIngredientCostFromPricebook(ing, pb);
+                            const subBadge = (resolvedMatch && resolvedMatch.isGroupSubstitute && hasPositive)
+                                ? `<span class="text-[11px] px-2 py-0.5 rounded bg-sky-500/20 text-sky-300 font-semibold">🔄 W domu: ${resolvedMatch.matchedName} (${pantryEntry.qty} ${pantryEntry.unit})</span>`
+                                : (pantryEntry ? `<span class="text-[11px] px-2 py-0.5 rounded ${inPantry ? 'bg-emerald-500/20 text-emerald-300' : hasPositive ? 'bg-amber-500/20 text-amber-300' : 'bg-red-500/20 text-red-300'} font-mono">W domu: ${pantryEntry.qty} ${pantryEntry.unit}</span>` : '');
+                            return `
+                            <div onclick="togglePantryItem('${key}')" class="flex items-center justify-between p-2.5 rounded-xl border cursor-pointer transition-all ${inPantry ? 'bg-emerald-950/30 border-emerald-500/40' : hasPositive ? 'bg-amber-950/25 border-amber-500/40' : 'bg-slate-900/80 border-slate-800 hover:border-slate-700'}">
+                                <div class="flex items-center gap-2.5 flex-wrap">
+                                    <span class="w-5 h-5 rounded-md flex items-center justify-center text-xs ${inPantry ? 'bg-emerald-500 text-slate-950 font-bold' : hasPositive ? 'bg-amber-500 text-slate-950 font-bold' : 'bg-slate-800 text-slate-500'}">${inPantry ? '✓' : hasPositive ? '!' : ''}</span>
+                                    <span class="text-sm font-medium ${inPantry ? 'text-emerald-200' : 'text-slate-200'}">${ing.name}</span>
+                                    <span class="text-xs text-slate-400">(${ing.amount})</span>
+                                    ${subBadge}
+                                </div>
+                                <div class="text-right shrink-0">
+                                    <span class="text-xs font-bold text-slate-300">${portionPrice.toFixed(2)} zł</span>
+                                    ${pb && pb.unit ? `<span class="block text-[10px] text-slate-500">(${Number(pb.price).toFixed(2)} zł / ${pb.unit})</span>` : ''}
+                                </div>
+                            </div>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>
+
+                <div class="mt-6">
+                    <h4 class="text-sm font-bold uppercase tracking-wider text-slate-300 mb-2">Przygotowanie krok po kroku</h4>
+                    <ol class="space-y-2.5 text-sm text-slate-300 list-decimal list-inside bg-slate-900/60 p-4 rounded-xl border border-slate-800">
+                        ${(recipe.steps || []).map(step => `<li class="leading-relaxed">${step}</li>`).join('')}
+                    </ol>
+                </div>
+
+                ${recipeReviews.length > 0 ? `
+                    <div class="mt-6">
+                        <h4 class="text-sm font-bold uppercase tracking-wider text-amber-400 mb-2">Wasze poprzednie wykonania (${recipeReviews.length})</h4>
+                        <div class="space-y-2">
+                            ${recipeReviews.map(rev => `
+                                <div class="p-3 rounded-xl bg-slate-900 border border-slate-800 text-xs">
+                                    <div class="flex justify-between font-bold">
+                                        <span class="text-amber-400">${'⭐'.repeat(rev.rating)} (${rev.cost} zł za ${rev.dinnersForTwo} obiady dla 2 os.)</span>
+                                        <span class="text-emerald-400">${Number(rev.portionCost).toFixed(2)} zł / porcja</span>
+                                    </div>
+                                    ${rev.note ? `<p class="text-slate-300 mt-1 italic">"${rev.note}"</p>` : ''}
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                ` : ''}
+
+                <div class="mt-6 pt-4 border-t border-slate-800 flex flex-wrap justify-between items-center gap-3">
+                    <div class="flex flex-wrap gap-2">
+                        ${!isPublic ? `
+                            <button onclick="openEditRecipeModal('${recipe.id}')" class="px-3.5 py-2.5 rounded-xl bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 border border-indigo-500/40 text-xs font-bold">✏️ Edytuj przepis</button>
+                            <button onclick="deleteRecipe('${recipe.id}')" class="px-3.5 py-2.5 rounded-xl bg-red-950/40 hover:bg-red-900/60 text-red-400 text-xs font-semibold">Usuń przepis</button>
+                            ${isSharedByMe
+                                ? `<button onclick="unshareRecipeFromCommunity('${publicDocId}', '${recipe.id}')" class="px-3.5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-500/30 text-xs font-semibold">🔒 Cofnij udostępnienie</button>`
+                                : `<button onclick="shareRecipeToCommunity('${recipe.id}')" class="px-3.5 py-2.5 rounded-xl bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 border border-indigo-500/40 text-xs font-bold">🌍 Udostępnij innym kuchniom</button>`
+                            }
+                        ` : `
+                            <button onclick="saveCommunityRecipeToMyKitchen('${recipe.publicId}')" class="px-4 py-2.5 rounded-xl bg-indigo-500 hover:bg-indigo-400 text-white text-xs font-bold">📥 Zapisz u siebie w kuchni</button>
+                        `}
+                    </div>
+
+                    <div class="flex flex-wrap gap-2">
+                        <button onclick="freezeFromRecipe('${recipeId}', ${isPublic})" class="px-4 py-2.5 rounded-xl bg-sky-500/20 hover:bg-sky-500/30 text-sky-300 border border-sky-500/30 font-bold text-xs sm:text-sm">❄️ Zamroź porcje</button>
+                        ${metrics.isReadyFromPantry
+                            ? `<button onclick="closeModal('modal-recipe-detail'); openReviewModal('${recipeId}', ${isPublic})" class="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs sm:text-sm">🍳 Ugotowane! Odejmij ze spiżarni i oceń</button>`
+                            : `<button onclick="addMissingToShopping('${recipeId}', ${isPublic})" title="Uzupełnij brakujące składniki w spiżarni, aby ugotować" class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-500/40 font-bold text-xs sm:text-sm">🔒 Brakuje ${metrics.missingIngredients.length} składników (+ Zakupy)</button>`
+                        }
+                    </div>
+                </div>
+            `;
+            document.getElementById('modal-recipe-detail').classList.remove('hidden');
+        };
+
+        // ================= DODAWANIE PRZEPISÓW (LINK URL + AI + LOKALNY PARSER) =================
+        window.setAddRecipeMode = (mode) => {
+            const aiPanel = document.getElementById('add-recipe-ai-panel');
+            const manPanel = document.getElementById('add-recipe-manual-panel');
+            const btnAi = document.getElementById('btn-mode-ai');
+            const btnMan = document.getElementById('btn-mode-manual');
+
+            if (mode === 'ai') {
+                aiPanel.classList.remove('hidden');
+                manPanel.classList.add('hidden');
+                btnAi.className = 'py-2 rounded-lg text-sm font-bold bg-emerald-500 text-slate-950 transition-all';
+                btnMan.className = 'py-2 rounded-lg text-sm font-bold text-slate-400 hover:text-white transition-all';
+            } else {
+                aiPanel.classList.add('hidden');
+                manPanel.classList.remove('hidden');
+                btnMan.className = 'py-2 rounded-lg text-sm font-bold bg-emerald-500 text-slate-950 transition-all';
+                btnAi.className = 'py-2 rounded-lg text-sm font-bold text-slate-400 hover:text-white transition-all';
+            }
+        };
+
+        function sanitizeScrapedRecipeMarkdown(rawMarkdown) {
+            let text = String(rawMarkdown || '');
+
+            // Wyciągnij tytuł z nagłówka r.jina.ai ("Title: Zupa meksykańska - AniaGotuje.pl")
+            let extractedTitle = '';
+            const titleMatch = text.match(/^Title:\s*(.+)$/m);
+            if (titleMatch) {
+                extractedTitle = titleMatch[1]
+                    .replace(/\s*[-|–—]\s*(AniaGotuje\.pl|Kwestia Smaku|PrzyslijPrzepis\.pl|Doradca Smaku|Moje Wypieki|Poprostupycha).*$/i, '')
+                    .replace(/\s*przepis\s*$/i, '')
+                    .trim();
+            }
+
+            // Odetnij nagłówki techniczne r.jina.ai
+            const mdStartIdx = text.indexOf('Markdown Content:');
+            if (mdStartIdx !== -1) {
+                text = text.slice(mdStartIdx + 'Markdown Content:'.length);
+            }
+
+            // Usuń obrazki markdown [![...](...)](...) oraz ![...](...)
+            text = text.replace(/\[!\[[^\]]*\]\([^)]*\)\]\([^)]*\)/g, ' ');
+            text = text.replace(/!\[[^\]]*\]\([^)]*\)/g, ' ');
+
+            // Zamień linki markdown [Tekst](https://...) na sam Tekst, a puste [](https://...) usuń całkowicie
+            text = text.replace(/\[\s*\]\([^)]*\)/g, ' ');
+            text = text.replace(/\[([^\]]+)\]\([^)]*\)/g, '$1');
+
+            // Podziel na linie i odfiltruj śmieci nawigacyjne (pigułki kategorii, social media, cookies)
+            const navNoisePatterns = [
+                /^(facebook|instagram|youtube|tiktok|pinterest|losuj\s*!|szukaj|menu|zaloguj|rejestracja|polityka prywatności|regulamin|ciasteczka|cookies|udostępnij|drukuj|zapisz przepis|oceń przepis|dodaj komentarz|wszystkie przepisy|kategorie|pomysł na)/i,
+                /^(obiad|śniadanie|kolacja|desery|ciasta|zupy|sałatki|przekąski|napoje|wegetariańskie|bez glutenu|cynamonki|dynia|jabłka|rogale)$/i
+            ];
+
+            let cleanedLines = text
+                .split('\n')
+                .map(l => l.replace(/\s+/g, ' ').trim())
+                .filter(l => {
+                    if (!l) return false;
+                    if (/^[-=*_]{3,}$/.test(l)) return false;
+                    if (/^https?:\/\//i.test(l)) return false;
+                    const plain = l.replace(/^#+\s*/, '').replace(/^[*•-]+\s*/, '').trim();
+                    if (!plain || plain.length < 2) return false;
+                    if (navNoisePatterns.some(rx => rx.test(plain))) return false;
+                    return true;
+                });
+
+            // Jeśli na górze nadal jest menu przed głównym nagłówkiem H1 (# Tytuł) lub sekcją Składniki, przeskocz bezpośrednio do przepisu!
+            const h1Idx = cleanedLines.findIndex(l => /^#\s+/.test(l) || (extractedTitle && l.toLowerCase().includes(extractedTitle.toLowerCase())));
+            const ingIdx = cleanedLines.findIndex(l => /^(?:#+\s*)?(?:składniki|skladniki|czego potrzebujesz)/i.test(l));
+            let startIdx = 0;
+            if (h1Idx > 0 && h1Idx < 60) startIdx = h1Idx;
+            else if (ingIdx > 5 && ingIdx < 80) startIdx = Math.max(0, ingIdx - 5);
+
+            cleanedLines = cleanedLines.slice(startIdx);
+
+            // Odetnij sekcję komentarzy i podobnych przepisów na dole strony
+            const endIdx = cleanedLines.findIndex((l, idx) => idx > 8 && /^(?:#+\s*)?(?:komentarze|wasze zdjęcia|podobne przepisy|polecane przepisy|zobacz również|zobacz także|może cię zainteresować)/i.test(l));
+            if (endIdx !== -1) {
+                cleanedLines = cleanedLines.slice(0, endIdx);
+            }
+
+            const finalBody = cleanedLines.join('\n');
+            return extractedTitle ? `TYTUŁ PRZEPISU: ${extractedTitle}\n\n${finalBody}` : finalBody;
+        }
+
+        async function fetchWebpageReadableText(targetUrl) {
+            try {
+                const jinaResp = await fetch(`https://r.jina.ai/${targetUrl}`, { headers: { 'Accept': 'text/plain' } });
+                if (jinaResp.ok) {
+                    const txt = await jinaResp.text();
+                    if (txt && txt.length > 150) {
+                        const sanitized = sanitizeScrapedRecipeMarkdown(txt);
+                        if (sanitized.length > 120) return sanitized.slice(0, 16000);
+                    }
+                }
+            } catch (_) {}
+
+            const proxyResp = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`);
+            if (!proxyResp.ok) throw new Error("Nie udało się pobrać strony.");
+            const data = await proxyResp.json();
+            const docParser = new DOMParser().parseFromString(data.contents || "", "text/html");
+            const pageTitle = (docParser.querySelector('h1')?.innerText || docParser.title || '').trim();
+            docParser.querySelectorAll("script, style, nav, footer, header, aside, .comments, #comments").forEach(el => el.remove());
+            const cleanText = (docParser.body?.innerText || "").replace(/\n{3,}/g, "\n\n").trim();
+            if (cleanText.length < 100) throw new Error("Strona jest pusta lub zablokowana.");
+            const combined = pageTitle ? `TYTUŁ PRZEPISU: ${pageTitle}\n\n${cleanText}` : cleanText;
+            return combined.slice(0, 16000);
+        }
+
+        function parseRecipeLocallyFromText(rawText) {
+            const sanitizedText = rawText.includes('Markdown Content:') || /\]\(https?:\/\//.test(rawText)
+                ? sanitizeScrapedRecipeMarkdown(rawText)
+                : rawText;
+
+            let explicitTitle = '';
+            const expMatch = sanitizedText.match(/^TYTUŁ PRZEPISU:\s*(.+)$/m);
+            if (expMatch) explicitTitle = expMatch[1].trim();
+
+            const rawLines = sanitizedText
+                .split('\n')
+                .map(l => l.replace(/\*\*/g, '').trim())
+                .filter(l => l && !l.startsWith('TYTUŁ PRZEPISU:') && !l.startsWith('Title:') && !l.startsWith('URL Source:') && !l.startsWith('Źródło:'));
+
+            const cleanLine = (l) => l.replace(/^#+\s*/, '').replace(/^[-•*]\s*/, '').trim();
+            const title = (explicitTitle || cleanLine(rawLines[0] || "Nowy przepis z linku")).slice(0, 85);
+
+            // Wyciągnij czas i liczbę porcji jeśli występują
+            let detectedTime = 30;
+            let detectedPortions = 4;
+            const prepM = sanitizedText.match(/Czas przygotowania:\s*(\d+)/i);
+            const cookM = sanitizedText.match(/Czas gotowania(?:\s+zupy)?:\s*(\d+)/i);
+            if (prepM || cookM) {
+                detectedTime = (prepM ? parseInt(prepM[1], 10) : 0) + (cookM ? parseInt(cookM[1], 10) : 0);
+            }
+            const mlM = sanitizedText.match(/Liczba porcji:\s*(\d{3,4})\s*ml/i);
+            const porM = sanitizedText.match(/Liczba porcji:\s*(\d{1,2})\b/i);
+            if (mlM) detectedPortions = Math.max(2, Math.round(parseInt(mlM[1], 10) / 450));
+            else if (porM) detectedPortions = parseInt(porM[1], 10);
+
+            let mode = 'none';
+            const ingLines = [], stepLines = [];
+
+            const stopFooterRegex = /^(średnia\s+\d|oceń!|dodaj notatkę|powrót|dziękuję za wspólne gotowanie|komentarze|powiązane|podobne przepisy|zobacz podobne|zobacz także|udostępnij|wasze zdjęcia|zostaw mi swój email)/i;
+            const uiButtonRegex = /^(kopiuj|nie wygaszaj ekranu|ukryj zdjęcia|pokaż zdjęcia|drukuj przepis)$/i;
+
+            for (let i = 0; i < rawLines.length; i++) {
+                const rawLine = rawLines[i];
+                const isHeading = /^#{1,4}\s+/.test(rawLine);
+                const line = cleanLine(rawLine);
+                const low = line.toLowerCase();
+
+                if (stopFooterRegex.test(low)) break;
+                // Odrzuć pasek tagów z kropkami "bulion · cebula · chili · cukier..."
+                if ((line.match(/·/g) || []).length >= 3) break;
+                if (uiButtonRegex.test(low)) {
+                    if (mode === 'ing') mode = 'pre_steps';
+                    continue;
+                }
+
+                // Start sekcji składników
+                if (/^(składniki|skladniki|czego potrzebujesz)$/i.test(low)) {
+                    mode = 'ing';
+                    continue;
+                }
+                if (mode === 'ing' && /^składniki:/i.test(low)) {
+                    mode = 'pre_steps';
+                    continue;
+                }
+                if (mode === 'ing' && /^na\s+[a-ząćęłńóśźż\s]{3,28}:$/i.test(low)) {
+                    continue;
+                }
+
+                // Start sekcji przygotowania (w tym nagłówki H3 na Aniagotuje typu "### Zupa meksykańska przepis")
+                if (/^(przygotowanie|sposób przygotowania|wykonanie|instrukcja|krok po kroku)/i.test(low) || (isHeading && /przepis$/i.test(low) && ingLines.length > 0)) {
+                    mode = 'steps';
+                    continue;
+                }
+
+                if (mode === 'ing') {
+                    if (isHeading || line.length > 110) {
+                        mode = 'pre_steps';
+                    } else {
+                        ingLines.push(line);
+                        continue;
+                    }
+                }
+
+                if (mode === 'steps') {
+                    if (isHeading && !/przepis/i.test(low)) continue;
+                    // Pomiń luźne porady/wstępy meta jeśli krok jest bardzo krótki
+                    if (line.length < 22) continue;
+                    const cleanedStep = line.replace(/^_?Porada_?:\s*/i, 'Porada: ').replace(/^\d+[\.\)]\s*/, '');
+                    stepLines.push(cleanedStep);
+                }
+            }
+
+            // Fallback jeśli strona nie miała wyraźnego nagłówka "Przygotowanie"
+            if (stepLines.length === 0) {
+                for (const rawLine of rawLines) {
+                    const line = cleanLine(rawLine);
+                    const low = line.toLowerCase();
+                    if (stopFooterRegex.test(low) || (line.match(/·/g) || []).length >= 3) break;
+                    if (line.length > 55 && !/^(czas przygotowania|czas gotowania|liczba porcji|w 100 ml|szklanka ma u mnie|warzywa ważone były|kalorie policzone)/i.test(low)) {
+                        stepLines.push(line);
+                    }
+                }
+            }
+
+            const formattedIngredients = (ingLines.length > 0 ? ingLines : ["Składnik główny | 1 porcja | 5.00"]).slice(0, 30).map(item => {
+                // Usuń nawiasy opisowe np. "(waga z zalewą)", "(można pominąć)" z nazwy składnika
+                const noParens = item.replace(/\([^)]*\)/g, '').replace(/\s+/g, ' ').trim();
+                // Format Aniagotuje: "1 duża cebula - 220 g" albo "fasola czerwona z puszki - 400 g"
+                const dashSplit = noParens.split(/\s+[-–—]\s+/);
+                if (dashSplit.length === 2) {
+                    const left = dashSplit[0].trim();
+                    const right = dashSplit[1].trim();
+                    const leftAmt = left.match(/^(\d+(?:[.,]\d+)?\s*(?:g|kg|ml|l|szt\.?|łyżk[ia]?|łyżeczk[ia]?|szklank[ia]?|puszk[ia]?|ząbk[iów]?|opak\.?))/i);
+                    if (leftAmt) {
+                        const rawName = left.replace(leftAmt[0], '').replace(/^(duża|duży|duże|średnia|średni|średnie|mała|mały|małe)\s+/i, '').trim();
+                        const nomName = window.toPolishNominativeFoodName(rawName || left);
+                        return `${nomName} | ${/\d+\s*(g|kg|ml|l)/i.test(right) ? right : leftAmt[1]} | 3.50`;
+                    }
+                    if (/\d/.test(right)) {
+                        return `${window.toPolishNominativeFoodName(left)} | ${right} | 3.50`;
+                    }
+                }
+                const amountMatch = noParens.match(/(\d+(?:[.,]\d+)?\s*(?:g|kg|ml|l|szt\.?|łyżk[ia]?|łyżeczk[ia]?|szklank[ia]?|puszk[ia]?|ząbk[iów]?|opak\.?))/i);
+                if (amountMatch) {
+                    const amount = amountMatch[1].trim();
+                    const rawName = noParens.replace(amountMatch[0], '').replace(/^[-–•:,\s]+|[-–•:,\s]+$/g, '').trim() || noParens;
+                    return `${window.toPolishNominativeFoodName(rawName)} | ${amount} | 3.50`;
+                }
+                return `${window.toPolishNominativeFoodName(noParens)} | 1 porcja | 3.50`;
+            });
+
+            const formattedSteps = stepLines.slice(0, 18);
+            return {
+                title,
+                time: detectedTime,
+                portions: detectedPortions,
+                ingredientsText: formattedIngredients.join('\n'),
+                stepsText: (formattedSteps.length > 0 ? formattedSteps : ["Przygotuj składniki według opisu ze strony."]).join('\n')
+            };
+        }
+
+        window.importRecipeFromUrl = async () => {
+            const urlInput = document.getElementById('ai-recipe-url');
+            const rawUrl = urlInput.value.trim();
+            if (!rawUrl || !/^https?:\/\//i.test(rawUrl)) {
+                showToast("Wklej poprawny link zaczynający się od https://...", "warning");
+                return;
+            }
+
+            const btn = document.getElementById('btn-fetch-url');
+            const origText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = `<span class="animate-spin inline-block w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full"></span> Pobieram...`;
+
+            try {
+                const pageContent = await fetchWebpageReadableText(rawUrl);
+                document.getElementById('ai-recipe-prompt').value = `Źródło: ${rawUrl}\n\n${pageContent}`;
+                showToast("Pobrano treść przepisu ze strony! Przetwarzam...");
+                await generateRecipeWithAI();
+                urlInput.value = '';
+            } catch (err) {
+                showToast("Nie udało się automatycznie pobrać strony — wklej tekst przepisu poniżej.", "warning");
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = origText;
+            }
+        };
+
+        window.generateRecipeWithAI = async () => {
+            const promptText = document.getElementById('ai-recipe-prompt').value.trim();
+            const sharePublic = document.getElementById('ai-recipe-share-public').checked;
+            if (!promptText) {
+                showToast("Wklej link, wpisz nazwę dania lub wklej przepis!", "warning");
+                return;
+            }
+            if (/^https?:\/\/\S+$/i.test(promptText)) {
+                document.getElementById('ai-recipe-url').value = promptText;
+                document.getElementById('ai-recipe-prompt').value = '';
+                return importRecipeFromUrl();
+            }
+
+            const btn = document.getElementById('btn-generate-recipe-ai');
+            const origText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = `<span class="animate-spin inline-block w-4 h-4 border-2 border-slate-950 border-t-transparent rounded-full"></span> <span>Przetwarzam przepis...</span>`;
+
+            const activeGeminiKey = window.appState.geminiApiKey;
+
+            try {
+                if (!activeGeminiKey) {
+                    const parsedLocal = parseRecipeLocallyFromText(promptText);
+                    document.getElementById('man-title').value = parsedLocal.title;
+                    if (parsedLocal.time) document.getElementById('man-time').value = parsedLocal.time;
+                    if (parsedLocal.portions) document.getElementById('man-portions').value = parsedLocal.portions;
+                    document.getElementById('man-ingredients').value = parsedLocal.ingredientsText;
+                    document.getElementById('man-steps').value = parsedLocal.stepsText;
+                    document.getElementById('man-recipe-share-public').checked = sharePublic;
+                    setAddRecipeMode('manual');
+                    showToast("Lokalny parser (brak klucza Gemini AI) wyodrębnił tytuł, składniki i kroki! Sprawdź je i kliknij Zapisz Przepis.");
+                    return;
+                }
+
+                const payload = {
+                    contents: [{ parts: [{ text: promptText }] }],
+                    systemInstruction: { parts: [{ text: "Jesteś polskim szefem kuchni. Wyciągnij lub stwórz ustrukturyzowany przepis po polsku na podstawie podanego tekstu/strony z realistycznymi cenami składników w zł. Dobierz kategorię (np. 'Obiad jednogarnkowy', 'Danie główne', 'Makarony', 'Ryż i kasze', 'Zupy', 'Śniadanie / Kolacja', 'Desery', 'Przekąski / Sałatki') oraz tablicę wielu pasujących tagów w polu 'tags' (np. ['Makarony', 'Obiad jednogarnkowy', 'Danie główne']). Używaj podstawowych polskich nazw składników (np. 'Jajka', 'Cebula', 'Ryż', 'Pierś z kurczaka'). Dla WSZYSTKICH przypraw, ziół, marynat, sosów w łyżkach, wody oraz tłuszczów do smażenia wpisuj zawsze cenę 0." }] },
+                    generationConfig: {
+                        responseMimeType: "application/json",
+                        responseSchema: {
+                            type: "OBJECT",
+                            properties: {
+                                title: { type: "STRING" },
+                                category: { type: "STRING" },
+                                tags: { type: "ARRAY", items: { type: "STRING" } },
+                                time: { type: "NUMBER" },
+                                portions: { type: "NUMBER" },
+                                ingredients: {
+                                    type: "ARRAY",
+                                    items: {
+                                        type: "OBJECT",
+                                        properties: {
+                                            name: { type: "STRING" },
+                                            amount: { type: "STRING" },
+                                            price: { type: "NUMBER" },
+                                            cat: { type: "STRING" }
+                                        },
+                                        required: ["name", "amount", "price", "cat"]
+                                    }
+                                },
+                                steps: { type: "ARRAY", items: { type: "STRING" } }
+                            },
+                            required: ["title", "category", "time", "portions", "ingredients", "steps"]
+                        }
+                    }
+                };
+
+                const result = await callGeminiWithFallback(activeGeminiKey, payload);
+                const jsonStr = result.candidates?.[0]?.content?.parts?.[0]?.text;
+                if (!jsonStr) throw new Error("Brak danych z AI");
+
+                const aiParsed = safeParseGeminiJson(jsonStr, {});
+                if (Array.isArray(aiParsed.ingredients)) {
+                    aiParsed.ingredients = aiParsed.ingredients.map(i => ({
+                        ...i,
+                        name: window.toPolishNominativeFoodName(i.name || 'Składnik')
+                    }));
+                }
+                const manualSelectedAiTags = collectSelectedTagsFromContainer('ai-recipe-tags-selector', null, aiParsed.category);
+                const mergedAiTags = Array.from(new Set([...(Array.isArray(aiParsed.tags) ? aiParsed.tags : []), ...manualSelectedAiTags]));
+                const newRecipe = { id: 'rec_' + Date.now(), ...aiParsed, tags: mergedAiTags };
+                await persistNewRecipe(newRecipe, sharePublic);
+                document.getElementById('ai-recipe-prompt').value = '';
+                document.getElementById('ai-recipe-share-public').checked = false;
+                closeModal('modal-add-recipe');
+                showToast(sharePublic
+                    ? `Dodano przepis <strong>${newRecipe.title}</strong> i udostępniono go innym kuchniom!`
+                    : `Dodano przepis przez AI: <strong>${newRecipe.title}</strong>!`
+                );
+            } catch (err) {
+                console.error("Błąd Gemini AI przy przepisie:", err);
+                const parsedLocal = parseRecipeLocallyFromText(promptText);
+                document.getElementById('man-title').value = parsedLocal.title;
+                if (parsedLocal.time) document.getElementById('man-time').value = parsedLocal.time;
+                if (parsedLocal.portions) document.getElementById('man-portions').value = parsedLocal.portions;
+                document.getElementById('man-ingredients').value = parsedLocal.ingredientsText;
+                document.getElementById('man-steps').value = parsedLocal.stepsText;
+                document.getElementById('man-recipe-share-public').checked = sharePublic;
+                setAddRecipeMode('manual');
+                showToast(`AI zwróciło błąd (${err.message}) — wypełniono formularz lokalnym parserem.`, "warning");
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = origText;
+            }
+        };
+
+        window.saveManualRecipe = async (e) => {
+            e.preventDefault();
+            try {
+                const title = document.getElementById('man-title').value.trim();
+                if (!title) {
+                    showToast("Podaj nazwę przepisu!", "warning");
+                    return;
+                }
+                const category = document.getElementById('man-category').value;
+                const time = Number(document.getElementById('man-time').value) || 25;
+                const portions = Number(document.getElementById('man-portions').value) || 4;
+                const rawIngs = document.getElementById('man-ingredients').value.trim().split('\n').filter(Boolean);
+                const steps = document.getElementById('man-steps').value.trim().split('\n').filter(Boolean);
+                const sharePublic = document.getElementById('man-recipe-share-public').checked;
+
+                const ingredients = rawIngs.map(line => {
+                    const parts = line.split('|').map(s => s.trim());
+                    return { name: window.toPolishNominativeFoodName(parts[0] || 'Składnik'), amount: parts[1] || '1 porcja', price: parseFloat((parts[2] || '3.00').replace(',', '.')) || 3.00, cat: 'Inne' };
+                });
+
+                const tags = collectSelectedTagsFromContainer('man-recipe-tags-selector', 'man-custom-tags', category);
+                const newRec = { id: 'rec_' + Date.now(), title, category, tags, time, portions, ingredients, steps };
+                await persistNewRecipe(newRec, sharePublic);
+                e.target.reset();
+                closeModal('modal-add-recipe');
+                showToast(sharePublic
+                    ? `Zapisano przepis <strong>${title}</strong> i udostępniono go innym kuchniom!`
+                    : `Zapisano przepis: <strong>${title}</strong>`
+                );
+            } catch (err) {
+                console.error("Błąd zapisu przepisu:", err);
+                showToast(`Błąd zapisu przepisu: ${err.message}`, "error");
+            }
+        };
+
+        function ensureIngredientsInPricebookAndPantry(ingredientsList) {
+            let addedToPantryCount = 0;
+            (ingredientsList || []).forEach(ing => {
+                if (window.isIgnoredStapleOrMicro(ing)) return;
+                const rawName = (ing.name || '').trim();
+                if (!rawName) return;
+                const key = window.normalizeKey(rawName);
+                if (!key) return;
+
+                const resolved = localSpellFixAndKeywords(rawName);
+                const cleanDisplayName = key === 'jajka' ? 'Jajka' : (resolved.fixedName || rawName.charAt(0).toUpperCase() + rawName.slice(1));
+
+                if (!window.appState.pricebook[key] && !(window.appState.deletedPricebookKeys || []).includes(key)) {
+                    window.appState.pricebook[key] = {
+                        name: cleanDisplayName,
+                        unit: key === 'jajka' ? '10 szt.' : (resolved.unit || "1 szt."),
+                        category: ing.cat && ing.cat !== 'Inne' ? ing.cat : (resolved.category || 'Inne'),
+                        price: Number(ing.price) || 3.50,
+                        basePrice: Number(ing.price) || 3.50,
+                        promoPrice: Number(ing.price) || 3.50,
+                        isPromo: false,
+                        store: 'Przepis'
+                    };
+                }
+
+                // Jeśli produktu nie ma jeszcze w spiżarni/lodówce (nawet z ilością 0), dodajemy aktywny kafelek ze stanem 0!
+                const existingPantry = window.getPantryEntry(key, true);
+                if (!existingPantry) {
+                    const pbCat = window.appState.pricebook[key]?.category || '';
+                    const isFridge = pbCat === 'Lodówka i mrożonki' || pbCat === 'Mięso i świeże';
+                    window.appState.pantry[key] = {
+                        qty: 0,
+                        unit: 'szt.',
+                        location: isFridge ? 'Lodówka' : 'Spiżarnia'
+                    };
+                    addedToPantryCount++;
+                }
+            });
+            return addedToPantryCount;
+        }
+
+        async function persistNewRecipe(recipeObj, sharePublic = false) {
+            const addedPantry = ensureIngredientsInPricebookAndPantry(recipeObj.ingredients);
+            window.appState.recipes.unshift(recipeObj);
+            await saveKitchenChanges();
+
+            if (addedPantry > 0) {
+                showToast(`Dodano ${addedPantry} brakujących składników z przepisu do Spiżarni (stan: 0).`);
+            }
+
+            if (sharePublic) {
+                await window.shareRecipeToCommunity(recipeObj.id);
+            }
+        }
+
+        window.deleteRecipe = async (recipeId) => {
+            window.appState.recipes = window.appState.recipes.filter(r => r.id !== recipeId);
+            await saveKitchenChanges();
+            closeModal('modal-recipe-detail');
+            showToast("Usunięto przepis z bazy.");
+        };
+
+        window.openEditRecipeModal = (recipeId) => {
+            const recipe = (window.appState.recipes || []).find(r => r.id === recipeId);
+            if (!recipe) return;
+
+            document.getElementById('edit-rec-id').value = recipe.id;
+            document.getElementById('edit-rec-title').value = recipe.title || '';
+            const catSel = document.getElementById('edit-rec-category');
+            if ([...catSel.options].some(o => o.value === recipe.category)) {
+                catSel.value = recipe.category;
+            } else {
+                catSel.value = 'Inne';
+            }
+            const existingTags = window.getRecipeAllTags(recipe);
+            renderRecipeTagSelectorPills('edit-recipe-tags-selector', existingTags);
+            const customEditEl = document.getElementById('edit-custom-tags');
+            if (customEditEl) customEditEl.value = '';
+            document.getElementById('edit-rec-time').value = recipe.time || 25;
+            document.getElementById('edit-rec-portions').value = recipe.portions || 4;
+
+            const ingLines = (recipe.ingredients || []).map(i =>
+                `${i.name} | ${i.amount || '1 porcja'} | ${Number(i.price || 3.00).toFixed(2)}`
+            ).join('\n');
+            document.getElementById('edit-rec-ingredients').value = ingLines;
+            document.getElementById('edit-rec-steps').value = (recipe.steps || []).join('\n');
+
+            closeModal('modal-recipe-detail');
+            document.getElementById('modal-edit-recipe').classList.remove('hidden');
+        };
+
+        window.appendEditIngredientRow = () => {
+            const ta = document.getElementById('edit-rec-ingredients');
+            ta.value = (ta.value.trim() ? ta.value.trim() + '\n' : '') + 'Nowy składnik | 100 g | 3.50';
+            ta.focus();
+        };
+
+        window.saveEditedRecipe = async (e) => {
+            e.preventDefault();
+            const recipeId = document.getElementById('edit-rec-id').value;
+            const recipe = (window.appState.recipes || []).find(r => r.id === recipeId);
+            if (!recipe) return;
+
+            const title = document.getElementById('edit-rec-title').value.trim();
+            const category = document.getElementById('edit-rec-category').value;
+            const time = Number(document.getElementById('edit-rec-time').value) || 25;
+            const portions = Number(document.getElementById('edit-rec-portions').value) || 4;
+            const rawIngs = document.getElementById('edit-rec-ingredients').value.trim().split('\n').filter(Boolean);
+            const steps = document.getElementById('edit-rec-steps').value.trim().split('\n').filter(Boolean);
+
+            const ingredients = rawIngs.map(line => {
+                const parts = line.split('|').map(s => s.trim());
+                return {
+                    name: window.toPolishNominativeFoodName(parts[0] || 'Składnik'),
+                    amount: parts[1] || '1 porcja',
+                    price: parseFloat((parts[2] || '3.00').replace(',', '.')) || 3.00,
+                    cat: 'Inne'
+                };
+            });
+
+            const updatedTags = collectSelectedTagsFromContainer('edit-recipe-tags-selector', 'edit-custom-tags', category);
+            recipe.title = title;
+            recipe.category = category;
+            recipe.tags = updatedTags;
+            recipe.time = time;
+            recipe.portions = portions;
+            recipe.ingredients = ingredients;
+            recipe.steps = steps;
+
+            const addedToPantry = ensureIngredientsInPricebookAndPantry(ingredients);
+            await saveKitchenChanges();
+
+            // Jeśli przepis był udostępniony społeczności, zaktualizuj również wersję publiczną
+            const publicDocId = `${window.appState.kitchenCode}_${recipe.id}`;
+            const isShared = (window.appState.publicRecipes || []).some(p => p.publicId === publicDocId);
+            if (isShared) {
+                try {
+                    await setDoc(doc(db, "publiczne_przepisy", publicDocId), {
+                        title,
+                        category,
+                        tags: updatedTags,
+                        time,
+                        portions,
+                        ingredients,
+                        steps
+                    }, { merge: true });
+                } catch (_) {}
+            }
+
+            closeModal('modal-edit-recipe');
+            openRecipeDetail(recipe.id, false);
+            showToast(addedToPantry > 0
+                ? `Zapisano zmiany w przepisie i dodano ${addedToPantry} nowych składników do Spiżarni!`
+                : `Zapisano zmiany w przepisie <strong>${title}</strong>!`
+            );
+        };
+
+        // ================= LISTA ZAKUPÓW =================
+        window.addMissingToShopping = async (recipeId, isPublic = false) => {
+            const recipe = isPublic
+                ? (window.appState.publicRecipes || []).find(r => r.publicId === recipeId)
+                : (window.appState.recipes || []).find(r => r.id === recipeId);
+            if (!recipe) return;
+            const metrics = calculateRecipeMetrics(recipe);
+
+            let added = 0;
+            metrics.missingIngredients.forEach(ing => {
+                const exists = window.appState.shopping.some(s => !s.checked && window.normalizeKey(s.baseName || s.name) === window.normalizeKey(ing.name));
+                if (!exists) {
+                    window.appState.shopping.push({
+                        id: 'shop_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+                        name: `${ing.name} (${ing.amount})`,
+                        baseName: ing.name,
+                        category: ing.cat || 'Inne',
+                        price: ing.activePrice,
+                        checked: false
+                    });
+                    added++;
+                }
+            });
+
+            await saveKitchenChanges();
+            showToast(added > 0 ? `Dodano ${added} brakujących produktów do Listy Zakupów!` : "Te produkty są już na Liście Zakupów.");
+        };
+
+        window.handleAddManualShoppingItem = async (e) => {
+            e.preventDefault();
+            const nameInput = document.getElementById('new-shop-name');
+            const catInput = document.getElementById('new-shop-cat');
+            const priceInput = document.getElementById('new-shop-price');
+
+            window.appState.shopping.push({
+                id: 'shop_' + Date.now(),
+                name: nameInput.value.trim(),
+                baseName: nameInput.value.trim(),
+                category: catInput.value,
+                price: parseFloat(priceInput.value) || 0,
+                checked: false
+            });
+
+            nameInput.value = '';
+            priceInput.value = '';
+            await saveKitchenChanges();
+            showToast("Dodano produkt do listy zakupów.");
+        };
+
+        window.toggleShoppingCheck = async (itemId) => {
+            const item = window.appState.shopping.find(s => s.id === itemId);
+            if (item) {
+                item.checked = !item.checked;
+                renderAll();
+                await patchKitchenFields({ shopping: window.appState.shopping });
+            }
+        };
+
+        window.moveCheckedToPantry = async () => {
+            const checkedItems = window.appState.shopping.filter(s => s.checked);
+            if (checkedItems.length === 0) {
+                showToast("Odhacz najpierw kupione produkty na liście!", "warning");
+                return;
+            }
+
+            const historyItemsPayload = [];
+            checkedItems.forEach(item => {
+                const amountMatch = String(item.name || '').match(/\(([^)]+)\)/);
+                const cleanName = (item.baseName || item.name.replace(/\(.*?\)/g, '')).trim();
+                const key = window.normalizeKey(cleanName);
+                const parsedBought = amountMatch
+                    ? parseQuantityString(amountMatch[1], key)
+                    : { val: 1, baseUnit: 'szt.', rawUnit: 'szt.' };
+
+                const addQty = parsedBought.rawUnit === 'kg' ? parsedBought.val / 1000
+                    : parsedBought.rawUnit === 'l' ? parsedBought.val / 1000
+                    : parsedBought.val;
+                const addUnit = ['g', 'kg', 'ml', 'l', 'puszka', 'opak.', 'słoik', 'szt.'].includes(parsedBought.rawUnit)
+                    ? parsedBought.rawUnit
+                    : (parsedBought.baseUnit === 'g' ? 'g' : parsedBought.baseUnit === 'ml' ? 'ml' : 'szt.');
+
+                const existing = window.getPantryEntry(key, true);
+                if (!existing) {
+                    const pbCat = window.appState.pricebook[key]?.category || '';
+                    const isFridge = pbCat === 'Lodówka i mrożonki' || pbCat === 'Mięso i świeże';
+                    window.appState.pantry[key] = { qty: Number(addQty.toFixed(2)), unit: addUnit, location: isFridge ? 'Lodówka' : 'Spiżarnia' };
+                } else if (existing.unit === addUnit) {
+                    window.appState.pantry[key] = { ...existing, qty: Number((existing.qty + addQty).toFixed(2)) };
+                } else if (existing.unit === 'kg' && addUnit === 'g') {
+                    window.appState.pantry[key] = { ...existing, qty: Number((existing.qty + addQty / 1000).toFixed(3)) };
+                } else if (existing.unit === 'g' && addUnit === 'kg') {
+                    window.appState.pantry[key] = { ...existing, qty: Number((existing.qty + addQty * 1000).toFixed(0)) };
+                } else if (existing.unit === 'l' && addUnit === 'ml') {
+                    window.appState.pantry[key] = { ...existing, qty: Number((existing.qty + addQty / 1000).toFixed(3)) };
+                } else if (existing.unit === 'ml' && addUnit === 'l') {
+                    window.appState.pantry[key] = { ...existing, qty: Number((existing.qty + addQty * 1000).toFixed(0)) };
+                } else {
+                    window.appState.pantry[key] = { ...existing, qty: Number((existing.qty + addQty).toFixed(2)) };
+                }
+
+                historyItemsPayload.push({
+                    name: item.name,
+                    qty: `${Number(addQty.toFixed(2))} ${addUnit}`,
+                    price: Number((Number(item.price) || 0).toFixed(2))
+                });
+            });
+
+            const basketTotal = checkedItems.reduce((sum, item) => sum + (Number(item.price) || 0), 0);
+            window.appState.shoppingHistory.unshift({
+                id: 'shist_' + Date.now(),
+                timestamp: new Date().toISOString(),
+                date: new Date().toLocaleDateString('pl-PL'),
+                source: '🛒 Lista Zakupów',
+                total: Number(basketTotal.toFixed(2)),
+                items: historyItemsPayload
+            });
+
+            window.appState.shopping = window.appState.shopping.filter(s => !s.checked);
+            await saveKitchenChanges();
+            showToast(`Przeniesiono ${checkedItems.length} produktów do Spiżarni i zapisano w Historii Zakupów (${basketTotal.toFixed(2)} zł)!`);
+        };
+
+        window.clearCheckedShopping = async () => {
+            window.appState.shopping = window.appState.shopping.filter(s => !s.checked);
+            await saveKitchenChanges();
+            showToast("Usunięto odhaczone pozycje.");
+        };
+
+        function analyzeShoppingBasketByStore() {
+            const items = (window.appState.shopping || []).filter(s => !s.checked);
+            const pending = Object.values(window.appState.pendingScraper || {});
+            const stores = ['Lidl', 'Biedronka', 'Netto'];
+            const storeTotals = { Lidl: 0, Biedronka: 0, Netto: 0 };
+            const storeHits = { Lidl: 0, Biedronka: 0, Netto: 0 };
+            const perItemBest = {};
+
+            items.forEach(item => {
+                const key = window.normalizeKey(item.baseName || item.name);
+                const fallbackPrice = Number(item.price || 0);
+                const offersByStore = {};
+
+                pending.forEach(off => {
+                    const st = getNormalizedVerifyStore(off);
+                    if (!stores.includes(st)) return;
+                    const offKey = window.normalizeKey(window.cleanGenericFoodName(off.name || ''));
+                    if (offKey === key && Number(off.detectedPrice) > 0) {
+                        if (!offersByStore[st] || Number(off.detectedPrice) < offersByStore[st]) {
+                            offersByStore[st] = Number(off.detectedPrice);
+                        }
+                    }
+                });
+
+                stores.forEach(st => {
+                    if (offersByStore[st] !== undefined) {
+                        storeTotals[st] += offersByStore[st];
+                        storeHits[st]++;
+                    } else {
+                        storeTotals[st] += fallbackPrice;
+                    }
+                });
+
+                const foundEntries = Object.entries(offersByStore).sort((a, b) => a[1] - b[1]);
+                if (foundEntries.length > 0) {
+                    perItemBest[item.id] = {
+                        bestStore: foundEntries[0][0],
+                        bestPrice: foundEntries[0][1],
+                        allOffers: foundEntries
+                    };
+                }
+            });
+
+            return { storeTotals, storeHits, perItemBest, itemCount: items.length };
+        }
+
+        window.renderShoppingList = () => {
+            const container = document.getElementById('shopping-list-container');
+            const totalEl = document.getElementById('shopping-total-cost');
+
+            const total = window.appState.shopping.reduce((sum, item) => sum + (Number(item.price) || 0), 0);
+            totalEl.textContent = `${total.toFixed(2)} zł`;
+
+            if (window.appState.shopping.length === 0) {
+                container.innerHTML = `<div class="bg-[#1e293b] rounded-2xl border border-slate-800 p-8 text-center">
+                    <p class="text-slate-400 text-sm">Lista zakupów jest pusta.</p>
+                </div>`;
+                return;
+            }
+
+            const basketAnalysis = analyzeShoppingBasketByStore();
+            const hasAnyStorePromoMatch = Object.values(basketAnalysis.storeHits).some(h => h > 0);
+            let comparatorBannerHtml = '';
+            if (basketAnalysis.itemCount > 0 && hasAnyStorePromoMatch) {
+                const rankedStores = Object.entries(basketAnalysis.storeTotals).sort((a, b) => a[1] - b[1]);
+                const winnerStore = rankedStores[0][0];
+                const winnerTotal = rankedStores[0][1];
+                comparatorBannerHtml = `
+                <div class="bg-gradient-to-r from-emerald-950/60 via-[#1e293b] to-indigo-950/50 rounded-2xl border border-emerald-500/35 p-4 space-y-3">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <div>
+                            <span class="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[11px] font-bold">🏪 PORÓWNYWARKA KOSZYKA W GAZETKACH</span>
+                            <h4 class="text-sm sm:text-base font-bold text-white mt-1">Najtaniej cały koszyk wyjdzie w: <span class="text-emerald-400">${winnerStore} (${winnerTotal.toFixed(2)} zł)</span></h4>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-3 gap-2.5">
+                        ${rankedStores.map(([stName, stTotal], idx) => {
+                            const icon = stName === 'Lidl' ? '🔵' : stName === 'Biedronka' ? '🐞' : '🟡';
+                            const hits = basketAnalysis.storeHits[stName] || 0;
+                            return `
+                            <div class="p-3 rounded-xl bg-slate-950/90 border ${idx === 0 ? 'border-emerald-500/50' : 'border-slate-800'}">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-xs font-bold text-slate-200">${icon} ${stName}</span>
+                                    ${idx === 0 ? '<span class="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold">Lider</span>' : ''}
+                                </div>
+                                <p class="text-base sm:text-lg font-extrabold ${idx === 0 ? 'text-emerald-400' : 'text-white'} font-mono mt-1">${stTotal.toFixed(2)} zł</p>
+                                <p class="text-[10px] text-slate-400">Promocje na ${hits} z ${basketAnalysis.itemCount} poz.</p>
+                            </div>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>
+                `;
+            }
+
+            const grouped = {};
+            window.appState.shopping.forEach(item => {
+                const cat = item.category || 'Inne';
+                if (!grouped[cat]) grouped[cat] = [];
+                grouped[cat].push(item);
+            });
+
+            container.innerHTML = comparatorBannerHtml + Object.entries(grouped).map(([cat, items]) => `
+                <div class="bg-[#1e293b] rounded-2xl border border-slate-800 p-5">
+                    <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">${cat}</h4>
+                    <div class="space-y-2">
+                        ${items.map(item => {
+                            const hasPromoInfo = Boolean(item.promoStore || item.promoValidTo || item.promoDateText);
+                            let promoDeadlineBadge = '';
+                            if (hasPromoInfo) {
+                                const todayStr = new Date().toISOString().slice(0, 10);
+                                let deadlineLabel = '';
+                                let deadlineStyle = 'bg-sky-500/15 text-sky-300 border-sky-500/30';
+
+                                if (item.promoValidTo) {
+                                    const parts = String(item.promoValidTo).split('-');
+                                    const plDate = parts.length === 3 ? `${parts[2]}.${parts[1]}.${parts[0]}` : item.promoValidTo;
+                                    if (item.promoValidTo < todayStr) {
+                                        deadlineLabel = `⚠️ Promka wygasła (${plDate})`;
+                                        deadlineStyle = 'bg-red-500/20 text-red-300 border-red-500/40';
+                                    } else if (item.promoValidTo === todayStr) {
+                                        deadlineLabel = `🔥 Ostatni dzień promki! (do ${plDate})`;
+                                        deadlineStyle = 'bg-amber-500/20 text-amber-300 border-amber-500/40';
+                                    } else {
+                                        deadlineLabel = `⏳ Promka do ${plDate}`;
+                                    }
+                                } else if (item.promoDateText) {
+                                    deadlineLabel = `📅 ${item.promoDateText}`;
+                                }
+
+                                promoDeadlineBadge = `
+                                    <div class="flex flex-wrap items-center gap-1.5 mt-1">
+                                        ${item.promoStore ? `<span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold uppercase border ${getStoreBadgeStyle(item.promoStore)}">🏪 ${item.promoStore}</span>` : ''}
+                                        ${deadlineLabel ? `<span class="px-2 py-0.5 rounded-md text-[11px] font-semibold border ${deadlineStyle}">${deadlineLabel}</span>` : ''}
+                                    </div>
+                                `;
+                            }
+
+                            return `
+                            <div onclick="toggleShoppingCheck('${item.id}')" class="flex items-center justify-between gap-3 p-3 rounded-xl border cursor-pointer transition-all ${item.checked ? 'bg-slate-900/40 border-slate-800/60 opacity-60' : hasPromoInfo ? 'bg-slate-900 border-indigo-500/35 hover:border-emerald-500/40' : 'bg-slate-900 border-slate-700/80 hover:border-emerald-500/40'}">
+                                <div class="flex items-start gap-3 min-w-0">
+                                    <div class="w-5 h-5 mt-0.5 rounded-md flex items-center justify-center shrink-0 border ${item.checked ? 'bg-emerald-500 border-emerald-500 text-slate-950 font-bold' : 'border-slate-600'}">
+                                        ${item.checked ? '✓' : ''}
+                                    </div>
+                                    <div class="min-w-0">
+                                        <span class="text-sm font-semibold block ${item.checked ? 'line-through text-slate-500' : 'text-white'}">${item.name}</span>
+                                        ${promoDeadlineBadge}
+                                        ${!item.checked && basketAnalysis.perItemBest[item.id] ? `
+                                            <p class="text-[11px] text-emerald-300 mt-1">
+                                                🏷️ W gazetkach najtaniej: <strong>${basketAnalysis.perItemBest[item.id].bestStore} (${basketAnalysis.perItemBest[item.id].bestPrice.toFixed(2)} zł)</strong>
+                                                ${basketAnalysis.perItemBest[item.id].allOffers.length > 1 ? ` • ${basketAnalysis.perItemBest[item.id].allOffers.slice(1).map(([s, p]) => `${s}: ${p.toFixed(2)} zł`).join(', ')}` : ''}
+                                            </p>
+                                        ` : ''}
+                                    </div>
+                                </div>
+                                ${item.price > 0 ? `<span class="text-xs sm:text-sm font-mono font-bold ${hasPromoInfo ? 'text-emerald-400' : 'text-slate-300'} shrink-0">${Number(item.price).toFixed(2)} zł</span>` : ''}
+                            </div>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>
+            `).join('');
+        };
+
+        window.deleteShoppingHistoryEntry = async (entryId) => {
+            if (!confirm("Usunąć ten wpis z historii zakupów?")) return;
+            window.appState.shoppingHistory = (window.appState.shoppingHistory || []).filter(h => h.id !== entryId);
+            await saveKitchenChanges();
+            showToast("Usunięto wpis z historii zakupów.");
+        };
+
+        window.renderShoppingHistory = () => {
+            const listEl = document.getElementById('shopping-history-list');
+            const filter = document.getElementById('shop-history-filter')?.value || 'all';
+            if (!listEl) return;
+
+            const history = window.appState.shoppingHistory || [];
+            const now = new Date();
+            const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+            const currentMonth = now.getMonth();
+            const currentYear = now.getFullYear();
+
+            let weekSum = 0, weekCount = 0;
+            let monthSum = 0, monthCount = 0;
+            let allSum = 0;
+
+            history.forEach(entry => {
+                const amount = Number(entry.total) || 0;
+                allSum += amount;
+                const dt = entry.timestamp ? new Date(entry.timestamp) : null;
+                if (dt && !isNaN(dt.getTime())) {
+                    if (dt >= sevenDaysAgo) {
+                        weekSum += amount;
+                        weekCount++;
+                    }
+                    if (dt.getMonth() === currentMonth && dt.getFullYear() === currentYear) {
+                        monthSum += amount;
+                        monthCount++;
+                    }
+                }
+            });
+
+            document.getElementById('shop-stat-week').textContent = `${weekSum.toFixed(2)} zł`;
+            document.getElementById('shop-stat-week-count').textContent = `${weekCount} zakupów (ostatnie 7 dni)`;
+            document.getElementById('shop-stat-month').textContent = `${monthSum.toFixed(2)} zł`;
+            document.getElementById('shop-stat-month-count').textContent = `${monthCount} zakupów w tym miesiącu`;
+            document.getElementById('shop-stat-all').textContent = `${allSum.toFixed(2)} zł`;
+            document.getElementById('shop-stat-all-count').textContent = `${history.length} zapisanych wizyt w sklepie`;
+
+            const filtered = history.filter(entry => {
+                if (filter === 'all') return true;
+                const dt = entry.timestamp ? new Date(entry.timestamp) : null;
+                if (!dt || isNaN(dt.getTime())) return false;
+                if (filter === 'week') return dt >= sevenDaysAgo;
+                if (filter === 'month') return dt.getMonth() === currentMonth && dt.getFullYear() === currentYear;
+                return true;
+            });
+
+            if (filtered.length === 0) {
+                listEl.innerHTML = `<p class="text-xs text-slate-400 italic py-4 text-center">Brak zapisanych zakupów w wybranym okresie. Zeskanuj paragon w zakładce Cennik lub przenieś odhaczone zakupy do Spiżarni.</p>`;
+                return;
+            }
+
+            listEl.innerHTML = filtered.map(entry => {
+                const items = Array.isArray(entry.items) ? entry.items : [];
+                const timeStr = entry.timestamp ? new Date(entry.timestamp).toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' }) : '';
+                return `
+                <details class="group rounded-xl bg-slate-950/90 border border-slate-800 hover:border-slate-700 transition-all">
+                    <summary class="list-none cursor-pointer p-3.5 flex items-center justify-between gap-3">
+                        <div class="flex items-center gap-3 min-w-0">
+                            <span class="text-slate-400 group-open:rotate-90 transition-transform text-xs">▶</span>
+                            <div class="min-w-0">
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <span class="text-xs font-bold text-white">${entry.source || 'Zakupy'}</span>
+                                    <span class="text-[11px] text-slate-400">${entry.date || ''} ${timeStr}</span>
+                                    <span class="px-2 py-0.5 rounded bg-slate-800 text-slate-300 text-[10px] font-semibold">${items.length} prod.</span>
+                                </div>
+                                <p class="text-[11px] text-slate-400 truncate mt-0.5">${items.map(i => i.name).join(', ')}</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3 shrink-0">
+                            <span class="text-sm sm:text-base font-extrabold text-emerald-400 font-mono">${Number(entry.total || 0).toFixed(2)} zł</span>
+                            <button type="button" onclick="event.preventDefault(); deleteShoppingHistoryEntry('${entry.id}')" title="Usuń wpis" class="text-slate-500 hover:text-red-400 text-xs px-1.5 py-1">✕</button>
+                        </div>
+                    </summary>
+                    <div class="px-4 pb-3.5 pt-2 border-t border-slate-800/80 space-y-1.5">
+                        ${items.map(it => `
+                            <div class="flex items-center justify-between text-xs text-slate-300">
+                                <span>• ${it.name} <span class="text-slate-500">(${it.qty || '1 szt.'})</span></span>
+                                <span class="font-mono font-semibold text-slate-200">${Number(it.price || 0).toFixed(2)} zł</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                </details>
+                `;
+            }).join('');
+        };
+
+        // ================= RECENZJE, WALIDACJA SPIŻARNI & ROZLICZENIE KOSZTÓW =================
+        window.openReviewModal = (recipeId, isPublic = false) => {
+            const recipe = isPublic
+                ? (window.appState.publicRecipes || []).find(r => r.publicId === recipeId)
+                : (window.appState.recipes || []).find(r => r.id === recipeId);
+            if (!recipe) return;
+            const metrics = calculateRecipeMetrics(recipe);
+
+            const statusBanner = document.getElementById('review-pantry-status-banner');
+            const submitBtn = document.getElementById('btn-submit-review');
+
+            if (!metrics.isReadyFromPantry) {
+                const missingList = metrics.missingIngredients.map(m => `${m.name} (${m.reason})`).join(', ');
+                statusBanner.innerHTML = `
+                    <div class="p-3 rounded-xl bg-red-950/50 border border-red-500/40 text-xs text-red-200 space-y-1">
+                        <p class="font-bold text-red-300">⛔ Brakuje składników w spiżarni (${metrics.missingIngredients.length}):</p>
+                        <p>${missingList}</p>
+                        <p class="text-[11px] text-slate-400 pt-1">Uzupełnij braki w Spiżarni przed ugotowaniem tego przepisu.</p>
+                    </div>
+                `;
+                submitBtn.disabled = true;
+                submitBtn.className = "w-full py-3 rounded-xl bg-slate-800 text-slate-500 border border-slate-700 font-bold text-sm cursor-not-allowed";
+                submitBtn.textContent = "Uzupełnij brakujące składniki w Spiżarni";
+            } else {
+                statusBanner.innerHTML = `
+                    <div class="p-2.5 rounded-xl bg-emerald-950/40 border border-emerald-500/30 text-xs text-emerald-300 font-medium">
+                        ✅ Masz 100% składników w spiżarni! Po zatwierdzeniu ilości zostaną automatycznie odjęte.
+                    </div>
+                `;
+                submitBtn.disabled = false;
+                submitBtn.className = "w-full py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-sm shadow-lg shadow-amber-500/20";
+                submitBtn.textContent = "Zatwierdź Ugotowanie i Odejmij ze Spiżarni";
+            }
+
+            document.getElementById('review-recipe-id').value = isPublic ? `PUBLIC::${recipeId}` : recipe.id;
+            document.getElementById('review-recipe-title').textContent = recipe.title;
+            document.getElementById('review-cost').value = metrics.currentTotal.toFixed(2);
+            document.getElementById('review-dinners').value = Math.max(1, Math.round((recipe.portions || 4) / 2));
+            document.getElementById('review-note').value = '';
+            updateLivePortionPreview();
+            document.getElementById('modal-review-recipe').classList.remove('hidden');
+        };
+
+        window.updateLivePortionPreview = () => {
+            const cost = parseFloat(document.getElementById('review-cost').value) || 0;
+            const dinnersForTwo = parseFloat(document.getElementById('review-dinners').value) || 1;
+            const perPerson = cost / (dinnersForTwo * 2);
+            document.getElementById('review-live-portion-cost').textContent = `${perPerson.toFixed(2)} zł`;
+        };
+
+        window.submitRecipeReview = async (e) => {
+            e.preventDefault();
+            const rawId = document.getElementById('review-recipe-id').value;
+            const isPublic = rawId.startsWith('PUBLIC::');
+            const cleanId = isPublic ? rawId.replace('PUBLIC::', '') : rawId;
+
+            const recipe = isPublic
+                ? (window.appState.publicRecipes || []).find(r => r.publicId === cleanId)
+                : (window.appState.recipes || []).find(r => r.id === cleanId);
+            if (!recipe) return;
+
+            const metrics = calculateRecipeMetrics(recipe);
+            if (!metrics.isReadyFromPantry) {
+                showToast(`Nie możesz ugotować — brakuje ${metrics.missingIngredients.length} składników w spiżarni!`, "error");
+                return;
+            }
+
+            const cost = parseFloat(document.getElementById('review-cost').value) || 0;
+            const dinnersForTwo = parseFloat(document.getElementById('review-dinners').value) || 1;
+            const rating = parseInt(document.getElementById('review-rating').value, 10) || 5;
+            const note = document.getElementById('review-note').value.trim();
+            const shouldDeduct = document.getElementById('review-deduct-pantry').checked;
+            const portionCost = cost / (dinnersForTwo * 2);
+
+            window.appState.reviews.unshift({
+                id: 'rev_' + Date.now(),
+                recipeId: cleanId,
+                recipeTitle: recipe.title,
+                cost,
+                dinnersForTwo,
+                portionCost,
+                rating,
+                note,
+                date: new Date().toLocaleDateString('pl-PL')
+            });
+
+            let deducted = 0;
+            if (shouldDeduct) {
+                deducted = window.deductRecipeFromPantry(recipe);
+            }
+
+            await saveKitchenChanges();
+            closeModal('modal-review-recipe');
+            showToast(
+                shouldDeduct && deducted > 0
+                    ? `Ugotowane! Odjęto ${deducted} składników ze spiżarni (${portionCost.toFixed(2)} zł/porcja).`
+                    : `Rozliczono! Koszt 1 porcji wyszedł ${portionCost.toFixed(2)} zł.`
+            );
+        };
+
+        window.renderReviewsAndStats = () => {
+            const historyList = document.getElementById('reviews-history-list');
+            const reviews = window.appState.reviews;
+
+            if (reviews.length === 0) {
+                document.getElementById('stat-avg-portion').textContent = '0.00 zł';
+                document.getElementById('stat-total-portions').textContent = '0 porcji';
+                document.getElementById('stat-total-dinners').textContent = '0 pełnych obiadów dla dwojga';
+                document.getElementById('stat-total-spent').textContent = '0.00 zł';
+                historyList.innerHTML = `<p class="text-sm text-slate-400 italic">Nie macie jeszcze żadnego rozliczonego dania.</p>`;
+                return;
+            }
+
+            const totalSpent = reviews.reduce((s, r) => s + Number(r.cost), 0);
+            const totalDinnersForTwo = reviews.reduce((s, r) => s + Number(r.dinnersForTwo), 0);
+            const totalSinglePortions = totalDinnersForTwo * 2;
+            const avgPortion = totalSpent / totalSinglePortions;
+
+            document.getElementById('stat-avg-portion').textContent = `${avgPortion.toFixed(2)} zł`;
+            document.getElementById('stat-total-portions').textContent = `${totalSinglePortions} porcji`;
+            document.getElementById('stat-total-dinners').textContent = `${totalDinnersForTwo} pełnych obiadów dla dwojga`;
+            document.getElementById('stat-total-spent').textContent = `${totalSpent.toFixed(2)} zł`;
+
+            historyList.innerHTML = reviews.map(rev => `
+                <div class="p-4 rounded-xl bg-slate-900/90 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs text-slate-500">${rev.date}</span>
+                            <span class="text-xs text-amber-400 font-bold">${'⭐'.repeat(rev.rating)}</span>
+                        </div>
+                        <h4 class="text-base font-bold text-white mt-0.5">${rev.recipeTitle}</h4>
+                        ${rev.note ? `<p class="text-xs text-slate-300 mt-1 italic">"${rev.note}"</p>` : ''}
+                    </div>
+                    <div class="sm:text-right shrink-0 bg-slate-950/60 px-3.5 py-2 rounded-xl border border-slate-800">
+                        <p class="text-xs text-slate-400">Paragon: <strong class="text-white">${Number(rev.cost).toFixed(2)} zł</strong> (${rev.dinnersForTwo} obiady dla 2 os.)</p>
+                        <p class="text-sm font-extrabold text-emerald-400 mt-0.5">${Number(rev.portionCost).toFixed(2)} zł / 1 porcja</p>
+                    </div>
+                </div>
+            `).join('');
+        };
+
+        // ================= RENDEROWANIE ZBIORCZE & NAWIGACJA =================
+        // ================= PLANER POSIŁKÓW (TYDZIEŃ + BUDŻET + BRAKUJĄCE ZAKUPY) =================
+        const PLANNER_DAYS = [
+            { id: 'mon', short: 'Pon', full: 'Poniedziałek' },
+            { id: 'tue', short: 'Wt', full: 'Wtorek' },
+            { id: 'wed', short: 'Śr', full: 'Środa' },
+            { id: 'thu', short: 'Czw', full: 'Czwartek' },
+            { id: 'fri', short: 'Pt', full: 'Piątek' },
+            { id: 'sat', short: 'Sob', full: 'Sobota' },
+            { id: 'sun', short: 'Nd', full: 'Niedziela' }
+        ];
+        const PLANNER_SLOTS = [
+            { id: 'breakfast', label: '🌅 Śniadanie' },
+            { id: 'lunch', label: '🍲 Obiad' },
+            { id: 'dinner', label: '🌙 Kolacja' }
+        ];
+
+        window.currentPickMealTarget = null;
+
+        function getAllAvailableRecipesForPlanner() {
+            const local = (window.appState.recipes || []).map(r => ({ ...r, isPublicCommunity: false }));
+            const pub = (window.appState.publicRecipes || [])
+                .filter(p => p.sourceKitchen !== window.appState.kitchenCode)
+                .map(p => ({ ...p, id: p.publicId, isPublicCommunity: true }));
+            return [...local, ...pub];
+        }
+
+        function computePlannerSummary() {
+            const plan = window.appState.mealPlan || {};
+            const allRecs = getAllAvailableRecipesForPlanner();
+            let totalMeals = 0;
+            let totalCost = 0;
+
+            // Agregacja potrzebnych ilości składników na cały tydzień
+            const aggregatedNeeds = {}; // key -> { name, cat, totalRatioOfPack, totalCost, sampleAmount }
+
+            Object.values(plan).forEach(dayObj => {
+                if (!dayObj || typeof dayObj !== 'object') return;
+                Object.values(dayObj).forEach(recipeId => {
+                    if (!recipeId) return;
+                    const rec = allRecs.find(r => r.id === recipeId);
+                    if (!rec) return;
+
+                    totalMeals++;
+                    const m = calculateRecipeMetrics(rec);
+                    totalCost += m.currentTotal;
+
+                    (rec.ingredients || []).forEach(ing => {
+                        if (window.isIgnoredStapleOrMicro(ing)) return;
+                        const key = window.normalizeKey(ing.name);
+                        const pbItem = window.appState.pricebook[key];
+                        const req = parseQuantityString(ing.amount, key);
+                        const pack = parseQuantityString(pbItem?.unit || '1 szt.', key);
+                        const ratio = computeRatioBetweenAmounts(req, pack, key);
+
+                        if (!aggregatedNeeds[key]) {
+                            aggregatedNeeds[key] = {
+                                key,
+                                name: pbItem?.name || ing.name,
+                                cat: pbItem?.category || ing.cat || 'Inne',
+                                packUnit: pbItem?.unit || '1 szt.',
+                                packPrice: Number(pbItem?.price ?? ing.price ?? 0),
+                                totalPackRatio: 0,
+                                rawAmounts: []
+                            };
+                        }
+                        aggregatedNeeds[key].totalPackRatio += (ratio !== null && !isNaN(ratio)) ? ratio : 1;
+                        aggregatedNeeds[key].rawAmounts.push(ing.amount);
+                    });
+                });
+            });
+
+            // Porównaj zsumowane zapotrzebowanie z aktualnym stanem spiżarni
+            const missingItems = [];
+            Object.values(aggregatedNeeds).forEach(need => {
+                const pantryEntry = window.getPantryEntry(need.key, false);
+                let havePackRatio = 0;
+                if (pantryEntry) {
+                    const haveParsed = parseQuantityString(`${pantryEntry.qty} ${pantryEntry.unit}`, need.key);
+                    const packParsed = parseQuantityString(need.packUnit, need.key);
+                    const r = computeRatioBetweenAmounts(haveParsed, packParsed, need.key);
+                    havePackRatio = (r !== null && !isNaN(r)) ? r : 1;
+                }
+
+                const deficitRatio = need.totalPackRatio - havePackRatio;
+                if (deficitRatio > 0.05) {
+                    const packsToBuy = Math.max(1, Math.ceil(deficitRatio));
+                    missingItems.push({
+                        key: need.key,
+                        name: need.name,
+                        cat: need.cat,
+                        packsToBuy,
+                        packUnit: need.packUnit,
+                        estPrice: Number((packsToBuy * need.packPrice).toFixed(2)),
+                        neededDesc: need.rawAmounts.join(' + ')
+                    });
+                }
+            });
+
+            return { totalMeals, totalCost, missingItems };
+        }
+
+        window.setActivePlannerDay = (dayId) => {
+            window.appState.activePlannerDay = dayId;
+            renderMealPlanner();
+        };
+
+        window.openPickMealModal = (dayId, slotId) => {
+            window.currentPickMealTarget = { dayId, slotId };
+            const dayObj = PLANNER_DAYS.find(d => d.id === dayId);
+            const slotObj = PLANNER_SLOTS.find(s => s.id === slotId);
+            document.getElementById('pick-meal-slot-badge').textContent = `${dayObj?.full || ''} • ${slotObj?.label || ''}`;
+            document.getElementById('pick-meal-search').value = '';
+            renderPickMealList();
+            document.getElementById('modal-pick-meal').classList.remove('hidden');
+        };
+
+        window.renderPickMealList = () => {
+            const listEl = document.getElementById('pick-meal-list');
+            const q = (document.getElementById('pick-meal-search')?.value || '').toLowerCase().trim();
+            const allRecs = getAllAvailableRecipesForPlanner().filter(r =>
+                r.title.toLowerCase().includes(q) ||
+                (r.ingredients || []).some(i => i.name.toLowerCase().includes(q))
+            );
+
+            if (allRecs.length === 0) {
+                listEl.innerHTML = `<p class="text-xs text-slate-400 italic py-6 text-center">Brak pasujących przepisów.</p>`;
+                return;
+            }
+
+            listEl.innerHTML = allRecs.map(rec => {
+                const m = calculateRecipeMetrics(rec);
+                return `
+                <button type="button" onclick="assignMealToSlot('${rec.id}')" class="w-full p-3 rounded-xl bg-slate-900/90 hover:bg-slate-800 border ${m.isReadyFromPantry ? 'border-emerald-500/40' : 'border-slate-800'} flex items-center justify-between gap-3 text-left transition-all">
+                    <div class="min-w-0">
+                        <p class="text-sm font-bold text-white truncate">${rec.title}</p>
+                        <p class="text-[11px] text-slate-400 mt-0.5">
+                            ${m.isReadyFromPantry ? '<span class="text-emerald-400 font-semibold">✅ 100% w domu</span>' : `Brakuje: ${m.missingIngredients.length} skł.`} • ${rec.portions || 4} porc.
+                        </p>
+                    </div>
+                    <span class="shrink-0 text-xs font-extrabold text-emerald-400 font-mono bg-slate-950 px-2.5 py-1 rounded-lg border border-slate-800">${m.currentTotal.toFixed(2)} zł</span>
+                </button>
+                `;
+            }).join('');
+        };
+
+        window.assignMealToSlot = async (recipeId) => {
+            const target = window.currentPickMealTarget;
+            if (!target) return;
+            if (!window.appState.mealPlan) window.appState.mealPlan = {};
+            if (!window.appState.mealPlan[target.dayId]) window.appState.mealPlan[target.dayId] = {};
+            window.appState.mealPlan[target.dayId][target.slotId] = recipeId;
+
+            closeModal('modal-pick-meal');
+            renderMealPlanner();
+            updateBadges();
+            await saveKitchenChanges();
+            showToast("Dodano danie do Planera Posiłków!");
+        };
+
+        window.removeMealFromSlot = async (dayId, slotId) => {
+            if (window.appState.mealPlan?.[dayId]) {
+                delete window.appState.mealPlan[dayId][slotId];
+                renderMealPlanner();
+                updateBadges();
+                await saveKitchenChanges();
+            }
+        };
+
+        window.clearMealPlanner = async () => {
+            if (!confirm("Wyczyścić cały plan posiłków na ten tydzień?")) return;
+            window.appState.mealPlan = {};
+            renderMealPlanner();
+            updateBadges();
+            await saveKitchenChanges();
+            showToast("Wyczyszczono Planer Posiłków.");
+        };
+
+        window.addMissingFromPlannerToShopping = async () => {
+            const { missingItems } = computePlannerSummary();
+            if (missingItems.length === 0) {
+                showToast("Wszystkie składniki z planu macie już w Spiżarni!", "success");
+                return;
+            }
+
+            let added = 0;
+            missingItems.forEach(item => {
+                const exists = window.appState.shopping.some(s => !s.checked && window.normalizeKey(s.baseName || s.name) === item.key);
+                if (!exists) {
+                    window.appState.shopping.push({
+                        id: 'shop_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+                        name: `${item.name} (${item.packsToBuy} × ${item.packUnit})`,
+                        baseName: item.name,
+                        category: item.cat,
+                        price: item.estPrice,
+                        checked: false
+                    });
+                    added++;
+                }
+            });
+
+            await saveKitchenChanges();
+            showToast(added > 0 ? `🛒 Dodano ${added} brakujących pozycji z planu na Listę Zakupów!` : "Brakujące składniki są już na Liście Zakupów.");
+        };
+
+        window.renderMealPlanner = () => {
+            const grid = document.getElementById('planner-days-grid');
+            const pills = document.getElementById('planner-mobile-day-pills');
+            if (!grid || !pills) return;
+
+            const summary = computePlannerSummary();
+            document.getElementById('planner-stat-meals').textContent = `${summary.totalMeals} dań`;
+            document.getElementById('planner-stat-cost').textContent = `${summary.totalCost.toFixed(2)} zł`;
+            document.getElementById('planner-stat-missing').textContent = `${summary.missingItems.length} poz.`;
+            document.getElementById('planner-missing-btn-count').textContent = summary.missingItems.length;
+
+            const activeDay = window.appState.activePlannerDay || 'mon';
+            const plan = window.appState.mealPlan || {};
+            const allRecs = getAllAvailableRecipesForPlanner();
+
+            // Pigułki dni tygodnia na telefon (iPhone 13 mini)
+            pills.innerHTML = PLANNER_DAYS.map(d => {
+                const isAct = d.id === activeDay;
+                const countForDay = Object.values(plan[d.id] || {}).filter(Boolean).length;
+                return `
+                <button type="button" onclick="setActivePlannerDay('${d.id}')" class="px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center gap-1.5 ${isAct ? 'bg-sky-500 text-slate-950 shadow-md' : 'bg-slate-900 text-slate-300 border border-slate-800'}">
+                    <span>${d.short}</span>
+                    ${countForDay > 0 ? `<span class="w-4 h-4 rounded-full text-[10px] flex items-center justify-center ${isAct ? 'bg-slate-950 text-sky-400' : 'bg-sky-500/20 text-sky-300'}">${countForDay}</span>` : ''}
+                </button>
+                `;
+            }).join('');
+
+            grid.innerHTML = PLANNER_DAYS.map(day => {
+                const dayPlan = plan[day.id] || {};
+                const isHiddenOnMobile = day.id !== activeDay ? 'hidden md:flex' : 'flex';
+                let dayCost = 0;
+
+                const slotsHtml = PLANNER_SLOTS.map(slot => {
+                    const recId = dayPlan[slot.id];
+                    const rec = recId ? allRecs.find(r => r.id === recId) : null;
+                    if (rec) {
+                        const m = calculateRecipeMetrics(rec);
+                        dayCost += m.currentTotal;
+                        return `
+                        <div class="p-3 rounded-xl bg-slate-950/90 border ${m.isReadyFromPantry ? 'border-emerald-500/35' : 'border-slate-800'} flex items-center justify-between gap-2">
+                            <div onclick="openRecipeDetail('${rec.id}', ${!!rec.isPublicCommunity})" class="min-w-0 flex-1 cursor-pointer">
+                                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">${slot.label}</span>
+                                <p class="text-xs sm:text-sm font-bold text-white truncate mt-0.5 hover:text-emerald-400">${rec.title}</p>
+                                <span class="text-[11px] font-mono text-emerald-400">${m.currentTotal.toFixed(2)} zł</span>
+                            </div>
+                            <button type="button" onclick="removeMealFromSlot('${day.id}', '${slot.id}')" title="Usuń z planu" class="p-1.5 rounded-lg bg-slate-900 hover:bg-red-950/60 text-slate-400 hover:text-red-300 text-xs shrink-0">✕</button>
+                        </div>
+                        `;
+                    }
+                    return `
+                    <button type="button" onclick="openPickMealModal('${day.id}', '${slot.id}')" class="w-full p-2.5 rounded-xl bg-slate-900/50 hover:bg-slate-900 border border-dashed border-slate-700/80 hover:border-sky-500/50 flex items-center justify-between text-left transition-all">
+                        <span class="text-xs text-slate-400">${slot.label}</span>
+                        <span class="text-xs font-bold text-sky-400">+ Wybierz</span>
+                    </button>
+                    `;
+                }).join('');
+
+                return `
+                <div class="${isHiddenOnMobile} flex-col justify-between bg-[#1e293b] rounded-2xl border border-slate-800 p-4 space-y-3">
+                    <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+                        <h3 class="text-sm sm:text-base font-bold text-white">${day.full}</h3>
+                        <span class="text-xs font-mono font-bold text-emerald-400">${dayCost.toFixed(2)} zł</span>
+                    </div>
+                    <div class="space-y-2">
+                        ${slotsHtml}
+                    </div>
+                </div>
+                `;
+            }).join('');
+        };
+
+        window.toggleMobileMoreMenu = (forceState = null) => {
+            const sheet = document.getElementById('mobile-more-sheet');
+            if (!sheet) return;
+            if (forceState === null) sheet.classList.toggle('hidden');
+            else sheet.classList.toggle('hidden', !forceState);
+        };
+
+        window.renderAll = () => {
+            renderRecipes();
+            renderMealPlanner();
+            renderFreezer();
+            renderPantry();
+            renderPricebook();
+            renderTrackedProducts();
+            renderVerifyScraper();
+            renderShoppingList();
+            renderShoppingHistory();
+            renderReviewsAndStats();
+            updateBadges();
+        };
+
+        function updateBadges() {
+            const readyCount = window.appState.recipes.filter(r => calculateRecipeMetrics(r).isReadyFromPantry).length;
+            const pbCount = Object.keys(window.appState.pricebook || {}).length;
+            const trackedCount = (window.appState.trackedProducts || []).length;
+            const shopUnchecked = window.appState.shopping.filter(s => !s.checked).length;
+            const verifyCount = Object.keys(window.appState.pendingScraper || {}).length;
+            const plannerCount = computePlannerSummary().totalMeals;
+
+            document.getElementById('badge-pantry-ready').textContent = readyCount;
+            const plannerBadge = document.getElementById('badge-planner-count');
+            if (plannerBadge) plannerBadge.textContent = plannerCount;
+            const mobPlanner = document.getElementById('mobile-badge-planner');
+            if (mobPlanner) {
+                mobPlanner.textContent = plannerCount;
+                mobPlanner.classList.toggle('hidden', plannerCount === 0);
+            }
+            const pbBadge = document.getElementById('badge-pricebook-count');
+            if (pbBadge) pbBadge.textContent = pbCount;
+            const trackedBadge = document.getElementById('badge-tracked-count');
+            if (trackedBadge) trackedBadge.textContent = trackedCount;
+            document.getElementById('badge-shopping-count').textContent = shopUnchecked;
+            document.getElementById('badge-verify-count').textContent = verifyCount;
+
+            const mobPantry = document.getElementById('mobile-badge-pantry');
+            mobPantry.textContent = readyCount;
+            mobPantry.classList.toggle('hidden', readyCount === 0);
+
+            const mobVerify = document.getElementById('mobile-badge-verify');
+            mobVerify.textContent = verifyCount;
+            mobVerify.classList.toggle('hidden', verifyCount === 0);
+
+            const mobShop = document.getElementById('mobile-badge-shopping');
+            mobShop.textContent = shopUnchecked;
+            mobShop.classList.toggle('hidden', shopUnchecked === 0);
+        }
+
+        window.switchTab = (tabName) => {
+            ['recipes', 'planner', 'pantry', 'pricebook', 'promos', 'verify', 'shopping', 'reviews', 'feedback'].forEach(t => {
+                const el = document.getElementById(`tab-${t}`);
+                if (el) el.classList.toggle('hidden', t !== tabName);
+            });
+
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                const active = btn.dataset.tab === tabName;
+                btn.className = active
+                    ? 'nav-btn w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-medium transition-all bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
+                    : 'nav-btn w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800/70 transition-all';
+            });
+
+            document.querySelectorAll('.mobile-nav-btn').forEach(btn => {
+                const active = btn.dataset.tab === tabName;
+                btn.classList.toggle('text-emerald-400', active);
+                btn.classList.toggle('text-slate-400', !active);
+            });
+        };
+
+        window.openAddRecipeModal = () => {
+            syncKitchenLabelsUI();
+            renderRecipeTagSelectorPills('ai-recipe-tags-selector', []);
+            renderRecipeTagSelectorPills('man-recipe-tags-selector', ['Obiad jednogarnkowy']);
+            const customMan = document.getElementById('man-custom-tags');
+            if (customMan) customMan.value = '';
+            document.getElementById('modal-add-recipe').classList.remove('hidden');
+        };
+        window.openKitchenModal = () => {
+            syncKitchenLabelsUI();
+            const patEl = document.getElementById('input-github-pat');
+            const repoEl = document.getElementById('input-github-repo');
+            const wfEl = document.getElementById('input-github-wf');
+            if (patEl) patEl.value = window.appState.githubToken || '';
+            if (repoEl) repoEl.value = window.appState.githubRepo || 'przemyslawwinter/przepisnikAI';
+            if (wfEl) wfEl.value = window.appState.githubWorkflow || 'scraper.yml';
+            document.getElementById('modal-kitchen-code').classList.remove('hidden');
+        };
+        window.closeModal = (id) => document.getElementById(id).classList.add('hidden');
+
+        window.saveKitchenAiSettings = async (e) => {
+            e.preventDefault();
+            const newLabel = document.getElementById('input-kitchen-label').value.trim() || "Wspólna Kuchnia";
+            const newKey = document.getElementById('input-gemini-key').value.trim();
+            const newPat = (document.getElementById('input-github-pat')?.value || '').trim();
+            const newRepo = (document.getElementById('input-github-repo')?.value || '').trim() || 'przemyslawwinter/przepisnikAI';
+            const newWf = (document.getElementById('input-github-wf')?.value || '').trim() || 'scraper.yml';
+
+            window.appState.kitchenLabel = newLabel;
+            window.appState.geminiApiKey = newKey;
+            window.appState.githubToken = newPat;
+            window.appState.githubRepo = newRepo;
+            window.appState.githubWorkflow = newWf;
+            localStorage.setItem('kuchnia_gemini_key', newKey);
+            localStorage.setItem('kuchnia_github_pat', newPat);
+            localStorage.setItem('kuchnia_github_repo', newRepo);
+            localStorage.setItem('kuchnia_github_wf', newWf);
+            syncKitchenLabelsUI();
+            updateAiKeyBadge();
+            closeModal('modal-kitchen-code');
+
+            await saveKitchenChanges();
+
+            const myPublicRecipes = (window.appState.publicRecipes || []).filter(
+                p => p.sourceKitchen === window.appState.kitchenCode
+            );
+            for (const pub of myPublicRecipes) {
+                try {
+                    await setDoc(doc(db, "publiczne_przepisy", pub.publicId), {
+                        sharedBy: newLabel
+                    }, { merge: true });
+                } catch (_) {}
+            }
+
+            showToast(`Zapisano nazwę kuchni: <strong>${newLabel}</strong>${myPublicRecipes.length > 0 ? ` i zaktualizowano podpis przy ${myPublicRecipes.length} udostępnionych przepisach!` : '!'}`);
+        };
+
+        // ================= EKSPORT & IMPORT KOPII ZAPASOWEJ PRZEPISÓW =================
+        function triggerFileDownload(filename, contentStr, mimeType) {
+            const blob = new Blob([contentStr], { type: mimeType });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+        }
+
+        window.exportRecipesBackupJson = () => {
+            const recipes = window.appState.recipes || [];
+            const code = window.appState.kitchenCode || 'KUCHNIA';
+            const dateStr = new Date().toISOString().slice(0, 10);
+
+            const payload = {
+                app: "KuchniaBudżet PRO",
+                exportedAt: new Date().toISOString(),
+                kitchenCode: code,
+                kitchenLabel: window.appState.kitchenLabel || "Wspólna Kuchnia",
+                recipesCount: recipes.length,
+                recipes: recipes
+            };
+
+            triggerFileDownload(
+                `przepisy_${code}_${dateStr}.json`,
+                JSON.stringify(payload, null, 2),
+                "application/json;charset=utf-8"
+            );
+            showToast(`💾 Wyeksportowano <strong>${recipes.length} przepisów</strong> do pliku JSON!`);
+        };
+
+        window.exportRecipesReadableTxt = () => {
+            const recipes = window.appState.recipes || [];
+            const code = window.appState.kitchenCode || 'KUCHNIA';
+            const dateStr = new Date().toISOString().slice(0, 10);
+
+            const lines = [
+                `KSIĄŻKA KUCHARSKA — ${window.appState.kitchenLabel || 'Wspólna Kuchnia'} (${code})`,
+                `Data eksportu: ${new Date().toLocaleDateString('pl-PL')} | Liczba przepisów: ${recipes.length}`,
+                "=".repeat(60),
+                ""
+            ];
+
+            recipes.forEach((r, idx) => {
+                lines.push(`${idx + 1}. ${r.title.toUpperCase()} [${r.category || 'Obiad'}]`);
+                lines.push(`   Czas: ${r.time || 25} min | Porcje: ${r.portions || 4}`);
+                lines.push("   Składniki:");
+                (r.ingredients || []).forEach(ing => {
+                    lines.push(`     - ${ing.name}: ${ing.amount || ''} (${Number(ing.price || 0).toFixed(2)} zł)`);
+                });
+                lines.push("   Przygotowanie:");
+                (r.steps || []).forEach((st, sIdx) => {
+                    lines.push(`     ${sIdx + 1}. ${st}`);
+                });
+                lines.push("");
+                lines.push("-".repeat(60));
+                lines.push("");
+            });
+
+            triggerFileDownload(
+                `ksiazka_kucharska_${code}_${dateStr}.txt`,
+                lines.join("\n"),
+                "text/plain;charset=utf-8"
+            );
+            showToast(`📄 Pobrano czytelny plik tekstowy z <strong>${recipes.length} przepisami</strong>!`);
+        };
+
+        window.importRecipesBackupJson = async (event) => {
+            const file = event.target.files?.[0];
+            if (!file) return;
+
+            try {
+                const rawText = await file.text();
+                const parsed = safeParseGeminiJson(rawText, {});
+                const importedList = Array.isArray(parsed)
+                    ? parsed
+                    : (Array.isArray(parsed.recipes) ? parsed.recipes : null);
+
+                if (!importedList || importedList.length === 0) {
+                    showToast("Wybrany plik nie zawiera listy przepisów.", "error");
+                    return;
+                }
+
+                const existingTitles = new Set(
+                    (window.appState.recipes || []).map(r => window.stripDiacritics(r.title))
+                );
+
+                let addedCount = 0;
+                let skippedCount = 0;
+
+                importedList.forEach((rec, idx) => {
+                    if (!rec || !rec.title || !Array.isArray(rec.ingredients)) return;
+                    const normTitle = window.stripDiacritics(rec.title);
+                    if (existingTitles.has(normTitle)) {
+                        skippedCount++;
+                        return;
+                    }
+
+                    const cleanRec = {
+                        id: 'rec_imp_' + Date.now() + '_' + idx,
+                        title: String(rec.title).trim(),
+                        category: rec.category || 'Obiad',
+                        time: Number(rec.time) || 25,
+                        portions: Number(rec.portions) || 4,
+                        ingredients: rec.ingredients.map(i => ({
+                            name: String(i.name || 'Składnik').trim(),
+                            amount: String(i.amount || '1 porcja').trim(),
+                            price: Number(i.price) || 3.00,
+                            cat: i.cat || 'Inne'
+                        })),
+                        steps: Array.isArray(rec.steps) ? rec.steps.map(s => String(s)) : []
+                    };
+
+                    ensureIngredientsInPricebookAndPantry(cleanRec.ingredients);
+                    window.appState.recipes.unshift(cleanRec);
+                    existingTitles.add(normTitle);
+                    addedCount++;
+                });
+
+                if (addedCount > 0) {
+                    await saveKitchenChanges();
+                    showToast(`📂 Zaimportowano <strong>${addedCount} nowych przepisów</strong>${skippedCount > 0 ? ` (pominięto ${skippedCount} duplikatów)` : ''}!`);
+                } else {
+                    showToast(`Wszystkie przepisy z pliku (${skippedCount}) już znajdują się w Twojej kuchni.`, "warning");
+                }
+            } catch (err) {
+                console.error("Błąd importu JSON:", err);
+                showToast("Nie udało się odczytać pliku kopii zapasowej (niepoprawny format JSON).", "error");
+            } finally {
+                event.target.value = '';
+            }
+        };
+
+        // ================= EKSPORT & IMPORT KOPII ZAPASOWEJ INWENTARZA (SPIŻARNIA + ZAMRAŻARKA) =================
+        window.exportInventoryBackupJson = () => {
+            const pantry = window.appState.pantry || {};
+            const freezer = window.appState.freezer || [];
+            const code = window.appState.kitchenCode || 'KUCHNIA';
+            const dateStr = new Date().toISOString().slice(0, 10);
+
+            const pantryItemsList = Object.entries(pantry).map(([key, val]) => {
+                const pb = window.appState.pricebook?.[key];
+                const entry = typeof val === 'object' && val !== null
+                    ? val
+                    : { qty: val ? 1 : 0, unit: 'szt.', location: 'Spiżarnia' };
+                return {
+                    key,
+                    name: pb?.name || key,
+                    qty: Number(entry.qty || 0),
+                    unit: entry.unit || 'szt.',
+                    location: entry.location || 'Spiżarnia',
+                    category: pb?.category || 'Inne',
+                    unitPrice: pb ? Number(pb.price || 0) : null,
+                    packUnit: pb?.unit || null
+                };
+            });
+
+            const payload = {
+                app: "KuchniaBudżet PRO",
+                backupType: "inventory",
+                exportedAt: new Date().toISOString(),
+                kitchenCode: code,
+                kitchenLabel: window.appState.kitchenLabel || "Wspólna Kuchnia",
+                pantryCount: pantryItemsList.length,
+                freezerMealsCount: freezer.length,
+                pantry: pantry,
+                pantryDetailed: pantryItemsList,
+                freezer: freezer
+            };
+
+            triggerFileDownload(
+                `inwentarz_${code}_${dateStr}.json`,
+                JSON.stringify(payload, null, 2),
+                "application/json;charset=utf-8"
+            );
+            showToast(`💾 Wyeksportowano inwentarz: <strong>${pantryItemsList.length} produktów</strong> w spiżarni/lodówce oraz <strong>${freezer.length} dań</strong> w zamrażarce!`);
+        };
+
+        window.exportInventoryReadableTxt = () => {
+            const pantry = window.appState.pantry || {};
+            const freezer = window.appState.freezer || [];
+            const code = window.appState.kitchenCode || 'KUCHNIA';
+            const dateStr = new Date().toISOString().slice(0, 10);
+
+            const lines = [
+                `STAN SPIŻARNI, LODÓWKI I ZAMRAŻARKI — ${window.appState.kitchenLabel || 'Wspólna Kuchnia'} (${code})`,
+                `Data eksportu: ${new Date().toLocaleDateString('pl-PL')}`,
+                "=".repeat(60),
+                "",
+                "1. SPIŻARNIA I LODÓWKA:",
+            ];
+
+            const entries = Object.entries(pantry).sort((a, b) => a[0].localeCompare(b[0]));
+            if (entries.length === 0) {
+                lines.push("   (brak zapisanych produktów)");
+            } else {
+                entries.forEach(([key, val]) => {
+                    const pb = window.appState.pricebook?.[key];
+                    const name = pb?.name || key;
+                    const entry = typeof val === 'object' && val !== null ? val : { qty: 1, unit: 'szt.', location: 'Spiżarnia' };
+                    lines.push(`   - ${name}: ${entry.qty} ${entry.unit || 'szt.'} [${entry.location || 'Spiżarnia'}]`);
+                });
+            }
+
+            lines.push("");
+            lines.push("2. ZAMRAŻARKA (GOTOWE DANIA):");
+            if (freezer.length === 0) {
+                lines.push("   (zamrażarka pusta)");
+            } else {
+                freezer.forEach(meal => {
+                    lines.push(`   - ${meal.name}: ${meal.portions} porc.${meal.note ? ` (${meal.note})` : ''}`);
+                });
+            }
+
+            triggerFileDownload(
+                `spis_spizarni_${code}_${dateStr}.txt`,
+                lines.join("\n"),
+                "text/plain;charset=utf-8"
+            );
+            showToast("📄 Pobrano czytelny spis spiżarni i zamrażarki (TXT)!");
+        };
+
+        window.importInventoryBackupJson = async (event) => {
+            const file = event.target.files?.[0];
+            if (!file) return;
+
+            try {
+                const rawText = await file.text();
+                const parsed = safeParseGeminiJson(rawText, {});
+
+                const hasPantryObj = parsed && typeof parsed.pantry === 'object' && parsed.pantry !== null && !Array.isArray(parsed.pantry);
+                const hasDetailedArr = parsed && Array.isArray(parsed.pantryDetailed);
+                const hasFreezerArr = parsed && Array.isArray(parsed.freezer);
+
+                if (!hasPantryObj && !hasDetailedArr && !hasFreezerArr) {
+                    showToast("Wybrany plik nie zawiera danych spiżarni ani zamrażarki.", "error");
+                    return;
+                }
+
+                const replaceMode = confirm(
+                    "Jak przywrócić inwentarz z pliku?\n\n" +
+                    "• Kliknij OK, aby NADPISAĆ obecny stan dokładnie stanem z pliku kopii.\n" +
+                    "• Kliknij Anuluj, aby POŁĄCZYĆ / ZAKTUALIZOWAĆ (zachowa obecne produkty i dopisze/zaktualizuje te z pliku)."
+                );
+
+                const nextPantry = replaceMode ? {} : { ...(window.appState.pantry || {}) };
+                let restoredPantryCount = 0;
+
+                if (hasDetailedArr && parsed.pantryDetailed.length > 0) {
+                    parsed.pantryDetailed.forEach(item => {
+                        if (!item || (!item.key && !item.name)) return;
+                        const key = window.normalizeKey(item.key || item.name);
+                        if (!key) return;
+
+                        nextPantry[key] = {
+                            qty: Math.max(0, Number(item.qty) || 0),
+                            unit: item.unit || 'szt.',
+                            location: item.location || 'Spiżarnia'
+                        };
+                        restoredPantryCount++;
+
+                        // Jeśli produktu nie ma w Cenniku, odtwórz go również w Cenniku, aby kafelek był od razu widoczny
+                        if (!window.appState.pricebook[key]) {
+                            window.appState.deletedPricebookKeys = (window.appState.deletedPricebookKeys || []).filter(k => k !== key);
+                            window.appState.pricebook[key] = {
+                                name: item.name || key,
+                                unit: key === 'jajka' ? '10 szt.' : (item.packUnit || '1 szt.'),
+                                category: item.category || (item.location === 'Lodówka' ? 'Lodówka i mrożonki' : 'Inne'),
+                                price: Number(item.unitPrice) > 0 ? Number(item.unitPrice) : 5.00,
+                                basePrice: Number(item.unitPrice) > 0 ? Number(item.unitPrice) : 5.00,
+                                promoPrice: Number(item.unitPrice) > 0 ? Number(item.unitPrice) : 5.00,
+                                isPromo: false,
+                                store: "Kopia JSON"
+                            };
+                        }
+                    });
+                } else if (hasPantryObj) {
+                    Object.entries(parsed.pantry).forEach(([rawKey, val]) => {
+                        const key = window.normalizeKey(rawKey);
+                        if (!key || val === null || val === undefined || val === false) return;
+                        const entry = typeof val === 'object'
+                            ? {
+                                qty: Math.max(0, Number(val.qty) || 0),
+                                unit: val.unit || 'szt.',
+                                location: val.location || 'Spiżarnia'
+                            }
+                            : { qty: 1, unit: 'szt.', location: 'Spiżarnia' };
+                        nextPantry[key] = entry;
+                        restoredPantryCount++;
+
+                        if (!window.appState.pricebook[key]) {
+                            window.appState.deletedPricebookKeys = (window.appState.deletedPricebookKeys || []).filter(k => k !== key);
+                            window.appState.pricebook[key] = {
+                                name: key.replace(/_/g, ' ').replace(/^./, c => c.toUpperCase()),
+                                unit: key === 'jajka' ? '10 szt.' : '1 szt.',
+                                category: entry.location === 'Lodówka' ? 'Lodówka i mrożonki' : 'Inne',
+                                price: 5.00,
+                                basePrice: 5.00,
+                                promoPrice: 5.00,
+                                isPromo: false,
+                                store: "Kopia JSON"
+                            };
+                        }
+                    });
+                }
+
+                window.appState.pantry = nextPantry;
+
+                let restoredFreezerCount = 0;
+                if (hasFreezerArr) {
+                    if (replaceMode) {
+                        window.appState.freezer = parsed.freezer.map((m, idx) => ({
+                            id: m.id || ('frz_imp_' + Date.now() + '_' + idx),
+                            name: String(m.name || 'Danie').trim(),
+                            portions: Math.max(1, parseInt(m.portions, 10) || 1),
+                            note: m.note || '',
+                            frozenAt: m.frozenAt || new Date().toLocaleDateString('pl-PL')
+                        }));
+                        restoredFreezerCount = window.appState.freezer.length;
+                    } else {
+                        const existingFreezer = [...(window.appState.freezer || [])];
+                        parsed.freezer.forEach((m, idx) => {
+                            if (!m || !m.name) return;
+                            const found = existingFreezer.find(e => window.stripDiacritics(e.name) === window.stripDiacritics(m.name));
+                            if (found) {
+                                found.portions = Number(found.portions || 0) + (parseInt(m.portions, 10) || 1);
+                            } else {
+                                existingFreezer.unshift({
+                                    id: 'frz_imp_' + Date.now() + '_' + idx,
+                                    name: String(m.name).trim(),
+                                    portions: Math.max(1, parseInt(m.portions, 10) || 1),
+                                    note: m.note || '',
+                                    frozenAt: m.frozenAt || new Date().toLocaleDateString('pl-PL')
+                                });
+                            }
+                            restoredFreezerCount++;
+                        });
+                        window.appState.freezer = existingFreezer;
+                    }
+                }
+
+                await saveKitchenChanges();
+                showToast(`📂 Przywrócono inwentarz: <strong>${restoredPantryCount} produktów</strong> w spiżarni/lodówce oraz <strong>${restoredFreezerCount} dań</strong> w zamrażarce!`);
+            } catch (err) {
+                console.error("Błąd importu inwentarza JSON:", err);
+                showToast("Nie udało się odczytać pliku inwentarza (niepoprawny format JSON).", "error");
+            } finally {
+                event.target.value = '';
+            }
+        };
+
+
+        // ================= SAMOUCZEK POWITALNY (ONBOARDING TOUR) =================
+        let currentTourStepIndex = 0;
+
+        function getOnboardingSteps() {
+            const code = window.appState.kitchenCode || '------';
+            const label = window.appState.kitchenLabel || 'Wspólna Kuchnia';
+            return [
+                {
+                    tab: 'recipes',
+                    icon: '🔑',
+                    title: `Witaj w „${label}”! Oto Twój Kod Kuchni`,
+                    desc: 'Ten 6-znakowy kod łączy wszystkich domowników ze wspólną bazą. Wyślij go drugiej połówce lub rodzinie — gdy wpiszą go na ekranie startowym, zobaczycie dokładnie te same przepisy, spiżarnię i listę zakupów na żywo.',
+                    extraHtml: `
+                        <div class="p-3.5 rounded-xl bg-slate-950 border border-emerald-500/40 flex items-center justify-between gap-3">
+                            <div>
+                                <span class="text-[10px] uppercase tracking-wider text-slate-400 block">Twój unikalny kod dostępu</span>
+                                <span class="font-mono text-xl font-extrabold text-emerald-400 tracking-widest">${code}</span>
+                            </div>
+                            <button type="button" onclick="copyKitchenCode()" class="px-3.5 py-2 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 text-xs font-bold transition-colors">
+                                📋 Kopiuj kod
+                            </button>
+                        </div>
+                    `
+                },
+                {
+                    tab: 'pantry',
+                    icon: '🥫',
+                    title: 'Spiżarnia, Lodówka & Zamrażarka',
+                    desc: 'Zaznaczaj produkty, które masz w domu, a w sekcji Zamrażarka zapisuj gotowe porcje obiadów. W zakładce Przepisy kliknij filtr „🥫 Z tego co mam”, aby od razu zobaczyć, co ugotujesz bez wychodzenia do sklepu.',
+                    extraHtml: `
+                        <div class="p-3 rounded-xl bg-slate-900/90 border border-slate-800 text-xs text-slate-300">
+                            💡 <strong>Wskazówka:</strong> Po ugotowaniu dania kliknij <strong>„🍳 Ugotowane!”</strong> — apka automatycznie odejmie zużyte składniki ze spiżarni.
+                        </div>
+                    `
+                },
+                {
+                    tab: 'pricebook',
+                    icon: '📸',
+                    title: 'Cennik & Skaner Paragonów',
+                    desc: 'Nie musisz ręcznie liczyć kosztów obiadów. Wgraj zdjęcie paragonu w tej zakładce, a apka wyciągnie ceny produktów spożywczych (pomijając chemię i kosmetyki), zaktualizuje Cennik i przeliczy koszt każdego przepisu.',
+                    extraHtml: `
+                        <div class="p-3 rounded-xl bg-slate-900/90 border border-slate-800 text-xs text-slate-300">
+                            ⚖️ Aplikacja sama przelicza gramatury, kromki chleba, ząbki czosnku oraz łyżki słoików (np. masła orzechowego czy bulionu).
+                        </div>
+                    `
+                },
+                {
+                    tab: 'planner',
+                    icon: '📅',
+                    title: 'Planer Tygodnia & Wspólna Lista Zakupów',
+                    desc: 'Zaplanuj śniadania, obiady i kolacje na cały tydzień. Aplikacja zsumuje zapotrzebowanie ze wszystkich dni, odejmie to, co już masz w domu, i jednym kliknięciem wrzuci wyłącznie brakujące rzeczy na Listę Zakupów.',
+                    extraHtml: `
+                        <div class="p-3 rounded-xl bg-slate-900/90 border border-slate-800 text-xs text-slate-300">
+                            🛒 Po powrocie ze sklepu kliknij <strong>„Przenieś kupione do Spiżarni”</strong>, aby uzupełnić zapasy jednym ruchem.
+                        </div>
+                    `
+                },
+                {
+                    tab: 'recipes',
+                    icon: '✨',
+                    title: 'Przepisy z linków & Klucz Gemini AI',
+                    desc: 'Na start masz już 15 sprawdzonych przepisów. Możesz dodawać własne, pobierać przepisy wklejając link ze strony kulinarnej albo dzielić się nimi z innymi kuchniami.',
+                    extraHtml: `
+                        <div class="p-3.5 rounded-xl bg-indigo-950/40 border border-indigo-500/40 space-y-2">
+                            <p class="text-xs text-indigo-200 leading-relaxed">
+                                🔑 Jeśli masz własny darmowy klucz <strong>Google Gemini API</strong>, wklej go w <strong>Nazwa & Klucz AI</strong>, aby odblokować Skaner Paragonów ze zdjęć i inteligentne parsowanie linków.
+                            </p>
+                            <button type="button" onclick="closeOnboardingTour(); openKitchenModal()" class="text-xs font-bold text-emerald-400 hover:underline">
+                                ⚙️ Otwórz ustawienia Nazwa & Klucz AI →
+                            </button>
+                        </div>
+                    `
+                }
+            ];
+        }
+
+        window.startOnboardingTour = (stepIdx = 0) => {
+            currentTourStepIndex = Math.max(0, stepIdx);
+            renderOnboardingTourStep();
+            document.getElementById('modal-onboarding-tour').classList.remove('hidden');
+        };
+
+        window.closeOnboardingTour = () => {
+            document.getElementById('modal-onboarding-tour').classList.add('hidden');
+            switchTab('recipes');
+        };
+
+        window.prevOnboardingStep = () => {
+            if (currentTourStepIndex > 0) {
+                currentTourStepIndex--;
+                renderOnboardingTourStep();
+            }
+        };
+
+        window.nextOnboardingStep = () => {
+            const steps = getOnboardingSteps();
+            if (currentTourStepIndex < steps.length - 1) {
+                currentTourStepIndex++;
+                renderOnboardingTourStep();
+            } else {
+                closeOnboardingTour();
+                showToast("Gotowe! Miłego gotowania i oszczędzania 👨‍🍳");
+            }
+        };
+
+        function renderOnboardingTourStep() {
+            const steps = getOnboardingSteps();
+            const step = steps[currentTourStepIndex];
+            if (!step) return;
+
+            if (step.tab) {
+                switchTab(step.tab);
+            }
+
+            document.getElementById('tour-step-badge').textContent = `KROK ${currentTourStepIndex + 1} / ${steps.length}`;
+            document.getElementById('tour-icon').textContent = step.icon;
+            document.getElementById('tour-title').textContent = step.title;
+            document.getElementById('tour-desc').textContent = step.desc;
+            document.getElementById('tour-extra-box').innerHTML = step.extraHtml || '';
+
+            document.getElementById('tour-dots').innerHTML = steps.map((_, idx) => `
+                <span class="h-1.5 rounded-full transition-all ${idx === currentTourStepIndex ? 'w-5 bg-emerald-400' : 'w-1.5 bg-slate-700'}"></span>
+            `).join('');
+
+            const prevBtn = document.getElementById('btn-tour-prev');
+            const nextBtn = document.getElementById('btn-tour-next');
+            prevBtn.classList.toggle('invisible', currentTourStepIndex === 0);
+            nextBtn.textContent = currentTourStepIndex === steps.length - 1 ? 'Zaczynamy! 🚀' : 'Dalej →';
+        }
+
+
+        // ================= ASYSTENT AI POMOCY & AUTO-ZGŁASZANIE BŁĘDÓW =================
+        window.openAiHelpModal = () => {
+            const noticeEl = document.getElementById('ai-help-key-notice');
+            if (noticeEl) {
+                if (window.appState.geminiApiKey) {
+                    noticeEl.className = 'p-3 rounded-xl bg-emerald-950/35 border border-emerald-500/35 flex items-center justify-between gap-2 text-xs';
+                    noticeEl.innerHTML = `<span class="text-emerald-200">✅ <strong>Klucz Gemini API aktywny</strong> — możesz pytać o funkcje lub zgłaszać błędy.</span>`;
+                } else {
+                    noticeEl.className = 'p-3 rounded-xl bg-amber-950/40 border border-amber-500/40 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs';
+                    noticeEl.innerHTML = `
+                        <span class="text-amber-200">🔑 <strong>Wymagany klucz Google Gemini API</strong> w ustawieniach kuchni, aby korzystać z asystenta AI.</span>
+                        <button type="button" onclick="closeModal('modal-ai-help'); openKitchenModal()" class="px-3 py-1.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 font-bold shrink-0">Wpisz klucz API →</button>
+                    `;
+                }
+            }
+            document.getElementById('modal-ai-help').classList.remove('hidden');
+        };
+
+        window.fillAiHelpPrompt = (text) => {
+            const input = document.getElementById('ai-help-input');
+            if (input) {
+                input.value = text;
+                input.focus();
+            }
+        };
+
+        window.askAiHelpAssistant = async (e) => {
+            e.preventDefault();
+            const userQuestion = document.getElementById('ai-help-input').value.trim();
+            if (!userQuestion) return;
+
+            const apiKey = window.appState.geminiApiKey;
+            if (!apiKey) {
+                showToast("Wymagany klucz Google Gemini API! Wklej go w ustawieniach kuchni.", "warning");
+                openAiHelpModal();
+                return;
+            }
+
+            const btn = document.getElementById('btn-ask-ai-help');
+            const origHtml = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = `<span class="animate-spin inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full"></span> <span>Analizuję pytanie...</span>`;
+
+            const responseBox = document.getElementById('ai-help-response-box');
+
+            try {
+                const systemGuide = `Jesteś wbudowanym asystentem aplikacji "KuchniaBudżet PRO".
+Znasz wszystkie zakładki i funkcje aplikacji:
+1. "recipes" (Przepisy & Społeczność): przeglądanie przepisów, filtr "Z tego co mam" (pantry), dodawanie własnych przepisów lub importowanie ich z linku URL ("Dodaj Przepis / Link / AI"), edycja składników, udostępnianie przepisów innym kuchniom, rozliczanie ugotowanych dań przyciskiem "Ugotowane!" (odejmuje zużyte składniki ze spiżarni i wylicza koszt 1 porcji).
+2. "planner" (Planer Posiłków): planowanie śniadań, obiadów i kolacji na 7 dni tygodnia, liczenie kosztu tygodnia oraz dodawanie brakujących składników do Listy Zakupów.
+3. "pantry" (Spiżarnia & Zamrażarka): domowy stan produktów (Lodówka / Spiżarnia) z obsługą jednostek (szt., g, kg, ml, l, opak., puszka, słoik) oraz sekcja "Zamrażarka" do ewidencji gotowych zamrożonych porcji obiadów.
+4. "pricebook" (Cennik & Paragon AI): Cennik Bazowy składników (źródło prawdy do wyceny przepisów) oraz Skaner Paragonów ze zdjęcia (wyciąga tylko żywność, pomija chemię/kosmetyki i aktualizuje ceny oraz spiżarnię).
+5. "promos" (Radar Śledzonych): lista ulubionych produktów do śledzenia w gazetkach.
+6. "verify" (Promocje): poczekalnia okazji z Lidla, Biedronki i Netto ze scrapera, przycisk "Sprawdź promocje teraz" oraz filtr "Odsiej AI".
+7. "shopping" (Lista Zakupów): wspólna lista zakupów z podziałem na działy, przenoszenie kupionych produktów do Spiżarni oraz Historia Zakupów (wydatki tygodniowe i miesięczne).
+8. "reviews" (Historia & Koszt Porcji): statystyki wydatków, średni koszt porcji i dziennik ugotowanych obiadów.
+9. Ustawienia ("Nazwa & Klucz AI"): zmiana nazwy kuchni, kopiowanie 6-znakowego Kodu Kuchni dla domowników, podpinanie klucza Google Gemini API oraz tokena GitHub Actions.
+
+ZADANIE:
+Przeanalizuj wiadomość użytkownika:
+- Jeśli użytkownik pyta JAK coś zrobić lub gdzie znaleźć funkcję: wyjaśnij krótko, konkretnie i przyjaźnie po polsku w krokach, oraz wskaż najlepszą zakładkę docelową ("targetTab": "recipes"|"planner"|"pantry"|"pricebook"|"promos"|"verify"|"shopping"|"reviews"|"settings"|""). Ustaw "isBug": false.
+- Jeśli użytkownik opisuje BŁĄD aplikacji, usterkę, niedziałający przycisk, zły przelicznik lub awarię (nie zwykłe pytanie o obsługę): ustaw "isBug": true, przygotuj zwięzły tytuł błędu ("bugTitle") oraz techniczny opis dla administratora ("bugDescription"), a w odpowiedzi ("answer") poinformuj użytkownika, że wykryto błąd i automatycznie wysłano zgłoszenie do Panelu Administratora, podając też ewentualne obejście problemu.
+
+Zwróć WYŁĄCZNIE poprawny JSON:
+{
+  "isBug": boolean,
+  "answer": "Treść odpowiedzi po polsku (możesz użyć prostego formatowania nowej linii)",
+  "targetTab": "recipes|planner|pantry|pricebook|promos|verify|shopping|reviews|settings|",
+  "targetButtonLabel": "np. Przejdź do Cennika i Skanera Paragonów",
+  "bugTitle": "Krótki tytuł błędu (jeśli isBug=true)",
+  "bugDescription": "Szczegółowy opis błędu na podstawie zgłoszenia użytkownika (jeśli isBug=true)"
+}`;
+
+                const resJson = await callGeminiWithFallback(apiKey, {
+                    contents: [{ parts: [{ text: userQuestion }] }],
+                    systemInstruction: { parts: [{ text: systemGuide }] },
+                    generationConfig: { responseMimeType: "application/json" }
+                });
+
+                const rawText = resJson.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
+                const parsed = safeParseGeminiJson(rawText, {});
+
+                let bugBannerHtml = '';
+                if (parsed.isBug) {
+                    const fbId = 'fb_ai_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4);
+                    const bugTitle = parsed.bugTitle || `Auto-zgłoszenie błędu: ${userQuestion.slice(0, 50)}`;
+                    const bugDesc = `${parsed.bugDescription || userQuestion}
+
+--- Kontekst automatyczny AI ---
+Oryginalna wiadomość: "${userQuestion}"
+Kuchnia: ${window.appState.kitchenLabel} (${window.appState.kitchenCode})`;
+
+                    await setDoc(doc(db, "sugestie_zmian", fbId), {
+                        id: fbId,
+                        kitchenCode: window.appState.kitchenCode,
+                        kitchenLabel: window.appState.kitchenLabel || "Wspólna Kuchnia",
+                        category: "🐛 Auto-zgłoszenie błędu (AI)",
+                        title: bugTitle,
+                        description: bugDesc,
+                        status: 'nowe',
+                        createdAt: new Date().toISOString()
+                    });
+
+                    bugBannerHtml = `
+                        <div class="p-3 rounded-xl bg-red-950/45 border border-red-500/40 text-xs text-red-200 space-y-1">
+                            <p class="font-bold text-red-300">🚨 Wykryto błąd — wysłano automatyczne zgłoszenie do Admina!</p>
+                            <p class="text-slate-300">Tytuł zgłoszenia: <strong>${bugTitle}</strong></p>
+                        </div>
+                    `;
+                    showToast("🚨 AI wykryło błąd i automatycznie wysłało zgłoszenie do Administratora!", "warning");
+                }
+
+                let actionBtnHtml = '';
+                const validTabs = ['recipes', 'planner', 'pantry', 'pricebook', 'promos', 'verify', 'shopping', 'reviews'];
+                if (parsed.targetTab && validTabs.includes(parsed.targetTab)) {
+                    const btnLabel = parsed.targetButtonLabel || 'Przejdź do tej zakładki →';
+                    actionBtnHtml = `
+                        <button type="button" onclick="closeModal('modal-ai-help'); switchTab('${parsed.targetTab}')" class="w-full py-2.5 px-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs sm:text-sm transition-all">
+                            ${btnLabel}
+                        </button>
+                    `;
+                } else if (parsed.targetTab === 'settings') {
+                    actionBtnHtml = `
+                        <button type="button" onclick="closeModal('modal-ai-help'); openKitchenModal()" class="w-full py-2.5 px-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs sm:text-sm transition-all">
+                            ⚙️ Otwórz ustawienia Nazwa & Klucz AI →
+                        </button>
+                    `;
+                }
+
+                const formattedAnswer = String(parsed.answer || '').replace(/\n/g, '<br>');
+                responseBox.innerHTML = `
+                    ${bugBannerHtml}
+                    <div class="p-4 rounded-xl bg-slate-950/90 border border-slate-800 text-sm text-slate-200 leading-relaxed">
+                        ${formattedAnswer}
+                    </div>
+                    ${actionBtnHtml}
+                `;
+                responseBox.classList.remove('hidden');
+            } catch (err) {
+                console.error("Błąd asystenta AI:", err);
+                responseBox.innerHTML = `
+                    <div class="p-3.5 rounded-xl bg-red-950/40 border border-red-500/40 text-xs text-red-200">
+                        Nie udało się połączyć z Gemini AI (${err.message}). Sprawdź poprawność klucza API w ustawieniach kuchni.
+                    </div>
+                `;
+                responseBox.classList.remove('hidden');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = origHtml;
+            }
+        };
+
+
+        window.generateRecipeFromPantryAI = async () => {
+            const apiKey = window.appState.geminiApiKey;
+            if (!apiKey) {
+                showToast("Wpisz klucz Google Gemini API w ustawieniach kuchni, aby generować przepisy z zapasów!", "warning");
+                openKitchenModal();
+                return;
+            }
+
+            const ownedItems = Object.entries(window.appState.pantry || {})
+                .filter(([_, v]) => v && Number(v.qty) > 0)
+                .map(([k, v]) => {
+                    const name = window.appState.pricebook[k]?.name || k.replace(/_/g, ' ');
+                    return `${name}: ${v.qty} ${v.unit}`;
+                });
+
+            if (ownedItems.length === 0) {
+                showToast("Twoja spiżarnia i lodówka są puste (brak produktów ze stanem > 0).", "warning");
+                return;
+            }
+
+            showToast("✨ AI układa przepis wyłącznie z Twoich aktualnych zapasów...");
+            const prompt = `Stwórz smaczny, domowy polski przepis na obiad lub kolację wykorzystujący WYŁĄCZNIE składniki, które mam teraz w domu (plus podstawowe przyprawy jak sól, pieprz, olej):
+Moje zapasy: ${ownedItems.join(', ')}.
+Nie dodawaj składników, których nie ma na powyższej liście! Zwróć JSON:
+{"title":"Nazwa dania","category":"Obiad jednogarnkowy","tags":["Z resztek","Na szybko"],"time":25,"portions":2,"ingredients":[{"name":"Składnik","amount":"200 g","price":0,"cat":"Inne"}],"steps":["Krok 1...","Krok 2..."]}`;
+
+            try {
+                const resJson = await callGeminiWithFallback(apiKey, {
+                    contents: [{ parts: [{ text: prompt }] }],
+                    generationConfig: { responseMimeType: "application/json" }
+                });
+                const parsed = safeParseGeminiJson(resJson.candidates?.[0]?.content?.parts?.[0]?.text, null);
+                if (!parsed || !parsed.title) throw new Error("Niepoprawny format przepisu");
+
+                const newRec = {
+                    id: 'rec_' + Date.now(),
+                    ...parsed,
+                    ingredients: (parsed.ingredients || []).map(i => ({
+                        ...i,
+                        name: window.toPolishNominativeFoodName(i.name || 'Składnik')
+                    }))
+                };
+                await persistNewRecipe(newRec, false);
+                switchTab('recipes');
+                openRecipeDetail(newRec.id, false);
+                showToast(`✨ Ułożono i zapisano przepis z Twoich zapasów: <strong>${newRec.title}</strong>!`);
+            } catch (err) {
+                showToast(`Nie udało się wygenerować przepisu (${err.message}).`, "error");
+            }
+        };
+
+        // ================= START APLIKACJI (ROUTING) =================
+        function initAppRouter() {
+            if (window.location.hash === '#admin') {
+                openAdminView();
+                return;
+            }
+
+            const savedCode = localStorage.getItem('kodKuchni');
+            if (savedCode && savedCode.trim().length > 0) {
+                connectToActiveKitchen(savedCode.trim().toUpperCase());
+            } else {
+                showOnlyTopView('view-welcome');
+            }
+        }
+
+        if (document.readyState === 'loading') {
+            window.addEventListener('DOMContentLoaded', initAppRouter);
+        } else {
+            initAppRouter();
+        }
+
+        window.addEventListener('hashchange', () => {
+            if (window.location.hash === '#admin') {
+                openAdminView();
+            }
+        });

@@ -1,0 +1,19 @@
+body {
+            background-color: #0f172a;
+            color: #f8fafc;
+            font-family: 'Inter', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 9999px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+        .promo-glow { box-shadow: 0 0 22px -5px rgba(16, 185, 129, 0.28); }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .pb-safe { padding-bottom: max(0.5rem, env(safe-area-inset-bottom)); }
+        .pt-safe { padding-top: max(0.625rem, env(safe-area-inset-top)); }
+        /* Zapobieganie automatycznemu zoomowaniu ekranu przez Safari na iPhone 13 mini przy kliknięciu w input */
+        @media screen and (max-width: 767px) {
+            input, select, textarea { font-size: 16px !important; }
+        }
