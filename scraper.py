@@ -741,7 +741,7 @@ def filter_pending_with_gemini(pending_dict: dict, api_key: str) -> dict:
             f"Lista: {json.dumps(chunk, ensure_ascii=False)}"
         )
         chunk_ok = False
-        for model_name in ["gemini-3.8-flash", "gemini-3.8-flash-lite"]:
+        for model_name in ["gemini-3.8-flash", "gemini-2.5-flash-lite", "gemini-2.5-flash", "gemini-2.0-flash"]:
             try:
                 resp = requests.post(
                     f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={api_key}",

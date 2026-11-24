@@ -2942,43 +2942,91 @@
             };
         }
 
+        function safeParseGeminiJson(rawText, fallbackVal = null) {
+            if (!rawText) return fallbackVal;
+            const cleaned = String(rawText)
+                .trim()
+                .replace(/^```(?:json)?\s*/i, '')
+                .replace(/\s*```$/i, '')
+                .trim();
+            return JSON.parse(cleaned);
+        }
+
+        async function discoverAvailableGeminiModels(apiKey) {
+            try {
+                const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
+                if (!resp.ok) return [];
+                const data = await resp.json();
+                return (data.models || [])
+                    .filter(m => Array.isArray(m.supportedGenerationMethods) && m.supportedGenerationMethods.includes('generateContent'))
+                    .map(m => String(m.name || '').replace(/^models\//, ''))
+                    .filter(name => name.includes('gemini') && !name.includes('embedding') && !name.includes('vision') && !name.includes('image') && !name.includes('tts'));
+            } catch (_) {
+                return [];
+            }
+        }
+
         async function callGeminiWithFallback(apiKey, payload) {
-            const models = [
+            const preferredModels = [
                 'gemini-3.8-flash',
-                'gemini-3.8-flash-lite'
+                'gemini-2.5-flash-lite',
+                'gemini-2.5-flash',
+                'gemini-2.0-flash'
             ];
+            const tried = new Set();
             let lastError = null;
 
-            for (let i = 0; i < models.length; i++) {
-                const model = models[i];
-                try {
-                    const resp = await fetch(
-                        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
-                        {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(payload)
+            const tryModelList = async (modelList) => {
+                for (let i = 0; i < modelList.length; i++) {
+                    const model = modelList[i];
+                    if (!model || tried.has(model)) continue;
+                    tried.add(model);
+
+                    try {
+                        const resp = await fetch(
+                            `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+                            {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify(payload)
+                            }
+                        );
+                        const data = await resp.json();
+
+                        if (resp.ok && !data.error) {
+                            return data;
                         }
-                    );
-                    const data = await resp.json();
 
-                    if (resp.ok && !data.error) {
-                        return data;
-                    }
+                        const errMsg = data.error?.message || `HTTP ${resp.status}`;
+                        lastError = new Error(errMsg);
 
-                    const errMsg = data.error?.message || `HTTP ${resp.status}`;
-                    lastError = new Error(errMsg);
+                        // Jeśli klucz API jest ewidentnie błędny, przerwij od razu
+                        if (resp.status === 400 && /API key not valid/i.test(errMsg)) {
+                            throw lastError;
+                        }
 
-                    if (resp.status === 503 || resp.status === 429 || /high demand|overloaded|no longer available/i.test(errMsg)) {
-                        await new Promise(r => setTimeout(r, 600));
+                        // Przy 503 (high demand), 429 (rate limit), 404 (not found) lub wycofanym modelu przejdź do kolejnego
+                        if ([404, 429, 500, 503].includes(resp.status) || /high demand|overloaded|not found|not supported|no longer available/i.test(errMsg)) {
+                            await new Promise(r => setTimeout(r, 400));
+                            continue;
+                        }
                         continue;
+                    } catch (err) {
+                        lastError = err;
+                        if (/API key not valid/i.test(err.message || '')) throw err;
                     }
-                    throw lastError;
-                } catch (err) {
-                    lastError = err;
-                    if (i === models.length - 1) throw lastError;
                 }
-            }
+                return null;
+            };
+
+            const firstPass = await tryModelList(preferredModels);
+            if (firstPass) return firstPass;
+
+            // Automatyczne pobranie listy modeli z Google ListModels jako ostateczny fallback
+            const dynamicModels = await discoverAvailableGeminiModels(apiKey);
+            const secondPass = await tryModelList(dynamicModels);
+            if (secondPass) return secondPass;
+
             throw lastError || new Error('Wszystkie modele Gemini są chwilowo niedostępne.');
         }
 
@@ -3368,7 +3416,7 @@
                         contents: [{ parts: [{ text: `Popraw polską nazwę produktu spożywczego (dodaj polskie znaki, popraw literówki, wielka litera na początku): "${rawName}". Zwróć JSON: {"fixedName": "Poprawna nazwa"}` }] }],
                         generationConfig: { responseMimeType: "application/json" }
                     });
-                    const parsed = JSON.parse(data.candidates?.[0]?.content?.parts?.[0]?.text || "{}");
+                    const parsed = safeParseGeminiJson(data.candidates?.[0]?.content?.parts?.[0]?.text, {});
                     if (parsed.fixedName) fixed.fixedName = parsed.fixedName;
                 } catch (_) {}
             }
@@ -3894,7 +3942,7 @@ BARDZO WAŻNE ZASADY:
                 const rawJson = result.candidates?.[0]?.content?.parts?.[0]?.text;
                 if (!rawJson) throw new Error("Brak odpowiedzi z Gemini Vision");
 
-                const parsed = JSON.parse(rawJson);
+                const parsed = safeParseGeminiJson(rawJson, []);
                 if (!Array.isArray(parsed) || parsed.length === 0) {
                     showToast("Nie znaleziono produktów spożywczych na zdjęciu.", "warning");
                     return;
@@ -4592,7 +4640,7 @@ ${JSON.stringify(chunk)}`;
                         generationConfig: { responseMimeType: "application/json" }
                     });
                     const rawText = resJson.candidates?.[0]?.content?.parts?.[0]?.text || "[]";
-                    const parsed = JSON.parse(rawText);
+                    const parsed = safeParseGeminiJson(rawText, {});
 
                     if (Array.isArray(parsed)) {
                         parsed.forEach(item => {
@@ -5724,7 +5772,7 @@ ${JSON.stringify(chunk)}`;
                 const jsonStr = result.candidates?.[0]?.content?.parts?.[0]?.text;
                 if (!jsonStr) throw new Error("Brak danych z AI");
 
-                const aiParsed = JSON.parse(jsonStr);
+                const aiParsed = safeParseGeminiJson(jsonStr, {});
                 if (Array.isArray(aiParsed.ingredients)) {
                     aiParsed.ingredients = aiParsed.ingredients.map(i => ({
                         ...i,
@@ -6848,7 +6896,7 @@ ${JSON.stringify(chunk)}`;
 
             try {
                 const rawText = await file.text();
-                const parsed = JSON.parse(rawText);
+                const parsed = safeParseGeminiJson(rawText, {});
                 const importedList = Array.isArray(parsed)
                     ? parsed
                     : (Array.isArray(parsed.recipes) ? parsed.recipes : null);
@@ -7003,7 +7051,7 @@ ${JSON.stringify(chunk)}`;
 
             try {
                 const rawText = await file.text();
-                const parsed = JSON.parse(rawText);
+                const parsed = safeParseGeminiJson(rawText, {});
 
                 const hasPantryObj = parsed && typeof parsed.pantry === 'object' && parsed.pantry !== null && !Array.isArray(parsed.pantry);
                 const hasDetailedArr = parsed && Array.isArray(parsed.pantryDetailed);
@@ -7338,7 +7386,7 @@ Zwróć WYŁĄCZNIE poprawny JSON:
                 });
 
                 const rawText = resJson.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
-                const parsed = JSON.parse(rawText);
+                const parsed = safeParseGeminiJson(rawText, {});
 
                 let bugBannerHtml = '';
                 if (parsed.isBug) {
