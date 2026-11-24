@@ -2136,16 +2136,23 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebas
             const req = parseQuantityString(ing.amount, canonKey);
             const pack = parseQuantityString(pbItem.unit || '1 szt.', canonKey);
 
-            // Bulion w płynie (np. "4 szklanki" lub "1 l" lub "500 ml"): 1 litr gotowego bulionu to ok. 2 łyżki koncentratu ze słoika (1/6 słoika) lub 2 kostki!
-            if (canonKey.includes('bulion')) {
-                let litersOfBroth = 0;
-                if (req.baseUnit === 'ml') litersOfBroth = req.val / 1000;
-                else if (req.baseUnit === 'tbsp') litersOfBroth = (req.val * 15) / 1000; // 4 szklanki = 66.67 tbsp = 1.0 litr
-                if (litersOfBroth > 0) {
-                    const jarPb = window.appState.pricebook['bulion_w_sloiku'] || pbItem;
-                    const jarPrice = Number(jarPb?.price ?? 6.50);
-                    // 1 litr bulionu zużywa 1/6 słoika (ok. 1.08 zł)
+            // Bulion: rozróżniamy gotowy wywar w płynie (szklanki, ml, l) od koncentratu ze słoika (łyżki, łyżeczki)
+            if (canonKey.includes('bulion') && !canonKey.includes('kostk')) {
+                const jarPb = window.appState.pricebook['bulion_w_sloiku'] || pbItem;
+                const jarPrice = Number(jarPb?.price ?? 6.50);
+                const isLiquidVolume = req.baseUnit === 'ml' || req.rawUnit === 'szklanka';
+
+                if (isLiquidVolume) {
+                    // 1 litr (4 szklanki) gotowego wywaru = ok. 2 łyżki koncentratu (1/6 słoika ≈ 1.08 zł)
+                    const litersOfBroth = req.baseUnit === 'ml'
+                        ? (req.val / 1000)
+                        : ((req.val * 15) / 1000);
                     return Number(((litersOfBroth / 6) * jarPrice).toFixed(2));
+                }
+                if (req.baseUnit === 'tbsp') {
+                    // Łyżki / łyżeczki koncentratu ze słoika (1 słoik = 12 łyżek)
+                    const tbspPerPack = (getCulinaryEquivalents(canonKey).tbspPerPack) || 12;
+                    return Number(((req.val / tbspPerPack) * jarPrice).toFixed(2));
                 }
             }
 
