@@ -236,11 +236,16 @@
 
                     <div class="pt-1.5 border-t border-slate-800 flex items-center justify-between gap-2">
                         <button onclick="logoutFromKitchen()" class="text-[11px] text-red-400 hover:text-red-300 font-semibold flex items-center gap-1">
-                            🚪 Zmień kuchnię / Wyloguj
+                            🚪 Wyloguj
                         </button>
-                        <button onclick="openAdminView()" class="text-[11px] text-slate-500 hover:text-slate-300">
-                            🛡️ Admin
-                        </button>
+                        <div class="flex items-center gap-2.5">
+                            <button onclick="startOnboardingTour(0)" title="Pokaż krótki przewodnik po aplikacji" class="text-[11px] text-emerald-400 hover:text-emerald-300 font-semibold">
+                                🧭 Przewodnik
+                            </button>
+                            <button onclick="openAdminView()" class="text-[11px] text-slate-500 hover:text-slate-300">
+                                🛡️ Admin
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -957,7 +962,8 @@
                     </button>
                 </div>
                 <div class="pt-2 border-t border-slate-800 flex items-center justify-between text-xs">
-                    <button onclick="toggleMobileMoreMenu(false); logoutFromKitchen()" class="text-red-400 font-semibold">🚪 Zmień kuchnię / Wyloguj</button>
+                    <button onclick="toggleMobileMoreMenu(false); logoutFromKitchen()" class="text-red-400 font-semibold">🚪 Wyloguj</button>
+                    <button onclick="toggleMobileMoreMenu(false); startOnboardingTour(0)" class="text-emerald-400 font-semibold">🧭 Przewodnik</button>
                     <button onclick="toggleMobileMoreMenu(false); openAdminView()" class="text-slate-400">🛡️ Admin</button>
                 </div>
             </div>
@@ -1794,6 +1800,7 @@
                 labelInput.value = '';
                 connectToActiveKitchen(newCode);
                 showToast(`Utworzono nową kuchnię! Twój kod dostępu to: <strong class="font-mono text-base">${newCode}</strong>`);
+                setTimeout(() => startOnboardingTour(0), 450);
             } catch (err) {
                 console.error("Błąd tworzenia kuchni:", err);
                 showToast("Nie udało się utworzyć kuchni. Sprawdź Firestore Security Rules.", "error");
@@ -7094,6 +7101,137 @@ ${JSON.stringify(chunk)}`;
             }
         };
 
+
+        // ================= SAMOUCZEK POWITALNY (ONBOARDING TOUR) =================
+        let currentTourStepIndex = 0;
+
+        function getOnboardingSteps() {
+            const code = window.appState.kitchenCode || '------';
+            const label = window.appState.kitchenLabel || 'Wspólna Kuchnia';
+            return [
+                {
+                    tab: 'recipes',
+                    icon: '🔑',
+                    title: `Witaj w „${label}”! Oto Twój Kod Kuchni`,
+                    desc: 'Ten 6-znakowy kod łączy wszystkich domowników ze wspólną bazą. Wyślij go drugiej połówce lub rodzinie — gdy wpiszą go na ekranie startowym, zobaczycie dokładnie te same przepisy, spiżarnię i listę zakupów na żywo.',
+                    extraHtml: `
+                        <div class="p-3.5 rounded-xl bg-slate-950 border border-emerald-500/40 flex items-center justify-between gap-3">
+                            <div>
+                                <span class="text-[10px] uppercase tracking-wider text-slate-400 block">Twój unikalny kod dostępu</span>
+                                <span class="font-mono text-xl font-extrabold text-emerald-400 tracking-widest">${code}</span>
+                            </div>
+                            <button type="button" onclick="copyKitchenCode()" class="px-3.5 py-2 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 text-xs font-bold transition-colors">
+                                📋 Kopiuj kod
+                            </button>
+                        </div>
+                    `
+                },
+                {
+                    tab: 'pantry',
+                    icon: '🥫',
+                    title: 'Spiżarnia, Lodówka & Zamrażarka',
+                    desc: 'Zaznaczaj produkty, które masz w domu, a w sekcji Zamrażarka zapisuj gotowe porcje obiadów. W zakładce Przepisy kliknij filtr „🥫 Z tego co mam”, aby od razu zobaczyć, co ugotujesz bez wychodzenia do sklepu.',
+                    extraHtml: `
+                        <div class="p-3 rounded-xl bg-slate-900/90 border border-slate-800 text-xs text-slate-300">
+                            💡 <strong>Wskazówka:</strong> Po ugotowaniu dania kliknij <strong>„🍳 Ugotowane!”</strong> — apka automatycznie odejmie zużyte składniki ze spiżarni.
+                        </div>
+                    `
+                },
+                {
+                    tab: 'pricebook',
+                    icon: '📸',
+                    title: 'Cennik & Skaner Paragonów',
+                    desc: 'Nie musisz ręcznie liczyć kosztów obiadów. Wgraj zdjęcie paragonu w tej zakładce, a apka wyciągnie ceny produktów spożywczych (pomijając chemię i kosmetyki), zaktualizuje Cennik i przeliczy koszt każdego przepisu.',
+                    extraHtml: `
+                        <div class="p-3 rounded-xl bg-slate-900/90 border border-slate-800 text-xs text-slate-300">
+                            ⚖️ Aplikacja sama przelicza gramatury, kromki chleba, ząbki czosnku oraz łyżki słoików (np. masła orzechowego czy bulionu).
+                        </div>
+                    `
+                },
+                {
+                    tab: 'planner',
+                    icon: '📅',
+                    title: 'Planer Tygodnia & Wspólna Lista Zakupów',
+                    desc: 'Zaplanuj śniadania, obiady i kolacje na cały tydzień. Aplikacja zsumuje zapotrzebowanie ze wszystkich dni, odejmie to, co już masz w domu, i jednym kliknięciem wrzuci wyłącznie brakujące rzeczy na Listę Zakupów.',
+                    extraHtml: `
+                        <div class="p-3 rounded-xl bg-slate-900/90 border border-slate-800 text-xs text-slate-300">
+                            🛒 Po powrocie ze sklepu kliknij <strong>„Przenieś kupione do Spiżarni”</strong>, aby uzupełnić zapasy jednym ruchem.
+                        </div>
+                    `
+                },
+                {
+                    tab: 'recipes',
+                    icon: '✨',
+                    title: 'Przepisy z linków & Klucz Gemini AI',
+                    desc: 'Na start masz już 15 sprawdzonych przepisów. Możesz dodawać własne, pobierać przepisy wklejając link ze strony kulinarnej albo dzielić się nimi z innymi kuchniami.',
+                    extraHtml: `
+                        <div class="p-3.5 rounded-xl bg-indigo-950/40 border border-indigo-500/40 space-y-2">
+                            <p class="text-xs text-indigo-200 leading-relaxed">
+                                🔑 Jeśli masz własny darmowy klucz <strong>Google Gemini API</strong>, wklej go w <strong>Nazwa & Klucz AI</strong>, aby odblokować Skaner Paragonów ze zdjęć i inteligentne parsowanie linków.
+                            </p>
+                            <button type="button" onclick="closeOnboardingTour(); openKitchenModal()" class="text-xs font-bold text-emerald-400 hover:underline">
+                                ⚙️ Otwórz ustawienia Nazwa & Klucz AI →
+                            </button>
+                        </div>
+                    `
+                }
+            ];
+        }
+
+        window.startOnboardingTour = (stepIdx = 0) => {
+            currentTourStepIndex = Math.max(0, stepIdx);
+            renderOnboardingTourStep();
+            document.getElementById('modal-onboarding-tour').classList.remove('hidden');
+        };
+
+        window.closeOnboardingTour = () => {
+            document.getElementById('modal-onboarding-tour').classList.add('hidden');
+            switchTab('recipes');
+        };
+
+        window.prevOnboardingStep = () => {
+            if (currentTourStepIndex > 0) {
+                currentTourStepIndex--;
+                renderOnboardingTourStep();
+            }
+        };
+
+        window.nextOnboardingStep = () => {
+            const steps = getOnboardingSteps();
+            if (currentTourStepIndex < steps.length - 1) {
+                currentTourStepIndex++;
+                renderOnboardingTourStep();
+            } else {
+                closeOnboardingTour();
+                showToast("Gotowe! Miłego gotowania i oszczędzania 👨‍🍳");
+            }
+        };
+
+        function renderOnboardingTourStep() {
+            const steps = getOnboardingSteps();
+            const step = steps[currentTourStepIndex];
+            if (!step) return;
+
+            if (step.tab) {
+                switchTab(step.tab);
+            }
+
+            document.getElementById('tour-step-badge').textContent = `KROK ${currentTourStepIndex + 1} / ${steps.length}`;
+            document.getElementById('tour-icon').textContent = step.icon;
+            document.getElementById('tour-title').textContent = step.title;
+            document.getElementById('tour-desc').textContent = step.desc;
+            document.getElementById('tour-extra-box').innerHTML = step.extraHtml || '';
+
+            document.getElementById('tour-dots').innerHTML = steps.map((_, idx) => `
+                <span class="h-1.5 rounded-full transition-all ${idx === currentTourStepIndex ? 'w-5 bg-emerald-400' : 'w-1.5 bg-slate-700'}"></span>
+            `).join('');
+
+            const prevBtn = document.getElementById('btn-tour-prev');
+            const nextBtn = document.getElementById('btn-tour-next');
+            prevBtn.classList.toggle('invisible', currentTourStepIndex === 0);
+            nextBtn.textContent = currentTourStepIndex === steps.length - 1 ? 'Zaczynamy! 🚀' : 'Dalej →';
+        }
+
         // ================= START APLIKACJI (ROUTING) =================
         function initAppRouter() {
             if (window.location.hash === '#admin') {
@@ -7121,5 +7259,38 @@ ${JSON.stringify(chunk)}`;
             }
         });
     </script>
+    <!-- MODAL 7: Samouczek Powitalny po utworzeniu nowej kuchni -->
+    <div id="modal-onboarding-tour" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
+        <div class="bg-[#1e293b] border-t sm:border border-emerald-500/40 rounded-t-3xl sm:rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-5">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <span id="tour-step-badge" class="px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-xs font-extrabold tracking-wide">KROK 1 / 5</span>
+                    <div id="tour-dots" class="flex items-center gap-1.5 ml-1"></div>
+                </div>
+                <button type="button" onclick="closeOnboardingTour()" class="text-xs text-slate-400 hover:text-white px-2.5 py-1 rounded-lg bg-slate-800/90 transition-colors">
+                    Pomiń samouczek ✕
+                </button>
+            </div>
+
+            <div class="space-y-3">
+                <div id="tour-icon" class="w-12 h-12 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-2xl">
+                    🔑
+                </div>
+                <h3 id="tour-title" class="text-xl font-extrabold text-white leading-snug"></h3>
+                <p id="tour-desc" class="text-sm text-slate-300 leading-relaxed"></p>
+                <div id="tour-extra-box"></div>
+            </div>
+
+            <div class="pt-3 border-t border-slate-800 flex items-center justify-between gap-2">
+                <button type="button" id="btn-tour-prev" onclick="prevOnboardingStep()" class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs sm:text-sm transition-colors">
+                    ← Wstecz
+                </button>
+                <button type="button" id="btn-tour-next" onclick="nextOnboardingStep()" class="px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs sm:text-sm shadow-lg shadow-emerald-500/20 transition-all">
+                    Dalej →
+                </button>
+            </div>
+        </div>
+    </div>
+
 </body>
 </html>
