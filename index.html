@@ -305,6 +305,13 @@
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"></path></svg>
                     Zgłoś Pomysł / Błąd
                 </button>
+                <button onclick="openAiHelpModal()" class="w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-semibold text-indigo-300 bg-indigo-500/15 hover:bg-indigo-500/25 border border-indigo-500/35 transition-all">
+                    <span class="flex items-center gap-3">
+                        <span class="text-base">🤖</span>
+                        <span>Zapytaj AI o pomoc</span>
+                    </span>
+                    <span class="text-[10px] px-1.5 py-0.5 rounded bg-indigo-500/30 text-indigo-200 font-bold">AI</span>
+                </button>
             </nav>
 
             <div class="p-4 border-t border-slate-800 space-y-2">
@@ -959,6 +966,13 @@
                         <span class="text-lg">⚙️</span>
                         <p class="text-xs font-bold text-white">Nazwa & Klucz AI</p>
                         <p class="text-[10px] text-slate-400">Ustawienia kuchni</p>
+                    </button>
+                    <button onclick="toggleMobileMoreMenu(false); openAiHelpModal()" class="col-span-2 p-3.5 rounded-2xl bg-indigo-950/50 border border-indigo-500/40 text-left flex items-center justify-between gap-3">
+                        <div class="space-y-0.5">
+                            <p class="text-xs font-bold text-indigo-200">🤖 Zapytaj AI o pomoc lub zgłoś błąd</p>
+                            <p class="text-[10px] text-slate-400">AI pokieruje Cię po aplikacji lub wyśle zgłoszenie do Admina</p>
+                        </div>
+                        <span class="text-lg shrink-0">→</span>
                     </button>
                 </div>
                 <div class="pt-2 border-t border-slate-800 flex items-center justify-between text-xs">
@@ -7232,6 +7246,169 @@ ${JSON.stringify(chunk)}`;
             nextBtn.textContent = currentTourStepIndex === steps.length - 1 ? 'Zaczynamy! 🚀' : 'Dalej →';
         }
 
+
+        // ================= ASYSTENT AI POMOCY & AUTO-ZGŁASZANIE BŁĘDÓW =================
+        window.openAiHelpModal = () => {
+            const noticeEl = document.getElementById('ai-help-key-notice');
+            if (noticeEl) {
+                if (window.appState.geminiApiKey) {
+                    noticeEl.className = 'p-3 rounded-xl bg-emerald-950/35 border border-emerald-500/35 flex items-center justify-between gap-2 text-xs';
+                    noticeEl.innerHTML = `<span class="text-emerald-200">✅ <strong>Klucz Gemini API aktywny</strong> — możesz pytać o funkcje lub zgłaszać błędy.</span>`;
+                } else {
+                    noticeEl.className = 'p-3 rounded-xl bg-amber-950/40 border border-amber-500/40 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs';
+                    noticeEl.innerHTML = `
+                        <span class="text-amber-200">🔑 <strong>Wymagany klucz Google Gemini API</strong> w ustawieniach kuchni, aby korzystać z asystenta AI.</span>
+                        <button type="button" onclick="closeModal('modal-ai-help'); openKitchenModal()" class="px-3 py-1.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 font-bold shrink-0">Wpisz klucz API →</button>
+                    `;
+                }
+            }
+            document.getElementById('modal-ai-help').classList.remove('hidden');
+        };
+
+        window.fillAiHelpPrompt = (text) => {
+            const input = document.getElementById('ai-help-input');
+            if (input) {
+                input.value = text;
+                input.focus();
+            }
+        };
+
+        window.askAiHelpAssistant = async (e) => {
+            e.preventDefault();
+            const userQuestion = document.getElementById('ai-help-input').value.trim();
+            if (!userQuestion) return;
+
+            const apiKey = window.appState.geminiApiKey;
+            if (!apiKey) {
+                showToast("Wymagany klucz Google Gemini API! Wklej go w ustawieniach kuchni.", "warning");
+                openAiHelpModal();
+                return;
+            }
+
+            const btn = document.getElementById('btn-ask-ai-help');
+            const origHtml = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = `<span class="animate-spin inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full"></span> <span>Analizuję pytanie...</span>`;
+
+            const responseBox = document.getElementById('ai-help-response-box');
+
+            try {
+                const systemGuide = `Jesteś wbudowanym asystentem aplikacji "KuchniaBudżet PRO".
+Znasz wszystkie zakładki i funkcje aplikacji:
+1. "recipes" (Przepisy & Społeczność): przeglądanie przepisów, filtr "Z tego co mam" (pantry), dodawanie własnych przepisów lub importowanie ich z linku URL ("Dodaj Przepis / Link / AI"), edycja składników, udostępnianie przepisów innym kuchniom, rozliczanie ugotowanych dań przyciskiem "Ugotowane!" (odejmuje zużyte składniki ze spiżarni i wylicza koszt 1 porcji).
+2. "planner" (Planer Posiłków): planowanie śniadań, obiadów i kolacji na 7 dni tygodnia, liczenie kosztu tygodnia oraz dodawanie brakujących składników do Listy Zakupów.
+3. "pantry" (Spiżarnia & Zamrażarka): domowy stan produktów (Lodówka / Spiżarnia) z obsługą jednostek (szt., g, kg, ml, l, opak., puszka, słoik) oraz sekcja "Zamrażarka" do ewidencji gotowych zamrożonych porcji obiadów.
+4. "pricebook" (Cennik & Paragon AI): Cennik Bazowy składników (źródło prawdy do wyceny przepisów) oraz Skaner Paragonów ze zdjęcia (wyciąga tylko żywność, pomija chemię/kosmetyki i aktualizuje ceny oraz spiżarnię).
+5. "promos" (Radar Śledzonych): lista ulubionych produktów do śledzenia w gazetkach.
+6. "verify" (Promocje): poczekalnia okazji z Lidla, Biedronki i Netto ze scrapera, przycisk "Sprawdź promocje teraz" oraz filtr "Odsiej AI".
+7. "shopping" (Lista Zakupów): wspólna lista zakupów z podziałem na działy, przenoszenie kupionych produktów do Spiżarni oraz Historia Zakupów (wydatki tygodniowe i miesięczne).
+8. "reviews" (Historia & Koszt Porcji): statystyki wydatków, średni koszt porcji i dziennik ugotowanych obiadów.
+9. Ustawienia ("Nazwa & Klucz AI"): zmiana nazwy kuchni, kopiowanie 6-znakowego Kodu Kuchni dla domowników, podpinanie klucza Google Gemini API oraz tokena GitHub Actions.
+
+ZADANIE:
+Przeanalizuj wiadomość użytkownika:
+- Jeśli użytkownik pyta JAK coś zrobić lub gdzie znaleźć funkcję: wyjaśnij krótko, konkretnie i przyjaźnie po polsku w krokach, oraz wskaż najlepszą zakładkę docelową ("targetTab": "recipes"|"planner"|"pantry"|"pricebook"|"promos"|"verify"|"shopping"|"reviews"|"settings"|""). Ustaw "isBug": false.
+- Jeśli użytkownik opisuje BŁĄD aplikacji, usterkę, niedziałający przycisk, zły przelicznik lub awarię (nie zwykłe pytanie o obsługę): ustaw "isBug": true, przygotuj zwięzły tytuł błędu ("bugTitle") oraz techniczny opis dla administratora ("bugDescription"), a w odpowiedzi ("answer") poinformuj użytkownika, że wykryto błąd i automatycznie wysłano zgłoszenie do Panelu Administratora, podając też ewentualne obejście problemu.
+
+Zwróć WYŁĄCZNIE poprawny JSON:
+{
+  "isBug": boolean,
+  "answer": "Treść odpowiedzi po polsku (możesz użyć prostego formatowania nowej linii)",
+  "targetTab": "recipes|planner|pantry|pricebook|promos|verify|shopping|reviews|settings|",
+  "targetButtonLabel": "np. Przejdź do Cennika i Skanera Paragonów",
+  "bugTitle": "Krótki tytuł błędu (jeśli isBug=true)",
+  "bugDescription": "Szczegółowy opis błędu na podstawie zgłoszenia użytkownika (jeśli isBug=true)"
+}`;
+
+                const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: userQuestion }] }],
+                        systemInstruction: { parts: [{ text: systemGuide }] },
+                        generationConfig: { responseMimeType: "application/json" }
+                    })
+                });
+
+                const resJson = await resp.json();
+                if (!resp.ok || resJson.error) {
+                    throw new Error(resJson.error?.message || `HTTP ${resp.status}`);
+                }
+
+                const rawText = resJson.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
+                const parsed = JSON.parse(rawText);
+
+                let bugBannerHtml = '';
+                if (parsed.isBug) {
+                    const fbId = 'fb_ai_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4);
+                    const bugTitle = parsed.bugTitle || `Auto-zgłoszenie błędu: ${userQuestion.slice(0, 50)}`;
+                    const bugDesc = `${parsed.bugDescription || userQuestion}
+
+--- Kontekst automatyczny AI ---
+Oryginalna wiadomość: "${userQuestion}"
+Kuchnia: ${window.appState.kitchenLabel} (${window.appState.kitchenCode})`;
+
+                    await setDoc(doc(db, "sugestie_zmian", fbId), {
+                        id: fbId,
+                        kitchenCode: window.appState.kitchenCode,
+                        kitchenLabel: window.appState.kitchenLabel || "Wspólna Kuchnia",
+                        category: "🐛 Auto-zgłoszenie błędu (AI)",
+                        title: bugTitle,
+                        description: bugDesc,
+                        status: 'nowe',
+                        createdAt: new Date().toISOString()
+                    });
+
+                    bugBannerHtml = `
+                        <div class="p-3 rounded-xl bg-red-950/45 border border-red-500/40 text-xs text-red-200 space-y-1">
+                            <p class="font-bold text-red-300">🚨 Wykryto błąd — wysłano automatyczne zgłoszenie do Admina!</p>
+                            <p class="text-slate-300">Tytuł zgłoszenia: <strong>${bugTitle}</strong></p>
+                        </div>
+                    `;
+                    showToast("🚨 AI wykryło błąd i automatycznie wysłało zgłoszenie do Administratora!", "warning");
+                }
+
+                let actionBtnHtml = '';
+                const validTabs = ['recipes', 'planner', 'pantry', 'pricebook', 'promos', 'verify', 'shopping', 'reviews'];
+                if (parsed.targetTab && validTabs.includes(parsed.targetTab)) {
+                    const btnLabel = parsed.targetButtonLabel || 'Przejdź do tej zakładki →';
+                    actionBtnHtml = `
+                        <button type="button" onclick="closeModal('modal-ai-help'); switchTab('${parsed.targetTab}')" class="w-full py-2.5 px-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs sm:text-sm transition-all">
+                            ${btnLabel}
+                        </button>
+                    `;
+                } else if (parsed.targetTab === 'settings') {
+                    actionBtnHtml = `
+                        <button type="button" onclick="closeModal('modal-ai-help'); openKitchenModal()" class="w-full py-2.5 px-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs sm:text-sm transition-all">
+                            ⚙️ Otwórz ustawienia Nazwa & Klucz AI →
+                        </button>
+                    `;
+                }
+
+                const formattedAnswer = String(parsed.answer || '').replace(/
+/g, '<br>');
+                responseBox.innerHTML = `
+                    ${bugBannerHtml}
+                    <div class="p-4 rounded-xl bg-slate-950/90 border border-slate-800 text-sm text-slate-200 leading-relaxed">
+                        ${formattedAnswer}
+                    </div>
+                    ${actionBtnHtml}
+                `;
+                responseBox.classList.remove('hidden');
+            } catch (err) {
+                console.error("Błąd asystenta AI:", err);
+                responseBox.innerHTML = `
+                    <div class="p-3.5 rounded-xl bg-red-950/40 border border-red-500/40 text-xs text-red-200">
+                        Nie udało się połączyć z Gemini AI (${err.message}). Sprawdź poprawność klucza API w ustawieniach kuchni.
+                    </div>
+                `;
+                responseBox.classList.remove('hidden');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = origHtml;
+            }
+        };
+
         // ================= START APLIKACJI (ROUTING) =================
         function initAppRouter() {
             if (window.location.hash === '#admin') {
@@ -7289,6 +7466,50 @@ ${JSON.stringify(chunk)}`;
                     Dalej →
                 </button>
             </div>
+        </div>
+    </div>
+
+    <!-- MODAL 8: Asystent AI Pomocy & Automatycznego Zgłaszania Błędów -->
+    <div id="modal-ai-help" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
+        <div class="bg-[#1e293b] border-t sm:border border-indigo-500/40 rounded-t-3xl sm:rounded-2xl max-w-xl w-full p-5 sm:p-6 shadow-2xl max-h-[90vh] flex flex-col space-y-4">
+            <div class="flex items-start justify-between gap-3">
+                <div>
+                    <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 text-[11px] font-bold mb-1">
+                        <span>🤖 ASYSTENT POMOCY & AUTO-DIAGNOSTYKA</span>
+                    </div>
+                    <h3 class="text-lg sm:text-xl font-extrabold text-white">Nie wiesz jak coś zrobić lub coś nie działa?</h3>
+                </div>
+                <button type="button" onclick="closeModal('modal-ai-help')" class="p-2 rounded-xl bg-slate-800 text-slate-400 hover:text-white shrink-0">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+
+            <!-- Baner informacyjny o wymaganym kluczu Gemini API -->
+            <div id="ai-help-key-notice" class="p-3 rounded-xl bg-amber-950/40 border border-amber-500/40 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+                <span class="text-amber-200">
+                    🔑 <strong>Wymagany klucz Google Gemini API</strong> w ustawieniach kuchni, aby korzystać z asystenta AI.
+                </span>
+                <button type="button" onclick="closeModal('modal-ai-help'); openKitchenModal()" class="px-3 py-1.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 font-bold shrink-0">
+                    Wpisz klucz API →
+                </button>
+            </div>
+
+            <!-- Szybkie przykłady pytań -->
+            <div class="flex flex-wrap gap-1.5">
+                <button type="button" onclick="fillAiHelpPrompt('Jak zeskanować paragon, żeby zaktualizować ceny?')" class="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-[11px] text-slate-300">📸 Jak skanować paragon?</button>
+                <button type="button" onclick="fillAiHelpPrompt('Jak połączyć telefon drugiej osoby z naszą kuchnią?')" class="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-[11px] text-slate-300">🔑 Wspólna kuchnia</button>
+                <button type="button" onclick="fillAiHelpPrompt('Jak zaplanować tydzień i zrobić listę zakupów?')" class="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-[11px] text-slate-300">📅 Planer i zakupy</button>
+            </div>
+
+            <form onsubmit="askAiHelpAssistant(event)" class="space-y-3">
+                <textarea id="ai-help-input" rows="3" required placeholder="Opisz czego szukasz (np. 'gdzie wpisać zamrożone pierogi?') albo jaki problem wystąpił (np. 'nie zapisuje mi nowego przepisu')..." class="w-full p-3.5 rounded-xl bg-slate-950 border border-slate-700 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500"></textarea>
+                <button type="submit" id="btn-ask-ai-help" class="w-full py-3 rounded-xl bg-indigo-500 hover:bg-indigo-400 text-white font-bold text-sm shadow-lg shadow-indigo-500/20 transition-all flex items-center justify-center gap-2">
+                    <span>✨ Zapytaj AI</span>
+                </button>
+            </form>
+
+            <!-- Odpowiedź Asystenta AI + ewentualne auto-zgłoszenie błędu -->
+            <div id="ai-help-response-box" class="hidden overflow-y-auto pr-1 space-y-3 pt-2 border-t border-slate-800"></div>
         </div>
     </div>
 
